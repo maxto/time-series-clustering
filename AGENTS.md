@@ -6,9 +6,9 @@ A concept-first, English-only mini-course on time series similarity (static site
 
 Files marked (planned) arrive in later pilot tasks.
 
-- `content/` (planned, Tasks 6 to 8): lessons (`NN-id.md`), `_course.md` (course data), `figures/` (generated SVG, their `*.preview.svg`, and `numbers.json`).
+- `content/`: lessons (`NN-id.md`), `_course.md` (course data), `figures/` (generated SVG, their `*.preview.svg`, and `numbers.json`).
 - `site/`: `theme.css` (tokens, light and dark, layout, the figure classes between the `figure-classes` markers), `theme.js` (theme button, `tsc:theme`), `page.html` (lesson), `home.html`, `favicon.svg`.
-- `scripts/`: `build.py` (content to `dist/`, holds `SITE_URL`), `buildlib/` (build helpers: `content.py` schema, sections, prose and links, `svg.py` figure rules and previews, `katex.py` math batch), `katex.mjs` (TeX to HTML and MathML, called once per build), `make_fixtures.py`, `parity_dtw.py`, `figures.py` (planned, Task 6).
+- `scripts/`: `build.py` (content to `dist/`, holds `SITE_URL`), `buildlib/` (build helpers: `content.py` schema, sections, prose and links, `svg.py` figure rules and previews, `katex.py` math batch), `katex.mjs` (TeX to HTML and MathML, called once per build), `make_fixtures.py`, `parity_dtw.py`, `figures.py` (figures and `numbers.json` from the fixture).
 - `code/python/tsc/`: reference package (`distances.py`, `group.py`, `validity.py`). Tests in `code/python/tests/`.
 - `code/r/`: R reference code (`distances.R`, `check_dtw.R`).
 - `fixtures/`: saved numbers (`demand-12.csv`). Frozen once the fixture checks pass. The CSV is the source of truth, the generator only documents it.
@@ -43,7 +43,7 @@ Files marked (planned) arrive in later pilot tasks.
 - Type: Geist (text), Geist Mono (labels, code). Fallbacks `system-ui`, `ui-monospace`.
 - Figures: SVG styled only through classes defined in `site/theme.css`. No `fill`/`stroke` colour attributes, no inline `style`, no `width`/`height` on the root. Each figure has `role="img"` and a `<title>`. Readable at 375 px.
 - Prose (lesson text, captions, notes) has no semicolons and no em-dashes, outside code and math.
-- Visual style: minimal, flat, 2D, low density, few colours with constant meaning (series A `ink`, series B `accent`, third group `line`).
+- Visual style: minimal, flat, 2D, low density, few colours with constant meaning. In figures comparing two series: series A `ink`, series B `accent`. In figures about groups: colour encodes the group (first group `ink`, second `accent`, third `line`), stated by the panel headings.
 - Fixtures are saved numbers in `fixtures/`. The fixture is an authored demonstration, and the lessons say so: it shows what a choice does, it is not evidence that a method performs well.
 - DTW convention everywhere: local cost = squared difference, closed endpoints (0, 0) and (n-1, m-1), steps (1, 0), (0, 1), (1, 1) with no weights, Sakoe-Chiba window `|i - j| <= w` in samples, result = square root of the accumulated cost, no length normalisation. Course window: `w = 4` samples (2 hours at 30-minute sampling). Inputs: non-empty, finite, `w` a non-negative integer or `None` (no window), else `ValueError`.
 - SBD inputs must have non-zero norm, else `ValueError` (the formula is undefined).

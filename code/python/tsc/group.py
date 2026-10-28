@@ -28,7 +28,14 @@ def load_demand(path=DEFAULT_PATH):
 
 
 def distance_matrix(X: np.ndarray, metric: Callable) -> np.ndarray:
-    """Pairwise distances between the rows of X, as a symmetric n x n matrix."""
+    """Pairwise distances between the rows of X, as a symmetric n x n matrix.
+
+    Assumes a symmetric measure with zero self-distance, and does not verify either:
+    it evaluates metric(X[i], X[j]) only for i < j, mirrors the value to (j, i) and
+    leaves the diagonal at 0. For any other measure (raw soft-DTW, an asymmetric
+    cost), evaluate both directions and every self-comparison yourself before
+    running check_dissimilarity, or this helper hides what the check should see.
+    """
     n = len(X)
     D = np.zeros((n, n))
     for i in range(n):
