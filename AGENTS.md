@@ -4,15 +4,13 @@ A concept-first, English-only mini-course on time series similarity (static site
 
 ## Layout
 
-Files marked (planned) arrive in later pilot tasks.
-
 - `content/`: lessons (`NN-id.md`), `_course.md` (course data), `figures/` (generated SVG, their `*.preview.svg`, and `numbers.json`).
 - `site/`: `theme.css` (tokens, light and dark, layout, the figure classes between the `figure-classes` markers), `theme.js` (theme button, `tsc:theme`), `page.html` (lesson), `home.html`, `favicon.svg`.
 - `scripts/`: `build.py` (content to `dist/`, holds `SITE_URL`), `buildlib/` (build helpers: `content.py` schema, sections, prose and links, `svg.py` figure rules and previews, `katex.py` math batch), `katex.mjs` (TeX to HTML and MathML, called once per build), `make_fixtures.py`, `parity_dtw.py`, `figures.py` (figures and `numbers.json` from the fixture).
 - `code/python/tsc/`: reference package (`distances.py`, `group.py`, `validity.py`). Tests in `code/python/tests/`.
 - `code/r/`: R reference code (`distances.R`, `check_dtw.R`).
 - `fixtures/`: saved numbers (`demand-12.csv`). Frozen once the fixture checks pass. The CSV is the source of truth, the generator only documents it.
-- `tests/`: `e2e.mjs` (headless Chrome via `playwright-core`, set `CHROME_PATH` if Chrome is not at `/usr/bin/google-chrome`), `test_build.py` (build validation), `fixtures/smoke/` (a tiny permanent course that exercises every engine feature), `shots.mjs` (planned, Task 9). `tests/output/` is git-ignored.
+- `tests/`: `e2e.mjs` (headless Chrome via `playwright-core`, set `CHROME_PATH` if Chrome is not at `/usr/bin/google-chrome`), `test_build.py` (build validation), `fixtures/smoke/` (a tiny permanent course that exercises every engine feature), `shots.mjs` (full-page screenshots for review). `tests/output/` is git-ignored.
 - `.github/workflows/pages.yml`: build and deploy to GitHub Pages on push to `master` (inactive until push and Pages are approved).
 - `dist/`, `node_modules/`, `.venv/`: git-ignored.
 - `README.md` and the PDF are the original material: leave them alone unless asked.
@@ -30,7 +28,7 @@ Files marked (planned) arrive in later pilot tasks.
 - `npm run build`: `uv run python scripts/build.py` (content/ to dist/, writes figure previews). Options: `--content DIR`, `--dist DIR`, `--previews`. With no `content/_course.md` it prints a note and exits 0.
 - `npm test`: build, then `node tests/e2e.mjs` (builds the smoke fixture into `tests/output/smoke-dist/`, checks it from `file://` and over HTTP under `/time-series-clustering/`, then `dist/` when `content/_course.md` exists).
 - `uv run pytest`: Python tests (reference code and `tests/test_build.py`).
-- `npm run shots` (planned, Task 9): screenshots in `tests/output/`.
+- `npm run shots`: builds, then full-page screenshots of the home and every published lesson, light and dark, 1280 and 375 px, in `tests/output/shots/` (cleared first, `manifest.json` records the commit).
 - Every Python command runs through `uv run`.
 
 ## Global constraints
