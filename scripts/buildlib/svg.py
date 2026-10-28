@@ -81,7 +81,8 @@ def check_svg(path, classes, errors):
 
 def preview_css(theme_css):
     """The figure block with light values in place of every var(), without the 'figure svg ' prefix."""
-    light = dict(re.findall(r"(--[a-z0-9-]+):\s*([^;]+);", theme_css.split(":root {", 1)[1].split("}", 1)[0]))
+    light_block = re.sub(r"/\*.*?\*/", "", theme_css.split(":root {", 1)[1].split("}", 1)[0], flags=re.S)
+    light = dict(re.findall(r"(--[a-z0-9-]+):\s*([^;]+);", light_block))
 
     def resolve(value, depth=0):
         if depth > 10:

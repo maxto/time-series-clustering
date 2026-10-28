@@ -7,8 +7,9 @@
 // 2. Runs the general checks on the real dist/ too, when content/_course.md exists.
 //
 // General checks, in both runs: no console error, no failed request, no request to another
-// origin, home -> lesson -> previous/next -> home navigation, theme button and stored choice,
-// system dark fallback, dark body colour, no horizontal overflow at 375 px.
+// origin, home links and every lesson's exact previous/next (from the source _course.md),
+// lesson -> home, theme button and stored choice, system dark fallback, dark body colour,
+// no horizontal overflow at 375 px.
 // Chrome: CHROME_PATH or /usr/bin/google-chrome. Run via `npm test`.
 import { chromium } from 'playwright-core';
 import { execFileSync } from 'node:child_process';
@@ -116,6 +117,8 @@ async function smokeChecks(run, p, url) {
   expect(await count(p, '.card.measure .katex') === 1, `${run}: alpha measure card math missing`);
   expect(await p.locator('pre code', { hasText: '## not a section' }).count() === 1, `${run}: fenced "## not a section" not shown as code`);
   expect(await p.locator('h2', { hasText: 'not a section' }).count() === 0, `${run}: fenced "## not a section" became a heading`);
+  expect(await count(p, 'h3#a-subheading') === 1 && await count(p, '.lesson-body a[href="#a-subheading"]') === 1,
+    `${run}: fragment link #a-subheading has no heading target`);
   expect(await count(p, '.pager a.prev') === 0, `${run}: alpha has a previous link`);
   expect(await count(p, 'a[href*="beta"]') === 0, `${run}: alpha links to the planned lesson beta`);
   expect((await p.locator('.pager a.next').innerText()).includes('Gamma'), `${run}: alpha next does not skip to gamma`);
@@ -127,36 +130,61 @@ async function smokeChecks(run, p, url) {
   expect(await count(p, '.pager a.next') === 0, `${run}: gamma has a next link`);
   expect(await count(p, 'a[href*="beta"]') === 0, `${run}: gamma links to the planned lesson beta`);
 
-  // previous / next skip the planned lesson
-  await clickTo(p, '.pager a.prev', 'alpha/index.html');
-  expect(await p.locator('h1').innerText() === 'Alpha lesson', `${run}: gamma previous did not load alpha`);
-  await clickTo(p, '.pager a.next', 'gamma/index.html');
-  expect(await p.locator('h1').innerText() === 'Gamma lesson', `${run}: alpha next did not load gamma`);
+  // previous / next on every lesson: navigation() below, against the manifest
 
   // lesson -> home
   await clickTo(p, '.bar a.brand', 'index.html');
   expect(await count(p, '.modules') === 1, `${run}: brand link did not load the home`);
 }
 
-async function generalNavigation(run, p, url) {
+// Published lesson ids in course order, read from the source _course.md (not from the built pages).
+function publishedIds(contentDir) {
+  const ids = [];
+  for (const line of fs.readFileSync(path.join(contentDir, '_course.md'), 'utf8').split('\n')) {
+    const m = line.match(/^- (\S+) \| (published|planned) \| .+$/);
+    if (m && m[2] === 'published') ids.push(m[1]);
+  }
+  return ids;
+}
+
+// Home links equal the published ids in order. Every lesson has exactly its manifest neighbours
+// as previous/next (none before the first, none after the last). Walk forward with next and back
+// with prev, clicking every pager link, then return home with the brand link.
+async function navigation(run, p, url, ids) {
   await p.goto(url('index.html'));
+  const expected = ids.map(id => `${id}/index.html`);
   const links = await lessonLinks(p);
-  expect(links.length > 0, `${run}: home links no lesson`);
-  if (!links.length) return;
-  await clickTo(p, `.modules a[href="${links[0]}"]`, links[0]);
-  expect(await count(p, 'main h1') === 1, `${run}: ${links[0]} has no h1`);
-  for (const dir of ['next', 'prev']) {
-    if (await count(p, `.pager a.${dir}`) === 0) continue;
-    const href = await p.locator(`.pager a.${dir}`).getAttribute('href');
-    await clickTo(p, `.pager a.${dir}`, href.replace(/^\.\.\//, ''));
-    expect(await count(p, 'main h1') === 1, `${run}: ${dir} link ${href} did not load a lesson`);
+  expect(JSON.stringify(links) === JSON.stringify(expected), `${run}: home links ${JSON.stringify(links)}, expected ${JSON.stringify(expected)}`);
+  expect(ids.length > 0, `${run}: no published lesson in _course.md`);
+  if (!ids.length) return;
+  const pager = async i => {
+    for (const [dir, j] of [['prev', i - 1], ['next', i + 1]]) {
+      const hrefs = await p.$$eval(`.pager a.${dir}`, as => as.map(a => a.getAttribute('href')));
+      const want = j >= 0 && j < ids.length ? [`../${ids[j]}/index.html`] : [];
+      expect(JSON.stringify(hrefs) === JSON.stringify(want), `${run}: ${ids[i]} ${dir} links ${JSON.stringify(hrefs)}, expected ${JSON.stringify(want)}`);
+    }
+    expect(p.url().endsWith(`${ids[i]}/index.html`) && await count(p, 'main h1') === 1, `${run}: ${ids[i]} did not load (${p.url()})`);
+  };
+  await clickTo(p, `.modules a[href="${expected[0]}"]`, expected[0]);
+  await pager(0);
+  for (let i = 1; i < ids.length; i++) {
+    if (await count(p, '.pager a.next') !== 1) return;
+    await clickTo(p, '.pager a.next', expected[i]);
+    await pager(i);
+  }
+  for (let i = ids.length - 2; i >= 0; i--) {
+    if (await count(p, '.pager a.prev') !== 1) return;
+    await clickTo(p, '.pager a.prev', expected[i]);
+    await pager(i);
   }
   await clickTo(p, '.bar a.brand', 'index.html');
   expect(await count(p, '.modules') === 1, `${run}: brand link did not load the home`);
 }
 
-async function suite(label, dist, smoke) {
+async function suite(label, dist, contentDir, smoke) {
   dist = path.resolve(dist);
+  const ids = publishedIds(contentDir);
+  const lessons = ids.map(id => `${id}/index.html`);
   const runs = [{ name: `${label} file://`, url: rel => pathToFileURL(path.join(dist, rel)).href, isLocal: u => u.startsWith('file://') }];
   const server = await serve(dist);
   const origin = `http://127.0.0.1:${server.address().port}`;
@@ -167,10 +195,9 @@ async function suite(label, dist, smoke) {
     let ctx = await context(run.name, { viewport: { width: 1280, height: 900 }, colorScheme: 'light' }, run.isLocal);
     let p = await ctx.newPage();
     if (smoke) await smokeChecks(run.name, p, run.url);
-    else await generalNavigation(run.name, p, run.url);
+    await navigation(run.name, p, run.url, ids);
 
     await p.goto(run.url('index.html'));
-    const lessons = await lessonLinks(p);
     expect(await theme(p) === null && await bodyBg(p) !== DARK_BG, `${run.name}: home does not start light`);
     const button = p.locator('.bar button.theme');
     expect(await button.count() === 1 && !!(await button.getAttribute('aria-label')), `${run.name}: theme button missing or has no aria-label`);
@@ -215,8 +242,8 @@ async function suite(label, dist, smoke) {
   server.close();
 }
 
-await suite('smoke', smokeDist, true);
-if (fs.existsSync(path.join(root, 'content', '_course.md'))) await suite('dist', path.join(root, 'dist'), false);
+await suite('smoke', smokeDist, path.join(root, 'tests', 'fixtures', 'smoke'), true);
+if (fs.existsSync(path.join(root, 'content', '_course.md'))) await suite('dist', path.join(root, 'dist'), path.join(root, 'content'), false);
 else console.log('e2e: no content/_course.md yet, skipping the checks on dist/ (smoke fixture checked)');
 
 await browser.close();

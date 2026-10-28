@@ -25,6 +25,11 @@
   --fig-muted: var(--muted);
   --fig-ghost: var(--chip);
   --soft-mix: 16%;
+  /* text roles (aliases, token values unchanged): small meta text and small figure text.
+     Light --muted is 4.20:1 on the page and --fig-muted 3.62:1 on a .box-accent tint, under 4.5:1,
+     so light uses --ink-2. Dark keeps the approved --muted and --fig-muted, which pass. */
+  --meta: var(--ink-2);
+  --fig-label: var(--ink-2);
   --f-text: "Geist", system-ui, sans-serif;
   --f-mono: "Geist Mono", ui-monospace, monospace;
 }
@@ -33,6 +38,7 @@
     --bg: #1c2029; --surface: #262b37; --ink: #f2f4f8; --ink-2: #ccd2de; --muted: #a3aabb; --rule: #3e4657; --chip: #333a49;
     --accent: #8ca3ff; --accent-ink: #0b0e14; --accent-soft: #2c3768; --line: #8d98b0;
     --fig-bg: #171a21; --fig-box: #353c4c; --fig-soft: #333a49; --fig-muted: #ccd2de; --fig-ghost: #8d98b0; --soft-mix: 28%;
+    --meta: var(--muted); --fig-label: var(--fig-muted);
     color-scheme: dark;
   }
 }
@@ -40,6 +46,7 @@
   --bg: #1c2029; --surface: #262b37; --ink: #f2f4f8; --ink-2: #ccd2de; --muted: #a3aabb; --rule: #3e4657; --chip: #333a49;
   --accent: #8ca3ff; --accent-ink: #0b0e14; --accent-soft: #2c3768; --line: #8d98b0;
   --fig-bg: #171a21; --fig-box: #353c4c; --fig-soft: #333a49; --fig-muted: #ccd2de; --fig-ghost: #8d98b0; --soft-mix: 28%;
+  --meta: var(--muted); --fig-label: var(--fig-muted);
   color-scheme: dark;
 }
 
@@ -60,9 +67,9 @@ pre { margin: 24px 0; padding: 14px 18px; overflow-x: auto; background: var(--su
 .bar .in { max-width: 1120px; margin: 0 auto; padding: 14px 28px; display: flex; justify-content: space-between; align-items: center; gap: 16px; }
 .brand { font-weight: 600; font-size: 15px; letter-spacing: -.01em; display: flex; align-items: center; gap: 10px; color: var(--ink); text-decoration: none; white-space: nowrap; }
 .dot { width: 10px; height: 10px; border-radius: 3px; background: var(--accent); flex: none; }
-.bar nav { font: 13px var(--f-mono); color: var(--muted); display: flex; gap: 22px; align-items: center; min-width: 0; }
+.bar nav { font: 13px var(--f-mono); color: var(--meta); display: flex; gap: 22px; align-items: center; min-width: 0; }
 .bar nav .where { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.theme { background: none; border: 1px solid var(--rule); border-radius: 6px; color: var(--muted); font: 13px var(--f-mono); padding: 2px 8px; cursor: pointer; }
+.theme { background: none; border: 1px solid var(--rule); border-radius: 6px; color: var(--meta); font: 13px var(--f-mono); padding: 2px 8px; cursor: pointer; }
 .theme:hover { color: var(--ink); border-color: var(--line); }
 .prog { height: 2px; background: var(--rule); }
 .prog i { display: block; height: 2px; background: var(--accent); }
@@ -72,7 +79,7 @@ pre { margin: 24px 0; padding: 14px 18px; overflow-x: auto; background: var(--su
 main { min-width: 0; }
 .kicker { font: 12px var(--f-mono); color: var(--accent); text-transform: uppercase; letter-spacing: .1em; margin: 72px 0 0; }
 h1 { font-size: 52px; margin: 12px 0 16px; text-wrap: balance; }
-.lede { font-size: 21px; line-height: 1.5; color: var(--muted); max-width: 32em; margin: 0; }
+.lede { font-size: 21px; line-height: 1.5; color: var(--meta); max-width: 32em; margin: 0; }
 .oneline { font-size: 20px; line-height: 1.5; background: var(--accent-soft); border-radius: 12px; padding: 18px 22px; margin: 40px 0; }
 .oneline p { margin: 0; }
 .oneline em { font-style: normal; font-weight: 600; color: var(--accent); }
@@ -84,11 +91,11 @@ h1 { font-size: 52px; margin: 12px 0 16px; text-wrap: balance; }
 /* figures: drawn on the figure panel, classes below */
 figure { margin: 40px 0; background: var(--fig-bg); border: 1px solid var(--rule); border-radius: 14px; padding: 18px; }
 figure svg { display: block; width: 100%; height: auto; }
-figcaption { font: 12px/1.5 var(--f-mono); color: var(--fig-muted); margin-top: 10px; }
+figcaption { font: 12px/1.5 var(--f-mono); color: var(--fig-label); margin-top: 10px; }
 
 /* specimens */
 .card { background: var(--surface); border: 1px solid var(--rule); border-radius: 14px; padding: 18px 22px; margin: 32px 0; }
-.card .lbl, .mistake .lbl { display: block; font: 500 11px var(--f-mono); color: var(--muted); text-transform: uppercase; letter-spacing: .1em; }
+.card .lbl, .mistake .lbl { display: block; font: 500 11px var(--f-mono); color: var(--meta); text-transform: uppercase; letter-spacing: .1em; }
 .card > :last-child { margin-bottom: 0; }
 .card p { font-size: 15.5px; }
 .mistake { background: var(--surface); border: 1px solid var(--rule); border-left: 3px solid var(--accent); border-radius: 10px; padding: 16px 20px; margin: 32px 0; font-size: 15.5px; }
@@ -98,30 +105,30 @@ figcaption { font: 12px/1.5 var(--f-mono); color: var(--fig-muted); margin-top: 
 .pager { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 56px 0 96px; }
 .pager a { display: block; border: 1px solid var(--rule); border-radius: 12px; padding: 14px 18px; color: inherit; text-decoration: none; font-size: 15px; background: var(--surface); }
 .pager a:hover { border-color: var(--line); }
-.pager a span { display: block; font: 11px var(--f-mono); color: var(--muted); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 2px; }
+.pager a span { display: block; font: 11px var(--f-mono); color: var(--meta); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 2px; }
 .pager a.next { grid-column: 2; text-align: right; border-color: var(--accent); }
 
 /* margin notes */
 aside { padding-top: 170px; }
-.note { padding: 0 0 0 16px; margin-bottom: 44px; font-size: 14.5px; line-height: 1.6; color: var(--muted); border-left: 1px solid var(--rule); }
+.note { padding: 0 0 0 16px; margin-bottom: 44px; font-size: 14.5px; line-height: 1.6; color: var(--meta); border-left: 1px solid var(--rule); }
 .note b { display: block; font: 500 11px var(--f-mono); text-transform: uppercase; letter-spacing: .1em; color: var(--ink); margin-bottom: 8px; }
 .note p { margin: 0 0 8px; }
 .note p:last-child { margin-bottom: 0; }
 .note .legend { margin-top: 6px; }
-.chips span { display: inline-block; font: 12px var(--f-mono); background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 2px 8px; margin: 0 6px 6px 0; color: var(--muted); }
+.chips span { display: inline-block; font: 12px var(--f-mono); background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 2px 8px; margin: 0 6px 6px 0; color: var(--meta); }
 .chips .y { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
 
 /* home */
 .home .lede { margin-bottom: 8px; }
 .modules { margin: 48px 0 96px; }
-.module h2 { font-size: 15px; font-family: var(--f-mono); font-weight: 500; letter-spacing: .02em; color: var(--muted); margin: 40px 0 12px; }
+.module h2 { font-size: 15px; font-family: var(--f-mono); font-weight: 500; letter-spacing: .02em; color: var(--meta); margin: 40px 0 12px; }
 .module ol { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--rule); }
 .module li { display: flex; gap: 14px; align-items: baseline; padding: 12px 4px; border-bottom: 1px solid var(--rule); font-size: 17px; }
-.module li .n { font: 13px var(--f-mono); color: var(--muted); min-width: 1.6em; }
+.module li .n { font: 13px var(--f-mono); color: var(--meta); min-width: 1.6em; }
 .module li a { color: var(--ink); text-decoration: none; font-weight: 500; }
 .module li a:hover { color: var(--accent); }
-.module li.planned { color: var(--muted); }
-.module .coming { margin-left: auto; font: 11px var(--f-mono); text-transform: uppercase; letter-spacing: .1em; color: var(--muted); border: 1px solid var(--rule); border-radius: 6px; padding: 1px 7px; }
+.module li.planned { color: var(--meta); }
+.module .coming { margin-left: auto; font: 11px var(--f-mono); text-transform: uppercase; letter-spacing: .1em; color: var(--meta); border: 1px solid var(--rule); border-radius: 6px; padding: 1px 7px; }
 
 @media (max-width: 900px) {
   .wrap { grid-template-columns: minmax(0, 1fr); gap: 0; }
@@ -143,6 +150,8 @@ aside { padding-top: 170px; }
 
 /* figure classes: every figure colour goes through these, mapped only to variables.
    Series A ink, series B accent, third group and soft connectors --line.
+   Small text (.t-sm) uses --fig-label: 4.5:1 or more on --fig-bg, --fig-box and the .box-accent tint, both themes.
+   No text on solid fills (.fill-*).
    Kept between the markers: scripts/build.py turns this block into the light preview styles. */
 /* figure-classes:start */
 figure svg .ln { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
@@ -156,7 +165,7 @@ figure svg .fill-ink { fill: var(--ink); }
 figure svg .fill-muted { fill: var(--fig-muted); }
 figure svg text { font-family: var(--f-text); fill: var(--ink); }
 figure svg .t { font-size: 14px; fill: var(--ink); }
-figure svg .t-sm { font-size: 12px; fill: var(--fig-muted); }
+figure svg .t-sm { font-size: 12px; fill: var(--fig-label); }
 figure svg .t-mono { font-family: var(--f-mono); }
 figure svg .mid { text-anchor: middle; }
 figure svg .end { text-anchor: end; }

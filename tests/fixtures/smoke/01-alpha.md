@@ -31,6 +31,8 @@ x = 1; y = 2
 
 The next published lesson is [Gamma](lesson:gamma). The math is rendered by [KaTeX](https://katex.org/) at build time.
 
+Jump down to [the subheading](#a-subheading).
+
 ![A small hand-made figure: series A in ink, series B in accent](figures/overview.svg)
 
 ### A subheading

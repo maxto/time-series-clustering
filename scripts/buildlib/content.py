@@ -76,6 +76,7 @@ class Lesson:
     meta: dict
     sections: dict  # section name -> tokens
     math: list = field(default_factory=list)  # math tokens, rendered in one batch later
+    fragments: list = field(default_factory=list)  # "#id" link targets, checked against heading ids
 
 
 def split_front(text, path, errors):
@@ -248,7 +249,35 @@ def load_lesson(path, entry, md, numbers, published, content, errors):
     lesson = Lesson(entry, path, meta, sections)
     for name, toks in sections.items():
         check_tokens(toks, name, lesson, published, content, errors)
+    ids = heading_ids(sections)
+    for frag in lesson.fragments:
+        if frag not in ids:
+            errors.add(path, f"link '#{frag}': no heading with that id in this lesson"
+                             f" (ids: {', '.join(sorted(ids)) or 'none'})")
     return lesson
+
+
+def slug(text):
+    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-") or "section"
+
+
+def heading_ids(sections):
+    """Give every rendered heading a deterministic, unique id (slug of its text, then -2, -3...)."""
+    ids = set()
+    for name in SECTIONS:
+        toks = sections.get(name, [])
+        for i, tok in enumerate(toks):
+            if tok.type != "heading_open":
+                continue
+            text = "".join(c.content for c in walk_inline(toks[i + 1].children) if c.type in ("text", "code_inline"))
+            base, n = slug(text), 1
+            hid = base
+            while hid in ids:
+                n += 1
+                hid = f"{base}-{n}"
+            ids.add(hid)
+            tok.attrSet("id", hid)
+    return ids
 
 
 def split_sections(tokens, path, errors):
@@ -310,21 +339,23 @@ def check_tokens(tokens, section, lesson, published, content, errors):
                 elif c.type in MATH:
                     lesson.math.append(c)
                 elif c.type == "link_open":
-                    check_link(c, path, published, errors)
+                    check_link(c, lesson, published, errors)
             if images and alone and section == "Lesson":
                 figure_token(tokens, i, images[0], path, content, errors)
         i += 1
 
 
-def check_link(tok, path, published, errors):
-    href = tok.attrGet("href") or ""
+def check_link(tok, lesson, published, errors):
+    path, href = lesson.path, tok.attrGet("href") or ""
     if href.startswith("lesson:"):
         lid = href[len("lesson:"):]
         if lid not in published:
             errors.add(path, f"link to {href!r}: no published lesson with that id")
         tok.attrSet("href", f"../{lid}/index.html")
-    elif not href.startswith(("https://", "http://", "mailto:", "#")):
-        errors.add(path, f"link {href!r}: use lesson:<id>, #anchor, https:// or mailto:")
+    elif href.startswith("#"):
+        lesson.fragments.append(href[1:])
+    elif not href.startswith(("https://", "mailto:")):
+        errors.add(path, f"link {href!r}: use lesson:<id>, #<heading-id>, https:// or mailto:")
 
 
 def figure_token(tokens, i, image, path, content, errors):

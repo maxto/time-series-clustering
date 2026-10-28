@@ -91,3 +91,11 @@ def test_number_is_substituted_from_numbers_file(content):
     assert result.returncode == 0, result.stdout + result.stderr
     page = (content.parent / "dist" / "alpha" / "index.html").read_text()
     assert "The distance is 1.23." in page and "{{n:" not in page
+
+
+def test_fragment_link_without_heading_fails(content):
+    add_to_lesson(content, "See [the missing part](#no-such-heading).")
+    result = build(content)
+    assert result.returncode == 1
+    out = result.stdout + result.stderr
+    assert "01-alpha.md" in out and "no-such-heading" in out

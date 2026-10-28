@@ -21,7 +21,7 @@ Files marked (planned) arrive in later pilot tasks.
 
 - `content/_course.md`: front matter `title`, `tagline`. Body: `## <Letter>. <Module title>`, then one `- <id> | published|planned | <title>` per lesson. Published lessons need `NN-<id>.md` with `NN` = position in this list, planned ones must not have a file.
 - Lesson front matter: `id`, `module`, `title`, `kicker`, `lede`, `ignores`, `keeps`, `python`, `r` (the last four are comma lists). Sections in this order: `## One line` (one paragraph), `## Lesson`, `## Common mistake` (one paragraph), then optional `## In finance` (margin note), `## Measure card`, `## Check`.
-- Figures: `![caption](figures/<name>.svg)` alone in a paragraph of `## Lesson`. `figures/overview.svg`, when present, is shown on the home. Numbers: `{{n:<key>}}` from `figures/numbers.json`. Math: `$...$`, `$$...$$`. Links: `lesson:<id>`, `#anchor`, `https://` or `mailto:`.
+- Figures: `![caption](figures/<name>.svg)` alone in a paragraph of `## Lesson`. `figures/overview.svg`, when present, is shown on the home. Numbers: `{{n:<key>}}` from `figures/numbers.json`. Math: `$...$`, `$$...$$`. Links: `lesson:<id>`, `#<heading-id>` (every heading gets the slug of its text as id, `-2`, `-3` on repeats, and the target must exist in the same lesson), `https://` or `mailto:` (no `http://`).
 - The build rejects (one line per problem, exit 1): schema errors, TeX errors, semicolons or em-dashes in prose, SVG outside the figure rules, a missing figure or number.
 
 ## Commands
