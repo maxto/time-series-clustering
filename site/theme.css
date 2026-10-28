@@ -75,7 +75,7 @@ pre { margin: 24px 0; padding: 14px 18px; overflow-x: auto; background: var(--su
 .prog i { display: block; height: 2px; background: var(--accent); }
 
 /* reading column and margin */
-.wrap { max-width: 1120px; margin: 0 auto; padding: 0 28px; display: grid; grid-template-columns: minmax(0, 700px) 1fr; gap: 64px; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 28px; display: grid; grid-template-columns: minmax(0, 700px) 1fr; gap: 0 64px; }
 main { min-width: 0; }
 .kicker { font: 12px var(--f-mono); color: var(--accent); text-transform: uppercase; letter-spacing: .1em; margin: 72px 0 0; }
 h1 { font-size: 52px; margin: 12px 0 16px; text-wrap: balance; }
@@ -86,6 +86,8 @@ h1 { font-size: 52px; margin: 12px 0 16px; text-wrap: balance; }
 .lesson-body h3 { font-size: 22px; margin: 40px 0 8px; }
 .lesson-body li { margin: 4px 0; }
 .math { overflow-x: auto; overflow-y: hidden; }
+/* a display wider than the column scrolls on its own (KaTeX CSS customization docs), no clipping */
+.katex-display { overflow: auto hidden; }
 .katex { font-size: 1.08em; }
 
 /* figures: drawn on the figure panel, classes below */
@@ -101,8 +103,9 @@ figcaption { font: 12px/1.5 var(--f-mono); color: var(--fig-label); margin-top: 
 .mistake { background: var(--surface); border: 1px solid var(--rule); border-left: 3px solid var(--accent); border-radius: 10px; padding: 16px 20px; margin: 32px 0; font-size: 15.5px; }
 .mistake p { margin: 0; }
 
-/* previous / next */
-.pager { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 56px 0 96px; }
+/* previous / next: after the notes in the source, so phones read the notes first. Desktop: under the column.
+   Grid items keep their margins, so 24px here plus the 32px under .mistake gives the old 56px. */
+.pager { grid-column: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 24px 0 96px; }
 .pager a { display: block; border: 1px solid var(--rule); border-radius: 12px; padding: 14px 18px; color: inherit; text-decoration: none; font-size: 15px; background: var(--surface); }
 .pager a:hover { border-color: var(--line); }
 .pager a span { display: block; font: 11px var(--f-mono); color: var(--meta); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 2px; }
