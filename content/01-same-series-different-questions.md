@@ -4,9 +4,9 @@ module: A
 title: Same series, different questions
 kicker: Define similarity
 lede: Twelve days of electricity demand, two sensible questions, two different groupings. The data stays the same. The question changes, and so does the answer.
-ignores: B: level, B: scale, B: global shift
+ignores: B: level, B: scale, B: global shift (tolerated)
 keeps: A: level, A: scale, A: timing, A: shape, B: shape
-python: numpy, scipy.spatial.distance, scipy.cluster.hierarchy, aeon.distances, tslearn.clustering.KShape
+python: numpy, scipy.spatial.distance, scipy.cluster.hierarchy, aeon.distances
 r: stats::dist, stats::hclust, dtwclust::zscore, dtwclust::SBD
 ---
 
@@ -75,13 +75,13 @@ $$
 \mathrm{SBD}(x, y) = 1 - \max_{s} \frac{\mathrm{CC}_s(x, y)}{\lVert x \rVert \, \lVert y \rVert}
 $$
 
-Here $\mathrm{CC}_s(x, y)$ is the sum of products $x_t y_{t-s}$ after shifting $y$ by $s$ samples, with zeros where the two days no longer overlap. The value lies between 0 and 2, and 0 means the same shape. Moving a whole day earlier or later changes it little.
+Here $\mathrm{CC}_s(x, y)$ is the sum of products $x_t y_{t-s}$ after shifting $y$ by $s$ samples, with zeros where the two days no longer overlap. The value lies between 0 and 2, and 0 means the same shape. SBD searches over global shifts. With finite windows and zero padding, boundary and overlap changes can still affect the distance.
 
 The grouping rule is the same as before: average linkage, two groups.
 
 ![Question B: average linkage on SBD distances between z-normalised days, two groups. Group 1 in ink, group 2 in accent](figures/question-b.svg)
 
-Now the days split by shape. Group 1 holds the six two-peak days, early and late. Group 2 holds the six flat-block days. The five-hour difference in timing, which decided question A, has been ignored.
+Now the days split by shape. Group 1 holds the six two-peak days, early and late. Group 2 holds the six flat-block days. On this fixture the grouping follows shape despite the five-hour shift that decided question A.
 
 Both changes are needed here. On this fixture, z-normalisation followed by Euclidean distance still splits early from late, and so does SBD on the raw values. Only the two together answer question B.
 
@@ -93,7 +93,7 @@ So "which grouping is better?" has no answer until you say which question you ar
 
 ### What do you want to ignore?
 
-The difference between the two pipelines fits in one line: question B ignores level, scale and a global shift, question A ignores none of them. That is the lens this course uses for every measure. When you meet a new distance, ask what it lets you ignore:
+The difference between the two pipelines fits in one line: question B ignores level and scale and tolerates a global shift, question A ignores none of them. That is the lens this course uses for every measure. When you meet a new distance, ask what it lets you ignore:
 
 - the **level** of a series, its baseline
 - its **scale**, how large the swings are

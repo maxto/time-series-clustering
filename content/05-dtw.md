@@ -51,7 +51,7 @@ Libraries do not share one convention. On this pair, `aeon.distances.dtw_distanc
 
 The window says how much local timing you are willing to ignore. It is not a speed trick to tune away at the end.
 
-A window too narrow forbids alignments you want. With $w = 0$ the only allowed path is the diagonal, and DTW is the Euclidean distance again. With a window smaller than the three-sample shift of `sat`, the peaks cannot be fully matched.
+A window too narrow forbids alignments you want. For equal-length series, with $w = 0$ the only allowed path is the diagonal, and DTW is the Euclidean distance again. With a window smaller than the three-sample shift of `sat`, the peaks cannot be fully matched.
 
 A window too wide allows alignments you do not want. With no window, a peak at 08:00 may be matched with a peak at 13:00, and a day busy in the morning can look close to a day busy at midday. That is exactly the difference question A of lesson 1 wanted to keep.
 
@@ -82,7 +82,7 @@ This is the window doing its job, not a failure of DTW. A window of two hours sa
 
 ### Soft-DTW, a short extension
 
-DTW takes a hard minimum over paths, so it is not differentiable everywhere. [Cuturi and Blondel (2017)](https://arxiv.org/abs/1703.01541) replace the minimum with a soft minimum controlled by a smoothing parameter $\gamma > 0$. The result, soft-DTW, can be used as a loss and for averaging and clustering under the DTW geometry.
+DTW takes a hard minimum over paths, so it is not differentiable everywhere. [Cuturi and Blondel (2017)](https://arxiv.org/abs/1703.01541) replace the minimum with a soft minimum controlled by a smoothing parameter $\gamma > 0$. This smooths the accumulated cost, without the final square root used for our DTW distance. The result, soft-DTW, can be used as a loss and for averaging and clustering under the DTW geometry.
 
 There is a catch for clustering checks. Raw soft-DTW values can be negative, and the value is not smallest when the two series are equal ([Blondel, Mensch and Vert, 2021](https://arxiv.org/abs/2010.08354)). Their soft-DTW divergence subtracts self-comparison terms, giving zero for identical series. Its guarantees depend on the ground cost, so check the assumptions and the resulting matrix before scoring. A raw soft-DTW matrix is therefore not a dissimilarity matrix you can hand to a validity index, as the check below shows.
 
@@ -131,7 +131,7 @@ With no window the table has $n m$ cells. With the window only the band is fille
 
 Each validity index answers three questions: can it be computed on this input, what geometry does it assess, and does that geometry answer your question?
 
-**Silhouette on the DTW matrix: admissible.** The [silhouette of Rousseeuw (1987)](https://doi.org/10.1016/0377-0427(87)90125-7) needs only a dissimilarity matrix. The DTW matrix with $w = 4$ passes every check of `check_dissimilarity` in `code/python/tsc/validity.py`: square, finite, non-negative, symmetric, zero diagonal, and $k = 2$ lies between 2 and $n - 1 = 11$. The triangle inequality is not required. For the two groups of average linkage, the mean silhouette is {{n:silhouette_dtw4_k2}}.
+**Silhouette on the DTW matrix: admissible.** The [silhouette of Rousseeuw (1987)](https://doi.org/10.1016/0377-0427(87)90125-7) needs only a dissimilarity matrix. The DTW matrix with $w = 4$ passes every check of `check_dissimilarity` in `code/python/tsc/validity.py`: square, finite, non-negative, symmetric, zero diagonal, and $k = 2$ lies between 2 and $n - 1 = 11$. The triangle inequality is not required. A singleton receives silhouette zero. For the two groups of average linkage, the mean silhouette is {{n:silhouette_dtw4_k2}}.
 
 **Caliński-Harabasz: not on this matrix.** The standard index of [Caliński and Harabasz (1974)](https://doi.org/10.1080/03610927408827101) needs a vector space with centroids: it compares the spread of the group centroids with the spread of points around them. It cannot read a precomputed DTW matrix. Feeding the matrix rows as if they were vectors does give a number, but for a different geometry: Euclidean distances between distance profiles, not DTW.
 
