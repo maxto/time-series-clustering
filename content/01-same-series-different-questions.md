@@ -5,7 +5,7 @@ title: Same series, different questions
 kicker: Define similarity
 lede: Twelve days of electricity demand, two sensible questions, two different groupings. The data stays the same. The question changes, and so does the answer.
 ignores: B: level, B: scale, B: global shift
-keeps: A: level, A: scale, A: timing, B: shape
+keeps: A: level, A: scale, A: timing, A: shape, B: shape
 python: numpy, scipy.spatial.distance, scipy.cluster.hierarchy, aeon.distances, tslearn.clustering.KShape
 r: stats::dist, stats::hclust, dtwclust::zscore, dtwclust::SBD
 ---
@@ -87,7 +87,7 @@ Both changes are needed here. On this fixture, z-normalisation followed by Eucli
 
 ### Two answers, both right
 
-Neither grouping is a mistake. The twelve days carry two structures at once, when the activity happens and what it looks like, and each pipeline brings one of them forward by ignoring the other. The fixture file even stores both intended labels, an hour group and a shape group, because both are correct answers to their own question.
+Neither grouping is a mistake. Timing dominates the raw-Euclidean grouping on this fixture. With normalisation and SBD, the recovered groups instead follow shape. The fixture file even stores both intended labels, an hour group and a shape group, because both are correct answers to their own question.
 
 So "which grouping is better?" has no answer until you say which question you are asking. A validity score does not settle it either. A score computed under one distance tells you how well the groups fit that distance, not whether that distance matched your question. Module E comes back to this.
 
@@ -112,4 +112,4 @@ Asking "which distance is best for time series?" before asking what the grouping
 
 ## In finance
 
-Shape similarity of raw returns rarely means anything: returns carry little signal and a lot of noise, and two series that match only after a shift did not move together on the same days. Grouping assets is usually about co-movement, rising and falling on the same days. [Mantegna (1999)](https://arxiv.org/abs/cond-mat/9802256) built a hierarchy of stocks from the correlation of their daily returns over the same period. Correlation keeps the time steps aligned, so no shift or warping belongs in that comparison.
+Our finance example asks about contemporaneous co-movement. A match obtained only after shifting returns answers a different question. [Mantegna (1999)](https://arxiv.org/abs/cond-mat/9802256) built a hierarchy of stocks from the correlation of their daily returns over the same period. Correlation keeps the time steps aligned, so no shift or warping belongs in that comparison.
