@@ -89,7 +89,7 @@ h1 { font-size: 52px; margin: 12px 0 16px; text-wrap: balance; }
 .katex { font-size: 1.08em; }
 
 /* figures: drawn on the figure panel, classes below */
-figure { margin: 40px 0; background: var(--fig-bg); border: 1px solid var(--rule); border-radius: 14px; padding: 18px; }
+figure { max-width: 520px; margin: 40px auto; background: var(--fig-bg); border: 1px solid var(--rule); border-radius: 14px; padding: 18px; }
 figure svg { display: block; width: 100%; height: auto; }
 figcaption { font: 12px/1.5 var(--f-mono); color: var(--fig-label); margin-top: 10px; }
 
@@ -165,7 +165,7 @@ figure svg .fill-ink { fill: var(--ink); }
 figure svg .fill-muted { fill: var(--fig-muted); }
 figure svg text { font-family: var(--f-text); fill: var(--ink); }
 figure svg .t { font-size: 14px; fill: var(--ink); }
-figure svg .t-sm { font-size: 12px; fill: var(--fig-label); }
+figure svg .t-sm { font-size: 14px; fill: var(--fig-label); }
 figure svg .t-mono { font-family: var(--f-mono); }
 figure svg .mid { text-anchor: middle; }
 figure svg .end { text-anchor: end; }

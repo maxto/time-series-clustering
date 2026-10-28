@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 404" role="img"><style>.ln { fill: none; stroke: #161a23; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }.ln-accent { fill: none; stroke: #3b5bdb; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }.ln-muted { fill: none; stroke: #6f7689; stroke-width: 1.5; }.ln-soft { fill: none; stroke: #aeb6c6; stroke-width: 1; }.box { fill: #ffffff; stroke: #aeb6c6; stroke-width: 1; }.box-accent { fill: color-mix(in srgb, #3b5bdb 16%, #ffffff); stroke: #3b5bdb; stroke-width: 1; }.fill-accent { fill: #3b5bdb; }.fill-ink { fill: #161a23; }.fill-muted { fill: #6f7689; }text { font-family: "Geist", system-ui, sans-serif; fill: #161a23; }.t { font-size: 14px; fill: #161a23; }.t-sm { font-size: 12px; fill: #464d5e; }.t-mono { font-family: "Geist Mono", ui-monospace, monospace; }.mid { text-anchor: middle; }.end { text-anchor: end; }</style><rect width="100%" height="100%" fill="#ffffff"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 472" role="img"><style>.ln { fill: none; stroke: #161a23; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }.ln-accent { fill: none; stroke: #3b5bdb; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }.ln-muted { fill: none; stroke: #6f7689; stroke-width: 1.5; }.ln-soft { fill: none; stroke: #aeb6c6; stroke-width: 1; }.box { fill: #ffffff; stroke: #aeb6c6; stroke-width: 1; }.box-accent { fill: color-mix(in srgb, #3b5bdb 16%, #ffffff); stroke: #3b5bdb; stroke-width: 1; }.fill-accent { fill: #3b5bdb; }.fill-ink { fill: #161a23; }.fill-muted { fill: #6f7689; }text { font-family: "Geist", system-ui, sans-serif; fill: #161a23; }.t { font-size: 14px; fill: #161a23; }.t-sm { font-size: 14px; fill: #464d5e; }.t-mono { font-family: "Geist Mono", ui-monospace, monospace; }.mid { text-anchor: middle; }.end { text-anchor: end; }</style><rect width="100%" height="100%" fill="#ffffff"/>
 <title>Course map: the clustering pipeline, the seven families of comparison measures and the question of what to ignore</title>
-<desc>Left, the pipeline in six steps from top to bottom: 1 object, 2 preprocessing, 3 representation, 4 comparison, 5 grouping, 6 validation. Comparison is highlighted and a bracket links it to seven families on the right, in two boxes. On the series, using the values after step 2: lock-step, sliding, elastic, kernel. On a representation built in step 3: feature-based, model-based, embedding (learned). Below, the question what do you want to ignore, chosen in steps 2 to 4, with six chips: level, scale, global shift, local timing, noise, length.</desc>
+<desc>Left, the pipeline in six steps from top to bottom: 1 object, 2 preprocessing, 3 representation, 4 comparison, 5 grouping, 6 validation. Comparison is highlighted and a bracket links it to seven families on the right, in two boxes. Sequence inputs, using the values after step 2: lock-step, sliding, elastic, kernel. Explicit representations, built in step 3: feature-based, model-based, embedding (learned). A note under them says the two family boxes are for navigation, not mutually exclusive levels: a kernel, for instance, can imply a feature map. Below, the question what do you want to ignore, chosen in steps 2 to 4, with six chips: level, scale, global shift, local timing, noise, length.</desc>
 <defs><marker id="ov-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path class="fill-muted" d="M0,0 L10,5 L0,10 z"/></marker></defs>
 <text class="t-sm t-mono" x="4" y="14">Pipeline</text>
 <text class="t-sm t-mono" x="166" y="14">Seven families</text>
@@ -27,32 +27,36 @@
 <rect class="box" x="4" y="259" width="136" height="30" rx="6"/>
 <text class="t-sm t-mono" x="16" y="279">6</text>
 <text class="t" x="34" y="279">validation</text>
-<path class="ln-accent" d="M140,180 H153 M166,92 H153 V230 H166"/>
+<path class="ln-accent" d="M140,180 H153 M166,92 H153 V236 H166"/>
 <rect class="box" x="166" y="24" width="190" height="136" rx="8"/>
-<text class="t-sm t-mono" x="180" y="42">on the series</text>
+<text class="t-sm t-mono" x="180" y="42">Sequence inputs</text>
 <text class="t-sm" x="180" y="58">the values, after step 2</text>
 <text class="t" x="180" y="82">lock-step</text>
 <text class="t" x="180" y="104">sliding</text>
 <text class="t" x="180" y="126">elastic</text>
 <text class="t" x="180" y="148">kernel</text>
-<rect class="box" x="166" y="172" width="190" height="117" rx="8"/>
-<text class="t-sm t-mono" x="180" y="190">on a representation</text>
-<text class="t-sm" x="180" y="206">built in step 3</text>
-<text class="t" x="180" y="230">feature-based</text>
-<text class="t" x="180" y="252">model-based</text>
-<text class="t" x="180" y="274">embedding (learned)</text>
-<text class="t" x="4" y="318">What do you want to ignore?</text>
-<text class="t-sm" x="4" y="334">You choose it in steps 2 to 4.</text>
-<rect class="box" x="4" y="344" width="112" height="24" rx="12"/>
-<text class="t-sm t-mono mid" x="60" y="360">level</text>
-<rect class="box" x="124" y="344" width="112" height="24" rx="12"/>
-<text class="t-sm t-mono mid" x="180" y="360">scale</text>
-<rect class="box" x="244" y="344" width="112" height="24" rx="12"/>
-<text class="t-sm t-mono mid" x="300" y="360">global shift</text>
-<rect class="box" x="4" y="376" width="112" height="24" rx="12"/>
-<text class="t-sm t-mono mid" x="60" y="392">local timing</text>
-<rect class="box" x="124" y="376" width="112" height="24" rx="12"/>
-<text class="t-sm t-mono mid" x="180" y="392">noise</text>
-<rect class="box" x="244" y="376" width="112" height="24" rx="12"/>
-<text class="t-sm t-mono mid" x="300" y="392">length</text>
+<rect class="box" x="166" y="172" width="190" height="128" rx="8"/>
+<text class="t-sm t-mono" x="180" y="190">Explicit</text>
+<text class="t-sm t-mono" x="180" y="206">representations</text>
+<text class="t-sm" x="180" y="222">built in step 3</text>
+<text class="t" x="180" y="246">feature-based</text>
+<text class="t" x="180" y="268">model-based</text>
+<text class="t" x="180" y="290">embedding (learned)</text>
+<text class="t-sm" x="4" y="322">The two family boxes are for navigation, not</text>
+<text class="t-sm" x="4" y="338">mutually exclusive levels. A kernel, for instance,</text>
+<text class="t-sm" x="4" y="354">can imply a feature map.</text>
+<text class="t" x="4" y="386">What do you want to ignore?</text>
+<text class="t-sm" x="4" y="402">You choose it in steps 2 to 4.</text>
+<rect class="box" x="4" y="412" width="112" height="24" rx="12"/>
+<text class="t-sm t-mono mid" x="60" y="428">level</text>
+<rect class="box" x="124" y="412" width="112" height="24" rx="12"/>
+<text class="t-sm t-mono mid" x="180" y="428">scale</text>
+<rect class="box" x="244" y="412" width="112" height="24" rx="12"/>
+<text class="t-sm t-mono mid" x="300" y="428">global shift</text>
+<rect class="box" x="4" y="444" width="112" height="24" rx="12"/>
+<text class="t-sm t-mono mid" x="60" y="460">local timing</text>
+<rect class="box" x="124" y="444" width="112" height="24" rx="12"/>
+<text class="t-sm t-mono mid" x="180" y="460">noise</text>
+<rect class="box" x="244" y="444" width="112" height="24" rx="12"/>
+<text class="t-sm t-mono mid" x="300" y="460">length</text>
 </svg>
