@@ -214,10 +214,13 @@ def fig_dtw_window(x, y):
     def cy(i):  # row i counted from the bottom
         return g0y + size - (i + 0.5) * cell
 
+    def opacity(c):  # square-root transfer, so small local costs stay visible
+        return 0.12 + 0.78 * np.sqrt(c / cmax)
+
     # band cells only: outside the window DTW never computes a cost
     for i in range(n):
         for j in range(max(0, i - W_DTW), min(n, i + W_DTW + 1)):
-            op = 0.12 + 0.78 * np.sqrt(cost[i, j] / cmax)
+            op = opacity(cost[i, j])
             body.append(f'<rect class="fill-muted" x="{f(g0x + j * cell)}" y="{f(g0y + size - (i + 1) * cell)}" '
                         f'width="{f(cell)}" height="{f(cell)}" opacity="{op:.2f}"/>')
     body.append(f'<rect class="ln-soft" x="{f(g0x)}" y="{f(g0y)}" width="{f(size)}" height="{f(size)}"/>')
@@ -236,18 +239,29 @@ def fig_dtw_window(x, y):
     body.append(polyline(series_points(y, g0x, size, s_top, strip, lo, hi), "ln-accent", ' stroke-width="1.5"'))
     body.append(text(4, s_top + strip - 2, "sat"))
     body.extend(hour_hints(g0x, size, s_top + strip + 18))
-    height = s_top + strip + 24
+    # key: five steps evenly spaced in local cost, so the square-root shading shows in the swatches
+    ly = s_top + strip + 34
+    steps, sw = 5, 22
+    body.append(text(g0x, ly + 12, "0"))
+    for s in range(steps):
+        body.append(f'<rect class="fill-muted" x="{f(g0x + 14 + s * (sw + 2))}" y="{f(ly)}" width="{sw}" height="16" '
+                    f'opacity="{opacity(cmax * s / (steps - 1)):.2f}"/>')
+    body.append(text(g0x + 14 + steps * (sw + 2) + 4, ly + 12, f"{cmax:.2f}"))
+    body.append(text(WIDTH - 4, ly + 12, "local cost", "t-sm end"))
+    body.append(text(g0x, ly + 34, "(mon \u2212 sat)\u00b2 per cell, square-root shading", "t-sm"))
+    height = ly + 40
     off = max(abs(i - j) for i, j in path)
     title = f"The DTW cost grid of mon and sat with the window w = {W_DTW}"
     desc = (f"A {n} by {n} grid: rows are the samples i of mon (drawn along the left edge, time upward), columns the "
-            f"samples j of sat (drawn below). Only the band |i \u2212 j| \u2264 {W_DTW} is shaded, darker where the squared "
-            f"difference is larger. The dashed diagonal is lock-step matching. The warping path runs from the bottom-left "
+            f"samples j of sat (drawn below). Only the band |i \u2212 j| \u2264 {W_DTW} is drawn. Higher opacity means "
+            f"higher local cost, the squared difference of the two samples (not the accumulated cost), from 0 to "
+            f"{cmax:.2f} in the band, with opacity growing as its square root. The dashed diagonal is lock-step matching. The warping path runs from the bottom-left "
             f"corner to the top-right corner inside the band, at most {off} samples off the diagonal.")
     return document(height, title, desc, body)
 
 
 def fig_dtw_matrix(ids, D, labels):
-    """12 x 12 DTW (w = 4) matrix ordered by group: darker means closer, one class, opacity only."""
+    """12 x 12 DTW (w = 4) matrix ordered by group: higher opacity means closer, one class, opacity only."""
     order = sorted(range(len(ids)), key=lambda k: (labels[k], k))
     n = len(order)
     lab_w, lab_h, block_gap, pitch, gap = 36, 22, 6, 26, 2
@@ -288,7 +302,8 @@ def fig_dtw_matrix(ids, D, labels):
     g2 = ", ".join(ids[k] for k in order if labels[k] != labels[order[0]])
     title = f"The 12 by 12 DTW distance matrix (w = {W_DTW}), ordered by group"
     desc = (f"Rows and columns in the same order, group 1 ({g1}) then group 2 ({g2}), from average linkage with k = 2 "
-            f"on this matrix. Darker cells are closer pairs, from 0 on the diagonal to {dmax:.2f} for the farthest pair.")
+            f"on this matrix. Higher opacity means a smaller distance: full opacity for 0 on the diagonal, lowest "
+            f"opacity for {dmax:.2f}, the farthest pair.")
     return document(height, title, desc, body)
 
 
