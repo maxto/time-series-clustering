@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 334" role="img"><style>.ln { fill: none; stroke: #161a23; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }.ln-accent { fill: none; stroke: #3b5bdb; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }.ln-muted { fill: none; stroke: #6f7689; stroke-width: 1.5; }.ln-soft { fill: none; stroke: #aeb6c6; stroke-width: 1; }.box { fill: #ffffff; stroke: #aeb6c6; stroke-width: 1; }.box-accent { fill: color-mix(in srgb, #3b5bdb 16%, #ffffff); stroke: #3b5bdb; stroke-width: 1; }.fill-accent { fill: #3b5bdb; }.fill-ink { fill: #161a23; }.fill-muted { fill: #6f7689; }text { font-family: "Geist", system-ui, sans-serif; fill: #161a23; }.t { font-size: 14px; fill: #161a23; }.t-sm { font-size: 12px; fill: #464d5e; }.t-mono { font-family: "Geist Mono", ui-monospace, monospace; }.mid { text-anchor: middle; }.end { text-anchor: end; }</style><rect width="100%" height="100%" fill="#ffffff"/>
+<title>Lock-step links against DTW links for mon and sat</title>
+<desc>Two panels. Top: mon (ink) and sat (accent) linked sample i to sample i, Euclidean distance 3.71. Bottom: the same days linked along the DTW warping path with window w = 4, DTW distance 0.22. The DTW links lean to match each peak of mon with the later peak of sat. Every second link is drawn.</desc>
+<text class="t" x="4" y="14">Lock-step</text>
+<text class="t-sm t-mono end" x="356" y="14">Euclidean 3.71</text>
+<line class="ln-soft" x1="40" y1="64.7" x2="40" y2="137.6"/>
+<line class="ln-soft" x1="53.2" y1="64.7" x2="53.2" y2="139.9"/>
+<line class="ln-soft" x1="66.3" y1="65.4" x2="66.3" y2="136.4"/>
+<line class="ln-soft" x1="79.5" y1="64" x2="79.5" y2="138.5"/>
+<line class="ln-soft" x1="92.7" y1="62.1" x2="92.7" y2="137.8"/>
+<line class="ln-soft" x1="105.8" y1="45.2" x2="105.8" y2="138.8"/>
+<line class="ln-soft" x1="119" y1="22" x2="119" y2="130.7"/>
+<line class="ln-soft" x1="132.2" y1="44" x2="132.2" y2="103.4"/>
+<line class="ln-soft" x1="145.3" y1="60.7" x2="145.3" y2="103"/>
+<line class="ln-soft" x1="158.5" y1="47.1" x2="158.5" y2="130.7"/>
+<line class="ln-soft" x1="171.7" y1="26.7" x2="171.7" y2="130.6"/>
+<line class="ln-soft" x1="184.8" y1="46.8" x2="184.8" y2="108.1"/>
+<line class="ln-soft" x1="198" y1="64.1" x2="198" y2="107"/>
+<line class="ln-soft" x1="211.2" y1="63.9" x2="211.2" y2="130.6"/>
+<line class="ln-soft" x1="224.3" y1="64" x2="224.3" y2="137.4"/>
+<line class="ln-soft" x1="237.5" y1="65.6" x2="237.5" y2="139.4"/>
+<line class="ln-soft" x1="250.7" y1="64.2" x2="250.7" y2="139"/>
+<line class="ln-soft" x1="263.8" y1="64.6" x2="263.8" y2="138.1"/>
+<line class="ln-soft" x1="277" y1="65.3" x2="277" y2="139.3"/>
+<line class="ln-soft" x1="290.2" y1="65" x2="290.2" y2="137.7"/>
+<line class="ln-soft" x1="303.3" y1="64.8" x2="303.3" y2="139.9"/>
+<line class="ln-soft" x1="316.5" y1="63.5" x2="316.5" y2="136.8"/>
+<line class="ln-soft" x1="329.7" y1="64.4" x2="329.7" y2="138.9"/>
+<line class="ln-soft" x1="342.8" y1="65.1" x2="342.8" y2="138.7"/>
+<line class="ln-soft" x1="349.4" y1="65.9" x2="349.4" y2="137.6"/>
+<polyline class="ln" points="40,64.7 46.6,65 53.2,64.7 59.8,64.4 66.3,65.4 72.9,63.6 79.5,64 86.1,64.1 92.7,62.1 99.2,57.7 105.8,45.2 112.4,28.6 119,22 125.6,28.4 132.2,44 138.8,56.3 145.3,60.7 151.9,55.9 158.5,47.1 165.1,33.5 171.7,26.7 178.2,33.4 184.8,46.8 191.4,58.5 198,64.1 204.6,64.8 211.2,63.9 217.8,65.1 224.3,64 230.9,63.4 237.5,65.6 244.1,63.5 250.7,64.2 257.2,64.2 263.8,64.6 270.4,63.4 277,65.3 283.6,64.1 290.2,65 296.8,65.6 303.3,64.8 309.9,64.2 316.5,63.5 323.1,63.1 329.7,64.4 336.2,65.3 342.8,65.1 349.4,65.9"/>
+<polyline class="ln-accent" points="40,137.6 46.6,139.2 53.2,139.9 59.8,137.2 66.3,136.4 72.9,138.2 79.5,138.5 86.1,139.5 92.7,137.8 99.2,137.3 105.8,138.8 112.4,137 119,130.7 125.6,119 132.2,103.4 138.8,96 145.3,103 151.9,118.5 158.5,130.7 165.1,136.2 171.7,130.6 178.2,120.9 184.8,108.1 191.4,101.5 198,107 204.6,121.6 211.2,130.6 217.8,137.3 224.3,137.4 230.9,139.2 237.5,139.4 244.1,137.8 250.7,139 257.2,137.7 263.8,138.1 270.4,138.1 277,139.3 283.6,137.8 290.2,137.7 296.8,138.1 303.3,139.9 309.9,139.8 316.5,136.8 323.1,137.6 329.7,138.9 336.2,140 342.8,138.7 349.4,137.6"/>
+<text class="t-sm t-mono" x="4" y="62">mon</text>
+<text class="t-sm t-mono" x="4" y="136">sat</text>
+<text class="t" x="4" y="184">DTW, w = 4</text>
+<text class="t-sm t-mono end" x="356" y="184">DTW 0.22</text>
+<line class="ln-soft" x1="40" y1="234.7" x2="40" y2="307.6"/>
+<line class="ln-soft" x1="53.2" y1="234.7" x2="46.6" y2="309.2"/>
+<line class="ln-soft" x1="66.3" y1="235.4" x2="53.2" y2="309.9"/>
+<line class="ln-soft" x1="72.9" y1="233.6" x2="66.3" y2="306.4"/>
+<line class="ln-soft" x1="86.1" y1="234.1" x2="79.5" y2="308.5"/>
+<line class="ln-soft" x1="86.1" y1="234.1" x2="92.7" y2="307.8"/>
+<line class="ln-soft" x1="86.1" y1="234.1" x2="105.8" y2="308.8"/>
+<line class="ln-soft" x1="99.2" y1="227.7" x2="119" y2="300.7"/>
+<line class="ln-soft" x1="112.4" y1="198.6" x2="132.2" y2="273.4"/>
+<line class="ln-soft" x1="125.6" y1="198.4" x2="145.3" y2="273"/>
+<line class="ln-soft" x1="138.8" y1="226.3" x2="158.5" y2="300.7"/>
+<line class="ln-soft" x1="151.9" y1="225.9" x2="171.7" y2="300.6"/>
+<line class="ln-soft" x1="165.1" y1="203.5" x2="184.8" y2="278.1"/>
+<line class="ln-soft" x1="178.2" y1="203.4" x2="198" y2="277"/>
+<line class="ln-soft" x1="191.4" y1="228.5" x2="211.2" y2="300.6"/>
+<line class="ln-soft" x1="204.6" y1="234.8" x2="224.3" y2="307.4"/>
+<line class="ln-soft" x1="217.8" y1="235.1" x2="230.9" y2="309.2"/>
+<line class="ln-soft" x1="224.3" y1="234" x2="244.1" y2="307.8"/>
+<line class="ln-soft" x1="237.5" y1="235.6" x2="250.7" y2="309"/>
+<line class="ln-soft" x1="250.7" y1="234.2" x2="263.8" y2="308.1"/>
+<line class="ln-soft" x1="263.8" y1="234.6" x2="263.8" y2="308.1"/>
+<line class="ln-soft" x1="277" y1="235.3" x2="277" y2="309.3"/>
+<line class="ln-soft" x1="283.6" y1="234.1" x2="290.2" y2="307.7"/>
+<line class="ln-soft" x1="296.8" y1="235.6" x2="303.3" y2="309.9"/>
+<line class="ln-soft" x1="309.9" y1="234.2" x2="316.5" y2="306.8"/>
+<line class="ln-soft" x1="323.1" y1="233.1" x2="323.1" y2="307.6"/>
+<line class="ln-soft" x1="336.2" y1="235.3" x2="336.2" y2="310"/>
+<line class="ln-soft" x1="349.4" y1="235.9" x2="349.4" y2="307.6"/>
+<polyline class="ln" points="40,234.7 46.6,235 53.2,234.7 59.8,234.4 66.3,235.4 72.9,233.6 79.5,234 86.1,234.1 92.7,232.1 99.2,227.7 105.8,215.2 112.4,198.6 119,192 125.6,198.4 132.2,214 138.8,226.3 145.3,230.7 151.9,225.9 158.5,217.1 165.1,203.5 171.7,196.7 178.2,203.4 184.8,216.8 191.4,228.5 198,234.1 204.6,234.8 211.2,233.9 217.8,235.1 224.3,234 230.9,233.4 237.5,235.6 244.1,233.5 250.7,234.2 257.2,234.2 263.8,234.6 270.4,233.4 277,235.3 283.6,234.1 290.2,235 296.8,235.6 303.3,234.8 309.9,234.2 316.5,233.5 323.1,233.1 329.7,234.4 336.2,235.3 342.8,235.1 349.4,235.9"/>
+<polyline class="ln-accent" points="40,307.6 46.6,309.2 53.2,309.9 59.8,307.2 66.3,306.4 72.9,308.2 79.5,308.5 86.1,309.5 92.7,307.8 99.2,307.3 105.8,308.8 112.4,307 119,300.7 125.6,289 132.2,273.4 138.8,266 145.3,273 151.9,288.5 158.5,300.7 165.1,306.2 171.7,300.6 178.2,290.9 184.8,278.1 191.4,271.5 198,277 204.6,291.6 211.2,300.6 217.8,307.3 224.3,307.4 230.9,309.2 237.5,309.4 244.1,307.8 250.7,309 257.2,307.7 263.8,308.1 270.4,308.1 277,309.3 283.6,307.8 290.2,307.7 296.8,308.1 303.3,309.9 309.9,309.8 316.5,306.8 323.1,307.6 329.7,308.9 336.2,310 342.8,308.7 349.4,307.6"/>
+<text class="t-sm t-mono" x="4" y="232">mon</text>
+<text class="t-sm t-mono" x="4" y="306">sat</text>
+<text class="t-sm t-mono" x="40" y="328">00:00</text>
+<text class="t-sm t-mono mid" x="198" y="328">12:00</text>
+<text class="t-sm t-mono end" x="356" y="328">24:00</text>
+</svg>
