@@ -84,7 +84,7 @@ This is the window doing its job, not a failure of DTW. A window of two hours sa
 
 DTW takes a hard minimum over paths, so it is not differentiable everywhere. [Cuturi and Blondel (2017)](https://arxiv.org/abs/1703.01541) replace the minimum with a soft minimum controlled by a smoothing parameter $\gamma > 0$. The result, soft-DTW, can be used as a loss and for averaging and clustering under the DTW geometry.
 
-There is a catch for clustering checks. Raw soft-DTW values can be negative, and the value is not smallest when the two series are equal ([Blondel, Mensch and Vert, 2021](https://arxiv.org/abs/2010.08354)). Their soft-DTW divergence corrects this. A raw soft-DTW matrix is therefore not a dissimilarity matrix you can hand to a validity index, as the check below shows.
+There is a catch for clustering checks. Raw soft-DTW values can be negative, and the value is not smallest when the two series are equal ([Blondel, Mensch and Vert, 2021](https://arxiv.org/abs/2010.08354)). Their soft-DTW divergence subtracts self-comparison terms, giving zero for identical series. Its guarantees depend on the ground cost, so check the assumptions and the resulting matrix before scoring. A raw soft-DTW matrix is therefore not a dissimilarity matrix you can hand to a validity index, as the check below shows.
 
 ## Common mistake
 
