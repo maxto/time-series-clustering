@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 120" role="img">
+  <title>Two short series on a plain box: series A in ink, series B in accent</title>
+  <rect class="box" x="4" y="4" width="312" height="112" rx="8"/>
+  <polyline class="ln" points="20,80 60,72 100,40 140,70 180,80 220,78 260,62 300,70"/>
+  <polyline class="ln-accent" points="20,92 60,90 100,86 140,56 180,86 220,92 260,82 300,86"/>
+  <line class="ln-soft" x1="100" y1="40" x2="140" y2="56"/>
+  <text class="t-sm t-mono end" x="300" y="26">A and B</text>
+</svg>
