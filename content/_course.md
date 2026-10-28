@@ -12,7 +12,7 @@ tagline: Decide what similar means before you cluster time series.
 
 - lock-step | planned | Lock-step: Euclidean, L1, correlation
 - sliding | planned | Sliding: cross-correlation and SBD
-- dtw | planned | Elastic: DTW and its window
+- dtw | published | Elastic: DTW and its window
 - edit-based | planned | Edit-based: LCSS, EDR, ERP, MSM, TWE
 
 ## C. Compare representations
