@@ -1,0 +1,15 @@
+{
+  "name": "time-series-clustering",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "uv run python scripts/build.py",
+    "test": "npm run build && node tests/e2e.mjs",
+    "shots": "node tests/shots.mjs"
+  },
+  "devDependencies": {
+    "geist": "^1.8.2",
+    "katex": "^0.19.1",
+    "playwright-core": "^1.64.1"
+  }
+}

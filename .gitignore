@@ -1,2 +1,8 @@
 .mockups/
 .superpowers/
+dist/
+node_modules/
+.venv/
+tests/output/
+__pycache__/
+*.pyc
