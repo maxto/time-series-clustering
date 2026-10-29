@@ -3,6 +3,7 @@ id: same-series-different-questions
 module: A
 title: Same series, different questions
 kicker: Define similarity
+sector: energy
 lede: Twelve days of electricity demand, two sensible questions, two different groupings. The data stays the same. The question changes, and so does the answer.
 ignores: B: level, B: scale, B: global shift (tolerated)
 keeps: A: level, A: scale, A: timing, A: shape, B: shape
@@ -14,13 +15,13 @@ r: stats::dist, stats::hclust, dtwclust::zscore, dtwclust::SBD
 
 Before you pick a distance, decide *what two series must share to count as similar*. That decision is a choice about what to ignore, and the data cannot make it for you.
 
-## Lesson
+## What counts as close
 
 To cluster anything you need a rule for "close". With time series that rule is not given by the data. Two days of demand can be close in one sense and far apart in another, and both senses can be useful.
 
 This lesson shows it on one small dataset. The rest of the course is built on what it shows.
 
-### Twelve days of demand
+## Twelve days of demand
 
 Here are twelve daily profiles of electricity demand. Each panel is one day: 48 readings, one every half hour, in kW on an illustrative scale. The names are labels only, not calendar days.
 
@@ -32,7 +33,7 @@ That makes four kinds of day, three of each. Inside each kind the three days dif
 
 This dataset is authored. It was built to show what a choice of comparison does, and it says nothing about how well any method works on real data.
 
-### Two questions
+## Two questions
 
 Two people look at the same twelve days.
 
@@ -41,7 +42,7 @@ Two people look at the same twelve days.
 
 Both questions are reasonable. They lead to two different pipelines, and each pipeline is a set of choices about what to keep and what to ignore.
 
-### Question A: raw values, Euclidean distance
+## Question A: raw values, Euclidean distance
 
 For question A the hour matters, so the days are compared as they are. No preprocessing. The comparison is the Euclidean distance, which lines the two days up half hour by half hour:
 
@@ -57,7 +58,7 @@ To turn distances into groups, both pipelines use the same rule, average linkage
 
 The result splits the days by timing. Group 1 holds the six early days, two-peak and flat alike. Group 2 holds the six late days. In this fixture, the hour of activity outweighs the shape.
 
-### Question B: z-normalisation plus SBD
+## Question B: z-normalisation plus SBD
 
 For question B two steps change, not one.
 
@@ -85,13 +86,13 @@ Now the days split by shape. Group 1 holds the six two-peak days, early and late
 
 Both changes are needed here. On this fixture, z-normalisation followed by Euclidean distance still splits early from late, and so does SBD on the raw values. Only the two together answer question B.
 
-### Two answers, both right
+## Two answers, both right
 
 Neither grouping is a mistake. Timing dominates the raw-Euclidean grouping on this fixture. With normalisation and SBD, the recovered groups instead follow shape. The fixture file even stores both intended labels, an hour group and a shape group, because both are correct answers to their own question.
 
 So "which grouping is better?" has no answer until you say which question you are asking. A validity score does not settle it either. A score computed under one distance tells you how well the groups fit that distance, not whether that distance matched your question. Module E comes back to this.
 
-### What do you want to ignore?
+## What do you want to ignore?
 
 The difference between the two pipelines fits in one line: question B ignores level and scale and tolerates a global shift, question A ignores none of them. That is the lens this course uses for every measure. When you meet a new distance, ask what it lets you ignore:
 
@@ -106,10 +107,10 @@ Each choice sits somewhere in the pipeline: the object you cluster, preprocessin
 
 The comparison step has many options. The survey by [Paparrizos et al. (2024)](https://arxiv.org/abs/2412.20574) sorts more than 100 distance measures into seven families: lock-step, sliding, elastic, kernel, feature-based, model-based and embedding. This lesson used two of them. Euclidean distance is lock-step: it compares the same time steps. SBD is sliding: it compares the best of all shifted versions. Later lessons take the families one at a time, each with what it ignores and what it keeps.
 
-## Common mistake
-
-Asking "which distance is best for time series?" before asking what the grouping is for. On these twelve days the same data gives two different groupings, and both are correct. A distance can only be judged against what you need it to ignore.
-
 ## In finance
 
 Our finance example asks about contemporaneous co-movement. A match obtained only after shifting returns answers a different question. [Mantegna (1999)](https://arxiv.org/abs/cond-mat/9802256) built a hierarchy of stocks from the correlation of their daily returns over the same period. Correlation keeps the time steps aligned, so no shift or warping belongs in that comparison.
+
+## Common mistake
+
+Asking "which distance is best for time series?" before asking what the grouping is for. On these twelve days the same data gives two different groupings, and both are correct. A distance can only be judged against what you need it to ignore.

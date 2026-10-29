@@ -3,6 +3,7 @@ id: alpha
 module: A
 title: Alpha lesson
 kicker: Engine check
+sector: energy
 lede: A fixture lesson that uses every feature the build supports, so the end-to-end test can find each one.
 ignores: local timing, small shifts
 keeps: level, scale
@@ -14,7 +15,7 @@ r: distances.R
 
 The build finds *sections* in parsed tokens, so a heading inside a code block stays code.
 
-## Lesson
+## Engine features
 
 Inline math such as $d(x, y) = \sqrt{\sum_t (x_t - y_t)^2}$ sits inside a sentence.
 
@@ -39,9 +40,9 @@ Jump down to [the subheading](#a-subheading).
 
 More text with `inline code; with a semicolon` that the prose check skips.
 
-## Common mistake
+## A second section
 
-Reading a heading inside a code block as the start of a new section.
+A second content section, so the order of sections is visible.
 
 ## In finance
 
@@ -52,3 +53,17 @@ A finance note sits in the margin, next to the reading column.
 $$
 \mathrm{ED}(x, y) = \sqrt{\sum_{t=1}^{n} (x_t - y_t)^2}
 $$
+
+## Code
+
+```python
+print(1)
+```
+
+```r
+cat(1)
+```
+
+## Common mistake
+
+Reading a heading inside a code block as the start of a new section.

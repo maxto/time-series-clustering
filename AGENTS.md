@@ -18,15 +18,17 @@ A concept-first, English-only mini-course on time series similarity (static site
 ## Content format
 
 - `content/_course.md`: front matter `title`, `tagline`. Body: `## <Letter>. <Module title>`, then one `- <id> | published|planned | <title>` per lesson. Published lessons need `NN-<id>.md` with `NN` = position in this list, planned ones must not have a file.
-- Lesson front matter: `id`, `module`, `title`, `kicker`, `lede`, `ignores`, `keeps`, `python`, `r` (the last four are comma lists). Sections in this order: `## One line` (one paragraph), `## Lesson`, `## Common mistake` (one paragraph), then optional `## In finance` (margin note), `## Measure card`, `## Check`.
-- Figures: `![caption](figures/<name>.svg)` alone in a paragraph of `## Lesson`. `figures/overview.svg`, when present, is shown on the home. Numbers: `{{n:<key>}}` from `figures/numbers.json`. Math: `$...$`, `$$...$$`. Links: `lesson:<id>`, `#<heading-id>` (every heading gets the slug of its text as id, `-2`, `-3` on repeats, and the target must exist in the same lesson), `https://` or `mailto:` (no `http://`).
+- Lesson front matter: `id`, `module`, `title`, `kicker`, `sector`, `lede`, `ignores`, `keeps`, `python`, `r` (the last four are comma lists). `sector` is one of `energy`, `finance`, `weather`, `retail`, `industry`, `health`. Blocks in this order: `## One line` (required, one paragraph), one or more content sections `## <title>` (any title), then optional `## In finance` (margin note), optional `## Measure card`, optional `## Code`, and `## Common mistake` (required, one paragraph, last). `One line`, `In finance`, `Measure card`, `Code` and `Common mistake` are reserved names, matched in any letter case, so a content section cannot use them. `## Lesson` and `## Check` are no longer sections: the build rejects them.
+- `## Code`: at most one fence with info `python` and one with info `r`, plus optional paragraphs. Any other fence info is an error.
+- Heading ids: every heading gets the slug of its text, `-2`, `-3` on repeats. A slug equal to a block id (`one-line`, `in-finance`, `measure-card`, `code`, `common-mistake`) is an error. A content section's id is the id of its `##` heading.
+- Figures: `![caption](figures/<name>.svg)` alone in a paragraph, inside a content section or `## In finance`. `figures/overview.svg`, when present, is shown on the home. Numbers: `{{n:<key>}}` from `figures/numbers.json`. Math: `$...$`, `$$...$$`. Links: `lesson:<id>`, `#<heading-id>` (the target must exist in the same lesson), `https://` or `mailto:` (no `http://`).
 - The build rejects (one line per problem, exit 1): schema errors, TeX errors, semicolons or em-dashes in prose, SVG outside the figure rules, a missing figure or number.
 
 ## Commands
 
 - `uv sync`, `npm install`: set up (Python 3.13 pinned, `.python-version`).
 - `npm run build`: `uv run python scripts/build.py` (content/ to dist/, writes figure previews). Options: `--content DIR`, `--dist DIR`, `--previews`. With no `content/_course.md` it prints a note and exits 0.
-- `npm test`: build, then `node tests/e2e.mjs` (builds the smoke fixture into `tests/output/smoke-dist/`, checks it from `file://` and over HTTP under `/time-series-clustering/`, then `dist/` when `content/_course.md` exists).
+- `npm test`: `node tests/e2e.mjs`, which builds fresh itself (the smoke fixture into `tests/output/smoke-dist/`, the real content into `tests/output/dist/` when `content/_course.md` exists, never reading an old `dist/`) and checks each from `file://` and over HTTP under `/time-series-clustering/`.
 - `uv run pytest`: Python tests (reference code and `tests/test_build.py`).
 - `npm run shots`: builds, then full-page screenshots of the home and every published lesson, light and dark, 1280 and 375 px, in `tests/output/shots/` (cleared first, `manifest.json` records the commit).
 - Every Python command runs through `uv run`.

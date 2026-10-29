@@ -14,12 +14,19 @@ from markdown_it import MarkdownIt
 from markdown_it.token import Token
 from mdit_py_plugins.dollarmath import dollarmath_plugin
 
-LESSON_KEYS = ("id", "module", "title", "kicker", "lede", "ignores", "keeps", "python", "r")
+LESSON_KEYS = ("id", "module", "title", "kicker", "sector", "lede", "ignores", "keeps", "python", "r")
 LIST_KEYS = ("ignores", "keeps", "python", "r")
 PROSE_KEYS = ("title", "kicker", "lede", "ignores", "keeps")
-SECTIONS = ("One line", "Lesson", "Common mistake", "In finance", "Measure card", "Check")
-REQUIRED = ("One line", "Lesson", "Common mistake")
-ONE_PARAGRAPH = ("One line", "Common mistake")
+SECTORS = ("energy", "finance", "weather", "retail", "industry", "health")
+# Fixed blocks: name -> (kind, block id). Content sections (kind "section") sit between One line and In finance.
+FIXED = {"One line": ("oneline", "one-line"), "In finance": ("finance", "in-finance"),
+         "Measure card": ("measure", "measure-card"), "Code": ("code", "code"),
+         "Common mistake": ("mistake", "common-mistake")}
+KIND_ORDER = ("oneline", "section", "finance", "measure", "code", "mistake")
+BLOCK_IDS = tuple(bid for _, bid in FIXED.values())
+ONE_PARAGRAPH = ("oneline", "mistake")
+FIGURE_KINDS = ("section", "finance")
+CODE_LANGUAGES = ("python", "r")
 STATUSES = ("published", "planned")
 MATH = ("math_inline", "math_inline_double", "math_block")
 PROSE_BANNED = {";": "semicolon", "—": "em-dash"}
@@ -70,11 +77,20 @@ class Course:
 
 
 @dataclass
+class Block:
+    kind: str  # oneline | section | finance | measure | code | mistake
+    title: str
+    id: str  # fixed blocks: one-line, in-finance, measure-card, code, common-mistake. Sections: heading slug
+    tokens: list
+
+
+@dataclass
 class Lesson:
     entry: Entry
     path: pathlib.Path
     meta: dict
-    sections: dict  # section name -> tokens
+    blocks: list  # [Block] in document order
+    code: dict = field(default_factory=dict)  # "python" / "r" -> code text, only those present
     math: list = field(default_factory=list)  # math tokens, rendered in one batch later
     fragments: list = field(default_factory=list)  # "#id" link targets, checked against heading ids
 
@@ -233,6 +249,8 @@ def load_lesson(path, entry, md, numbers, published, content, errors):
             errors.add(path, f"empty front matter key {key!r}")
     for key in sorted(set(meta) - set(LESSON_KEYS)):
         errors.add(path, f"unknown front matter key {key!r}")
+    if meta.get("sector") and meta["sector"] not in SECTORS:
+        errors.add(path, f"sector {meta['sector']!r} is not one of: {', '.join(SECTORS)}")
     if meta.get("id", entry.id) != entry.id:
         errors.add(path, f"id {meta['id']!r} does not match the file name ({entry.id!r})")
     if meta.get("module", entry.module) != entry.module:
@@ -245,11 +263,14 @@ def load_lesson(path, entry, md, numbers, published, content, errors):
 
     body = NUMBER.sub(lambda m: numbers.get(m.group(1), path, errors), body)
     tokens = md.parse(body)
-    sections = split_sections(tokens, path, errors)
-    lesson = Lesson(entry, path, meta, sections)
-    for name, toks in sections.items():
-        check_tokens(toks, name, lesson, published, content, errors)
-    ids = heading_ids(sections)
+    blocks = split_blocks(tokens, path, errors)
+    lesson = Lesson(entry, path, meta, blocks)
+    for b in blocks:
+        check_prose(b.title, path, errors, f"heading {b.title}")
+        check_tokens(b, lesson, published, content, errors)
+        if b.kind == "code":
+            collect_code(b, lesson, errors)
+    ids = heading_ids(blocks, path, errors)
     for frag in lesson.fragments:
         if frag not in ids:
             errors.add(path, f"link '#{frag}': no heading with that id in this lesson"
@@ -261,67 +282,108 @@ def slug(text):
     return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-") or "section"
 
 
-def heading_ids(sections):
-    """Give every rendered heading a deterministic, unique id (slug of its text, then -2, -3...)."""
+def heading_text(toks, i):
+    return "".join(c.content for c in walk_inline(toks[i + 1].children) if c.type in ("text", "code_inline"))
+
+
+def heading_ids(blocks, path, errors):
+    """Give every rendered heading a deterministic, unique id (slug of its text, then -2, -3...).
+
+    A content section's id is the id of its own '##' heading. A slug equal to a fixed block id is an error."""
     ids = set()
-    for name in SECTIONS:
-        toks = sections.get(name, [])
-        for i, tok in enumerate(toks):
-            if tok.type != "heading_open":
-                continue
-            text = "".join(c.content for c in walk_inline(toks[i + 1].children) if c.type in ("text", "code_inline"))
-            base, n = slug(text), 1
-            hid = base
-            while hid in ids:
-                n += 1
-                hid = f"{base}-{n}"
-            ids.add(hid)
-            tok.attrSet("id", hid)
+
+    def unique(text):
+        base, n = slug(text), 1
+        if base in BLOCK_IDS:
+            errors.add(path, f"heading {text!r} has the slug {base!r}, which is a block id")
+        hid = base
+        while hid in ids:
+            n += 1
+            hid = f"{base}-{n}"
+        ids.add(hid)
+        return hid
+
+    for b in blocks:
+        if b.kind == "section":
+            b.id = unique(b.title)
+        for i, tok in enumerate(b.tokens):
+            if tok.type == "heading_open":
+                tok.attrSet("id", unique(heading_text(b.tokens, i)))
     return ids
 
 
-def split_sections(tokens, path, errors):
+def split_blocks(tokens, path, errors):
     """Top-level '## Name' headings split the body. A '##' inside a code block is a fence token."""
-    sections, order, current = {}, [], None
+    blocks = []
     i = 0
     while i < len(tokens):
         tok = tokens[i]
         if tok.type == "heading_open" and tok.tag == "h2" and tok.level == 0:
             name = tokens[i + 1].content.strip()
-            if name not in SECTIONS:
-                errors.add(path, f"unknown section '## {name}' (allowed: {', '.join(SECTIONS)})")
-            elif name in sections:
-                errors.add(path, f"section '## {name}' appears twice")
-            current = name
-            sections.setdefault(name, [])
-            order.append(name)
             i += 3
+            if name in FIXED:
+                kind, bid = FIXED[name]
+                if any(b.kind == kind for b in blocks):
+                    errors.add(path, f"section '## {name}' appears twice")
+                blocks.append(Block(kind, name, bid, []))
+            elif name.lower() in {n.lower() for n in FIXED}:
+                errors.add(path, f"'## {name}' is a reserved block name (use exactly "
+                                 f"{', '.join(repr(n) for n in FIXED)}, or another title for a content section)")
+                blocks.append(Block("_skip", name, "", []))
+            elif name == "Lesson":
+                errors.add(path, "'## Lesson' was replaced by content sections (design 4.3): "
+                                 "give each part its own '## <title>' section")
+                blocks.append(Block("_skip", name, "", []))
+            elif name == "Check":
+                errors.add(path, "'## Check' is not used in the first phase (design 1.1): "
+                                 "a validity example is a content section with its own title")
+                blocks.append(Block("_skip", name, "", []))
+            else:
+                blocks.append(Block("section", name, "", []))
             continue
         if tok.type == "heading_open" and tok.tag == "h1":
             errors.add(path, "'# ' headings are not allowed in a lesson (the title comes from the front matter)")
-        if current is None:
+        if not blocks:
             errors.add(path, "text before the first '## ' section")
-            current = "_before"
-            sections["_before"] = []
-        sections[current].append(tok)
+            blocks.append(Block("_skip", "", "", []))
+        blocks[-1].tokens.append(tok)
         i += 1
-    sections.pop("_before", None)
-    known = [n for n in order if n in SECTIONS]
-    if known != sorted(known, key=SECTIONS.index):
-        errors.add(path, f"sections out of order: {', '.join(known)} (expected order: {', '.join(SECTIONS)})")
-    for name in REQUIRED:
-        if name not in sections:
-            errors.add(path, f"missing section '## {name}'")
-    for name in ONE_PARAGRAPH:
-        toks = sections.get(name)
-        if toks is not None and [t.type for t in toks] != ["paragraph_open", "inline", "paragraph_close"]:
-            errors.add(path, f"section '## {name}' must be exactly one paragraph")
-    return {n: t for n, t in sections.items() if n in SECTIONS}
+    kinds = [b.kind for b in blocks if b.kind != "_skip"]
+    expected = "One line, content sections, In finance, Measure card, Code, Common mistake"
+    if kinds != sorted(kinds, key=KIND_ORDER.index):
+        shown = ", ".join(b.title for b in blocks if b.kind != "_skip")
+        errors.add(path, f"sections out of order: {shown} (expected order: {expected})")
+    for kind in ONE_PARAGRAPH:
+        if kind not in kinds:
+            errors.add(path, f"missing section '## {next(n for n, (k, _) in FIXED.items() if k == kind)}'")
+    if "section" not in kinds and not any(b.kind == "_skip" for b in blocks):
+        errors.add(path, "a lesson needs at least one content section (a '## <title>' section after '## One line')")
+    for b in blocks:
+        if b.kind in ONE_PARAGRAPH and [t.type for t in b.tokens] != ["paragraph_open", "inline", "paragraph_close"]:
+            errors.add(path, f"section '## {b.title}' must be exactly one paragraph")
+    return [b for b in blocks if b.kind != "_skip"]
 
 
-def check_tokens(tokens, section, lesson, published, content, errors):
-    """Prose rules, math collection, links and figures for the tokens of one section."""
-    path = lesson.path
+def collect_code(block, lesson, errors):
+    """'## Code': at most one python and one r fence, optional paragraphs, nothing else."""
+    para = ("paragraph_open", "inline", "paragraph_close")
+    for tok in block.tokens:
+        if tok.type == "fence":
+            lang = tok.info.strip()
+            if lang not in CODE_LANGUAGES:
+                errors.add(lesson.path, f"code block language {lang!r}: '## Code' takes {' and '.join(CODE_LANGUAGES)}")
+            elif lang in lesson.code:
+                errors.add(lesson.path, f"'## Code' has two {lang} blocks (at most one per language)")
+            else:
+                lesson.code[lang] = tok.content
+        elif tok.type not in para and tok.level == 0:
+            errors.add(lesson.path, f"'## Code' holds only paragraphs and fenced code, found {tok.type}")
+
+
+def check_tokens(block, lesson, published, content, errors):
+    """Prose rules, math collection, links and figures for the tokens of one block."""
+    path, tokens, section = lesson.path, block.tokens, block.title
+    figures_ok = block.kind in FIGURE_KINDS
     i = 0
     while i < len(tokens):
         tok = tokens[i]
@@ -331,8 +393,9 @@ def check_tokens(tokens, section, lesson, published, content, errors):
             images = [c for c in walk_inline(tok.children) if c.type == "image"]
             alone = (len(tok.children) == 1 and images and i > 0 and tokens[i - 1].type == "paragraph_open"
                      and tokens[i - 1].level == 0)
-            if images and not (alone and section == "Lesson"):
-                errors.add(path, "an image must be a figure: alone in its own paragraph inside '## Lesson'")
+            if images and not (alone and figures_ok):
+                errors.add(path, "an image must be a figure: alone in its own paragraph inside a content section"
+                                 " or '## In finance'")
             for c in walk_inline(tok.children):
                 if c.type == "text":
                     check_prose(c.content, path, errors, f"section {section}")
@@ -340,7 +403,7 @@ def check_tokens(tokens, section, lesson, published, content, errors):
                     lesson.math.append(c)
                 elif c.type == "link_open":
                     check_link(c, lesson, published, errors)
-            if images and alone and section == "Lesson":
+            if images and alone and figures_ok:
                 figure_token(tokens, i, images[0], path, content, errors)
         i += 1
 

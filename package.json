@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "uv run python scripts/build.py",
-    "test": "npm run build && node tests/e2e.mjs",
+    "test": "node tests/e2e.mjs",
     "shots": "node tests/shots.mjs"
   },
   "devDependencies": {

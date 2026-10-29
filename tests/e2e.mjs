@@ -4,7 +4,8 @@
 //    twice: from file:// and from a local HTTP server that serves it under /time-series-clustering/,
 //    the GitHub Pages subpath. The smoke checks pin every engine feature (sections, math, figures,
 //    margin notes, links, planned lessons skipped by previous/next).
-// 2. Runs the general checks on the real dist/ too, when content/_course.md exists.
+// 2. Builds the real content/ fresh into tests/output/dist (never reading an old dist/) and runs the
+//    general checks on it, when content/_course.md exists.
 //
 // General checks, in both runs: no console error, no failed request, no request to another
 // origin, home links and every lesson's exact previous/next (from the source _course.md),
@@ -29,8 +30,12 @@ const expect = (ok, msg) => { if (!ok) failures.push(msg); };
 
 fs.mkdirSync(out, { recursive: true });
 const smokeDist = path.join(out, 'smoke-dist');
+const realDist = path.join(out, 'dist');
 execFileSync('uv', ['run', 'python', 'scripts/build.py', '--content', 'tests/fixtures/smoke', '--dist', smokeDist],
   { cwd: root, stdio: 'inherit' });
+if (fs.existsSync(path.join(root, 'content', '_course.md'))) {
+  execFileSync('uv', ['run', 'python', 'scripts/build.py', '--dist', realDist], { cwd: root, stdio: 'inherit' });
+}
 
 // --- tiny static server: the built directory under PREFIX, 404 for anything else ---
 const TYPES = {
@@ -117,16 +122,16 @@ async function smokeChecks(run, p, url) {
   expect(await count(p, '.card.measure .katex') === 1, `${run}: alpha measure card math missing`);
   expect(await p.locator('pre code', { hasText: '## not a section' }).count() === 1, `${run}: fenced "## not a section" not shown as code`);
   expect(await p.locator('h2', { hasText: 'not a section' }).count() === 0, `${run}: fenced "## not a section" became a heading`);
-  expect(await count(p, 'h3#a-subheading') === 1 && await count(p, '.lesson-body a[href="#a-subheading"]') === 1,
+  expect(await count(p, 'h3#a-subheading') === 1 && await count(p, 'main section a[href="#a-subheading"]') === 1,
     `${run}: fragment link #a-subheading has no heading target`);
   expect(await count(p, '.pager a.prev') === 0, `${run}: alpha has a previous link`);
   expect(await count(p, 'a[href*="beta"]') === 0, `${run}: alpha links to the planned lesson beta`);
   expect((await p.locator('.pager a.next').innerText()).includes('Gamma'), `${run}: alpha next does not skip to gamma`);
 
   // working link in the lesson body
-  await clickTo(p, '.lesson-body a[href="../gamma/index.html"]', 'gamma/index.html');
+  await clickTo(p, 'main section a[href="../gamma/index.html"]', 'gamma/index.html');
   expect(await p.locator('h1').innerText() === 'Gamma lesson', `${run}: body link to gamma did not load gamma`);
-  expect(await count(p, '.card.check') === 1, `${run}: gamma Check section missing`);
+  expect(await count(p, 'main section#validity-example') === 1, `${run}: gamma content section "Validity example" missing`);
   expect(await count(p, '.pager a.next') === 0, `${run}: gamma has a next link`);
   expect(await count(p, 'a[href*="beta"]') === 0, `${run}: gamma links to the planned lesson beta`);
 
@@ -243,8 +248,8 @@ async function suite(label, dist, contentDir, smoke) {
 }
 
 await suite('smoke', smokeDist, path.join(root, 'tests', 'fixtures', 'smoke'), true);
-if (fs.existsSync(path.join(root, 'content', '_course.md'))) await suite('dist', path.join(root, 'dist'), path.join(root, 'content'), false);
-else console.log('e2e: no content/_course.md yet, skipping the checks on dist/ (smoke fixture checked)');
+if (fs.existsSync(path.join(root, 'content', '_course.md'))) await suite('dist', realDist, path.join(root, 'content'), false);
+else console.log('e2e: no content/_course.md yet, skipping the checks on the real build (smoke fixture checked)');
 
 await browser.close();
 if (failures.length) { console.error('FAIL\n' + failures.join('\n')); process.exit(1); }

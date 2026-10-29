@@ -22,7 +22,7 @@ import sys
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 from buildlib import svg  # noqa: E402
-from buildlib.content import Errors, esc, load_course, load_lessons, markdown, show  # noqa: E402
+from buildlib.content import CODE_LANGUAGES, Errors, esc, load_course, load_lessons, markdown, show  # noqa: E402
 from buildlib.katex import render_math  # noqa: E402
 
 SITE_URL = "https://maxto.github.io/time-series-clustering/"
@@ -79,8 +79,9 @@ def notes(lesson, md):
         chips += "".join(f"<span>{esc(v)}</span>" for v in meta["keeps"])
         out.append(f'<div class="note ignores"><b>What it ignores</b><div class="chips">{chips}</div>'
                    '<div class="legend">Highlighted: ignored. Grey: kept.</div></div>')
-    if "In finance" in lesson.sections:
-        out.append(f'<div class="note finance"><b>In finance</b>{render(md, lesson.sections["In finance"])}</div>')
+    for b in lesson.blocks:
+        if b.kind == "finance":
+            out.append(f'<div class="note finance"><b>In finance</b>{render(md, b.tokens)}</div>')
     code = [f"{lang} · {esc(', '.join(meta[key]))}" for lang, key in (("Python", "python"), ("R", "r")) if meta[key]]
     if code:
         out.append(f'<div class="note code"><b>Code</b><span class="mono">{"<br>".join(code)}</span></div>')
@@ -96,17 +97,24 @@ def pager(prev, nxt):
 
 
 def lesson_page(lesson, course, md, template, prev, nxt, position):
-    e, meta, sec = lesson.entry, lesson.meta, lesson.sections
-    specimens = "".join(f'<div class="card {cls}"><b class="lbl">{name}</b>{render(md, sec[name])}</div>\n'
-                        for name, cls in (("Measure card", "measure"), ("Check", "check")) if name in sec)
-    mistake = render(md, sec["Common mistake"]).replace("<p>", "<p><b>Common mistake.</b> ", 1)
+    e, meta = lesson.entry, lesson.meta
+    by_kind = {b.kind: b for b in lesson.blocks if b.kind != "section"}
+    body = "\n".join(f'<section id="{b.id}"><h2>{esc(b.title)}</h2>\n{render(md, b.tokens)}</section>'
+                     for b in lesson.blocks if b.kind == "section")
+    # Temporary rendering, replaced with the new templates in Task 5.
+    specimens = ""
+    if "measure" in by_kind:
+        specimens = f'<div class="card measure"><b class="lbl">Measure card</b>{render(md, by_kind["measure"].tokens)}</div>\n'
+    specimens += "".join(f'<pre class="code {lang}"><code>{esc(lesson.code[lang])}</code></pre>\n'
+                         for lang in CODE_LANGUAGES if lang in lesson.code)
+    mistake = render(md, by_kind["mistake"].tokens).replace("<p>", "<p><b>Common mistake.</b> ", 1)
     total = len(course.published())
     return fill(template, {
         "meta": head_meta(f"{meta['title']} · {course.title}", meta["lede"], f"{SITE_URL}{e.id}/", "article", course.title),
         "root": "../", "site": esc(course.title.lower()), "module": esc(f"{e.module} · {e.module_title}"),
         "position": f"{position} / {total}", "progress": f"{round(100 * position / total)}",
         "kicker": esc(f"Lesson {e.number} · {meta['kicker']}"), "title": esc(meta["title"]), "lede": esc(meta["lede"]),
-        "oneline": render(md, sec["One line"]), "body": render(md, sec["Lesson"]), "specimens": specimens,
+        "oneline": render(md, by_kind["oneline"].tokens), "body": body, "specimens": specimens,
         "mistake": mistake, "pager": pager(prev, nxt), "notes": notes(lesson, md),
     })
 
