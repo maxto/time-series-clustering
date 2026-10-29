@@ -1,5 +1,75 @@
 # LOG — time-series-clustering
 
+## 2026-10-29 · Checkpoint 1 built (shell, format, draft map)
+
+Plan `docs/superpowers/plans/2026-10-29-redesign-checkpoint-1.md` (9 tasks)
+written with the writing-plans skill, reviewed by Codex
+(`docs/research/2026-10-29-codex-plan-cp1-review.md`, all findings adopted),
+then executed subagent-driven on the new local branch `redesign` (from
+`pilot`): Sonnet implementers and task reviewers, Codex for the citation
+review and the whole-branch review
+(`docs/research/2026-10-29-codex-cp1-branch-review.md`), one fix wave.
+Commits `9fd7cdf..7f28d4f` (21 commits). Ledger with every ruling and
+deferred minor: `.superpowers/sdd/2026-10-29-redesign-checkpoint-1/progress.md`
+(git-ignored).
+
+Built: lesson schema v2 (content sections, sector, code tabs, Check dropped
+for the first phase), citations `[@key, locator]` with a source registry and
+review records bound to versioned fingerprints (an edit reopens the review),
+`scripts/review.py`, `scripts/check_sources.py`, map and sector data imported
+from the mockup as draft with derived review state, release build refusing
+any unreviewed map item, fit, question, sector or branch, `--preview` into
+`preview/`, the course shell (top bar, contents, search), home with map,
+filters and sector cards, sources page, behaviour scripts, search index that
+works from `file://`, contrast and width checks.
+
+First verified citation: Sakoe and Chiba (1978), adjustment window condition,
+Sec. II-B condition 4 (Eq. 8), p. 44, in lesson 5. Passage read on a scan
+hosted on a University of Illinois course page, metadata matched on Crossref,
+sentence approved by Codex as is
+(`docs/research/2026-10-29-codex-sakoe-citation-review.md`). The site links
+only the DOI.
+
+**Verified (Claude, 11:06 CET on `7f28d4f`):** `uv run pytest -q` 113 passed.
+`npm test` e2e ok (smoke release and content preview, `file://` and HTTP,
+no-JS context, contrast matrix with body rows at 10:1 in content, one line,
+mistake, finance and measure areas). `npm run preview` ok. `npm run build`
+exits 1 with 110 lines, all "draft" (the gate working, map content is design
+step 2). Earlier, per task: 16 screenshots in `tests/output/shots/`, the four
+source identifiers `matched` by `check_sources.py`. Demo served at
+`http://127.0.0.1:60610/preview/` through a symlink `.mockups/preview ->
+../preview` (git-ignored) on the existing server.
+
+**Decisions**
+
+- Approved (owner): execution subagent-driven with a review per task.
+- Approved (owner, delegated): the four groups of edge-case tests in the
+  plan's Review Focus (citations and reviews, map, navigation and search,
+  schema and layout), on Claude's recommendation.
+- Approved (owner): Codex's plan findings, with Claude's simplification:
+  review state is derived from records matching the current fingerprint,
+  never a hand-typed status (replaces the design's `status` field in
+  practice: an edited item turns draft by itself).
+- Done (Claude rulings, full list in the ledger): question text, starts,
+  sector about and curve, and branch labels are gated like items (they are
+  recommendations shown on the home). Planned lessons are not linked from
+  the contents. Figures take the column width (design 4.1). Connector lines
+  with a root box (owner-approved mockup). Need-tag labels are UI vocabulary.
+  "None of the listed properties" dropped as an unsupported claim. Dimmed
+  chips keep 4.5:1 text. Contrast rule made concrete: body prose 10:1 by
+  colour, every other text 4.5:1. Fingerprint v2 (no whitespace collapse,
+  canonical JSON for map data, source identity with authors and venue)
+  after Codex's final review, with the two lesson records and the citation
+  record re-recorded on unchanged text.
+- Proposed, for the owner's checkpoint 1 review: static figures now scale to
+  the 760 px column, so their labels grow on desktop. Only one connector
+  line (root to Compare) in the 760 px column. Need-tag label wording.
+
+**HANDOFF reconciliation:** item 1 (plan, then step 1) moved on: checkpoint 1
+built, owner review pending. Added: delete the SDD workspace of this plan
+(owner go-ahead), the `.mockups/preview` symlink, edge cases deferred in the
+ledger. Other items unchanged.
+
 ## 2026-10-29 · Redesign design amended, re-checked and approved
 
 Continues HANDOFF item 1. Asked the owner the two open questions, amended

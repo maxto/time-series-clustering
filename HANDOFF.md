@@ -1,83 +1,86 @@
 # HANDOFF — time-series-clustering
 
-Closed: 2026-10-29 08:50 CET (HEAD verified before this update: 9a2fa1b)
-Last operation: redesign design amended with every Codex finding, Codex
-re-check done and its three new points fixed, owner's content direction
-applied, design approved by the owner. LOG entry "Redesign design
-amended, re-checked and approved".
+Closed: 2026-10-29 11:06 CET (HEAD verified before this update: 7f28d4f)
+Last operation: checkpoint 1 of the redesign built on branch `redesign`
+(9 tasks, task reviews, Codex whole-branch review and one fix wave), tests
+green, demo served for the owner. LOG entry "Checkpoint 1 built (shell,
+format, draft map)".
 
 ## Goal
 
-Turn the public repo `maxto/Time-Series-Clustering` (49 stars, 7 forks,
-reference tables in one README + a PDF) into a concept-first, English-only
-course on time series similarity and clustering. Now: implementation plan
-for the approved redesign, then step 1 (shell and format on lessons 1
-and 5). Design:
+Turn the public repo `maxto/Time-Series-Clustering` into a concept-first,
+English-only course on time series similarity and clustering. Now: the
+owner's checkpoint 1 review of the redesign (look, shell, map, phone, dark
+theme), then the plan for checkpoint 2 (lesson 5 live figures). Design:
 [docs/superpowers/specs/2026-10-28-course-design.md](docs/superpowers/specs/2026-10-28-course-design.md),
 amended by the approved
-[docs/superpowers/specs/2026-10-28-redesign-design.md](docs/superpowers/specs/2026-10-28-redesign-design.md)
-(section 1.1: content direction for the first phase, section 10:
-delivery order). Codex reviews:
-[review](docs/research/2026-10-28-codex-redesign-review.md),
-[re-check](docs/research/2026-10-29-codex-redesign-recheck.md).
+[docs/superpowers/specs/2026-10-28-redesign-design.md](docs/superpowers/specs/2026-10-28-redesign-design.md).
+Plan executed:
+[docs/superpowers/plans/2026-10-29-redesign-checkpoint-1.md](docs/superpowers/plans/2026-10-29-redesign-checkpoint-1.md).
 
 ## State
 
-- Clone at `~/projects/personal/time-series-clustering/`. Branch `pilot`
-  (from master `196e416`), local only. `master` at `196e416`, two commits
-  ahead of `origin/master`, not pushed.
-- Design amendment and Codex re-check: committed on `pilot` 2026-10-29
-  with these notes (owner go-ahead "Ok, procedi"). To check at resume
-  with `git status`.
-- Pilot built and verified 2026-10-28 on `0575db2` (see LOG): reference
-  code, R parity, engine, lessons 1 and 5, e2e tests.
-- Redesign mockup (git-ignored, throwaway): `.mockups/course/index.html`
-  (home with map, lesson 1, lesson 5 with the 2026-10-29 demo additions:
-  measure card, state line with reset, draft banner, condition labels,
-  exercises removed), `.mockups/course/logo.html`. Served at
-  `http://127.0.0.1:60610/course/` by the plain server on port 60610.
-  Verified running 2026-10-29 08:45, to check at resume.
-- Headless Chrome screenshots timed out 2026-10-29 ~08:40, even on a blank
-  page (page JS responsive). Not investigated. To check before e2e runs.
-- R package `dtw` 1.23.3 installed in the user R library (owner-approved).
-- Codex pane of this project: re-check task done, answer saved in
-  `docs/research/`. Its chat can be cleared when idle.
+- Clone at `~/projects/personal/time-series-clustering/`. Branch `redesign`
+  (from `pilot` at `6055354`), local only, commits `9fd7cdf..7f28d4f` plus
+  the notes commit. `pilot` at `6055354`, `master` at `196e416` (two commits
+  ahead of `origin/master`), nothing pushed.
+- Verified 2026-10-29 11:06 on `7f28d4f`: pytest 113 passed, `npm test` e2e
+  ok, `npm run preview` ok, `npm run build` exits 1 with draft lines only
+  (by design until the map is reviewed).
+- Demo: `http://127.0.0.1:60610/preview/`, served by the plain server on
+  60610 through the symlink `.mockups/preview -> ../preview` (git-ignored).
+  Rebuild with `npm run preview` after changes. Server verified 11:06, to
+  check at resume.
+- Screenshots: `tests/output/shots/` (16 PNG, manifest), git-ignored.
+- SDD workspace `.superpowers/sdd/2026-10-29-redesign-checkpoint-1/`
+  (ledger with every ruling and deferred minor finding), git-ignored.
+- Codex pane of this project (`term_58cbd4cb...`): idle, its answers saved
+  in `docs/research/`. Keep its context until checkpoint 1 is closed with
+  the owner.
+- The fix-wave commit `7f28d4f` carries a "Sonnet 5.5" co-author trailer
+  instead of the session's line. Left as is (changing it rewrites history).
 
 ## Open items
 
-1. **Implementation plan** for the redesign (Claude, writing-plans skill),
-   then step 1 in three checkpoints. Owner reviews after checkpoint 1 and
-   checkpoint 3. Status: to do, next.
-2. **Map and sector content is a draft.** Every card must be checked
-   against sources before release (design section 5.1: release build
-   refuses draft items). Known: R `dist(method = "binary")` is not Hamming
-   (README error), `TSclust` and `TSdist` archived on CRAN, several
-   functions marked "to check", affinity propagation takes similarities,
-   Ward needs Euclidean. Status: step 2 of the design.
-3. **Sources** (owner): reference works approved (Paparrizos et al. 2024,
-   Aghabozorgi et al. 2015, Arbelaitz et al. 2013). One or two references
-   per topic in standard form, found, read and confirmed by web search
-   while each lesson is written (design section 1.1). Status: applies
-   from step 1.
-4. **Exercises, transfer tasks, finance and weather fixtures:** step 4 of
-   the design, each with the owner's go-ahead to start. Status: deferred.
-5. **Merge `pilot` into `master`** and delete the SDD workspace
-   `.superpowers/sdd/2026-10-28-pilot/`: the plan decides the branch, each
-   needs the owner's go-ahead. Status: to decide in the plan.
-6. **Parked items** (LEAVE in Codex's final triage): code hardening and
-   test candidates, in `docs/research/2026-10-28-codex-pilot-final-review.md`.
-   Status: parked.
-7. **Content first, existing libraries first** (owner, 2026-10-28) for the
-   remaining lessons and code labs. Status: applies from step 3.
-8. **Licence:** MIT code + CC BY 4.0 content proposed, owner to confirm.
-   PDF rights to check. Status: to decide.
-9. **Remote steps, each with its own go-ahead:** push, repo rename to
-   lowercase, GitHub Pages activation. Status: not started.
-10. **Codex sessions in other projects** still hold the old hooks (exit
+1. **Owner review of checkpoint 1** (owner). Points to look at: static
+   figures scale to the 760 px column (labels larger on desktop), one
+   connector line only (root to Compare) in the 760 px column, need-tag
+   label wording on map cards. Status: demo ready, waiting.
+2. **Checkpoint 2 plan** (lesson 5 end to end: live DTW figures, lesson text
+   to the first-phase source rule). Status: after item 1.
+3. **Map and sector content is a draft** (design step 2). Release build
+   refuses it. Known: R `dist(method = "binary")` is not Hamming,
+   `TSclust` and `TSdist` archived on CRAN, affinity propagation takes
+   similarities, Ward needs Euclidean, several functions "to check".
+   Status: to do in step 2.
+4. **Sources** (owner): one or two references per topic in standard form,
+   read at the supporting point, confirmed by web search, reviewed by another
+   model (design 1.1). Reference works approved. Status: applies from
+   checkpoint 2.
+5. **Deferred edge cases and minor findings** of checkpoint 1, listed in the
+   ledger (`progress.md`) and in the Codex branch review's disposition
+   table: to propose to the owner as a short list. Status: to do with
+   checkpoint 2 planning.
+6. **Delete the SDD workspaces** `.superpowers/sdd/2026-10-28-pilot/` and
+   `.superpowers/sdd/2026-10-29-redesign-checkpoint-1/` (git-ignored). Each
+   needs the owner's go-ahead. Status: not asked yet.
+7. **Branches:** `redesign` builds on `pilot`. Merging into `master` needs
+   the owner's go-ahead. Status: after the redesign checkpoints.
+8. **Exercises, transfer tasks, finance and weather fixtures:** design step
+   4, each with the owner's go-ahead. Status: deferred.
+9. **Parked items** of the pilot (Codex final triage):
+   `docs/research/2026-10-28-codex-pilot-final-review.md`. Status: parked.
+10. **Content first, existing libraries first** (owner, 2026-10-28) for the
+    remaining lessons and code labs. Status: applies from step 3.
+11. **Licence:** MIT code + CC BY 4.0 content proposed, owner to confirm.
+    PDF rights to check. Status: to decide.
+12. **Remote steps, each with its own go-ahead:** push, repo rename,
+    GitHub Pages activation. Status: not started.
+13. **Codex sessions in other projects** still hold the old hooks (exit
     127) until restarted. Owner: the `~/infra/agents` session, told
     2026-10-28. Status: handed over, to check there.
 
 ## Next step
 
-Invoke the writing-plans skill on the approved redesign design and write
-the plan for step 1 (checkpoint 1 first), then pass it to Codex for review.
+Wait for the owner's checkpoint 1 review of `http://127.0.0.1:60610/preview/`,
+record the decisions, then write the checkpoint 2 plan.
