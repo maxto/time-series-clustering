@@ -4,6 +4,7 @@ _sources.toml is the registry of cited works, _reviews.toml records who reviewed
 A review record names the exact text it approved by fingerprint, so any edit reopens it.
 """
 
+import datetime
 import hashlib
 import re
 import tomllib
@@ -129,6 +130,18 @@ def load_sources(content, errors):
                 links[name] = None
         if not any(links.values()):
             errors.add(path, f"source {key!r} has no link (doi, arxiv, ssrn or url)")
+        if "manual" in raw:
+            m = raw["manual"]
+            if not isinstance(m, dict):
+                errors.add(path, f"source {key!r}: manual must be a table with date, by, what")
+            else:
+                for name in sorted(set(m) - {"date", "by", "what"}):
+                    errors.add(path, f"source {key!r}: unknown manual field {name!r}")
+                if not isinstance(m.get("date"), datetime.date) or isinstance(m.get("date"), datetime.datetime):
+                    errors.add(path, f"source {key!r}: manual.date must be a TOML date (YYYY-MM-DD)")
+                for name in ("by", "what"):
+                    if not isinstance(m.get(name), str) or not m[name].strip():
+                        errors.add(path, f"source {key!r}: manual.{name} must be a non-empty string")
         if links["url"] and not links["url"].startswith("https://"):
             errors.add(path, f"source {key!r}: url must start with https://")
         sources[key] = Source(key, raw["authors"], raw["year"], raw["title"], raw["venue"], raw["topics"], **links)

@@ -4,8 +4,10 @@ Network script, never called by the build. Writes content/_sources-check.json an
 line per source. A DOI is checked through Crossref, an arXiv id through the arXiv API: the
 normalised title and the year are compared. A year difference between a preprint and its
 publication is reported as a mismatch with both values for a person to judge, never fixed by
-editing the registry. SSRN ids and author URLs are manual-needed unless the source carries a
-`manual` record (date, by, what). Exit 1 on any mismatch.
+editing the registry. Outcomes: matched, mismatch, unavailable, manual-needed. SSRN ids and author
+URLs are manual-needed, and a source with a valid `manual` record (date, by, what) is listed as
+manually checked in the summary, not given a fifth outcome. A Crossref 404 and any network or
+parse failure are unavailable. Exit 1 only on a mismatch. The JSON file is an audit trail.
 
 Usage: uv run python scripts/check_sources.py [--content DIR]
 """
@@ -14,6 +16,7 @@ import argparse
 import datetime
 import json
 import pathlib
+import http.client
 import re
 import sys
 import tomllib
@@ -54,24 +57,26 @@ def compare(src, title, year):
 def check_doi(src):
     try:
         msg = json.loads(fetch(f"https://api.crossref.org/works/{urllib.parse.quote(src.doi)}"))["message"]
+        parts = (msg.get("issued") or {}).get("date-parts") or [[None]]
+        return compare(src, (msg.get("title") or [""])[0], parts[0][0])
     except urllib.error.HTTPError as e:
-        return ("mismatch", f"Crossref HTTP {e.code}") if e.code == 404 else ("unavailable", f"HTTP {e.code}")
-    except (urllib.error.URLError, TimeoutError, ValueError) as e:
-        return "unavailable", str(e)
-    parts = (msg.get("issued") or {}).get("date-parts") or [[None]]
-    return compare(src, (msg.get("title") or [""])[0], parts[0][0])
+        if e.code == 404:
+            return "unavailable", "not found on Crossref (DOI may be registered with another agency)"
+        return "unavailable", f"HTTP {e.code}"
+    except (OSError, http.client.HTTPException, ValueError, KeyError, TypeError, IndexError, AttributeError) as e:
+        return "unavailable", f"{type(e).__name__}: {e}"
 
 
 def check_arxiv(src):
     try:
         root = ET.fromstring(fetch(f"https://export.arxiv.org/api/query?id_list={urllib.parse.quote(src.arxiv)}"))
-    except (urllib.error.URLError, TimeoutError, ET.ParseError) as e:
-        return "unavailable", str(e)
-    entry = root.find(f"{ATOM}entry")
-    if entry is None or entry.find(f"{ATOM}title") is None or not entry.find(f"{ATOM}title").text.strip() or "/api/errors" in (entry.findtext(f"{ATOM}id") or ""):
-        return "mismatch", "arXiv returned no entry for this id"
-    title = " ".join(entry.findtext(f"{ATOM}title").split())
-    return compare(src, title, int(entry.findtext(f"{ATOM}published")[:4]))
+        entry = root.find(f"{ATOM}entry")
+        title = " ".join((entry.findtext(f"{ATOM}title") or "").split()) if entry is not None else ""
+        if entry is None or not title or "/api/errors" in (entry.findtext(f"{ATOM}id") or ""):
+            return "mismatch", "arXiv returned no entry for this id"
+        return compare(src, title, int(entry.findtext(f"{ATOM}published")[:4]))
+    except (OSError, http.client.HTTPException, ET.ParseError, ValueError, TypeError, AttributeError) as e:
+        return "unavailable", f"{type(e).__name__}: {e}"
 
 
 def main():
@@ -96,19 +101,23 @@ def main():
                     mismatch = True
                 if outcome != "matched":
                     rest.append(f"{key} {name}: {outcome} ({detail})")
+        manual = raw[key].get("manual")
         for name, value in (("ssrn", src.ssrn), ("url", src.url)):
             if value:
-                manual = raw[key].get("manual")
-                entry[name] = "matched-manual" if manual else "manual-needed"
-                notes.append(f"{name} {value}: {entry[name]}")
+                entry[name] = "manual-needed"
+                notes.append(f"{name} {value}: manual-needed")
                 if not manual:
                     rest.append(f"{key} {name}: manual-needed")
-        if manual_rec := raw[key].get("manual"):
-            entry["manual"] = {k: str(v) for k, v in manual_rec.items()}
+        if manual:
+            entry["manual"] = {k: str(v) for k, v in manual.items()}
+            notes.append(f"manual check {manual['date']} by {manual['by']}: {manual['what']}")
         result[key] = entry
         print(f"{key}: " + " | ".join(notes))
     (args.content / "_sources-check.json").write_text(
         json.dumps({"run": datetime.date.today().isoformat(), "sources": result}, indent=2, ensure_ascii=False) + "\n")
+    outcomes = [v for e in result.values() for k, v in e.items() if k != "manual"]
+    if outcomes and all(o == "unavailable" for o in outcomes):
+        print("\nEverything was unavailable: no identifier was checked (network or service problem).")
     if rest:
         print("\nNot matched:")
         print("\n".join(f"  {r}" for r in rest))
