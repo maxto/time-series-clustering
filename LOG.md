@@ -1,5 +1,50 @@
 # LOG — time-series-clustering
 
+## 2026-10-29 · Checkpoint 2 plan, Codex review, Tasks 1 to 4 built
+
+Owner decisions for checkpoint 2 (approved by the owner, recorded in the
+plan): deep-dives the reader opens (lever 2 of "not a brick"), no summary
+line per section (lever 3 rejected), soft-DTW out of lesson 5 (it stays a
+draft map item), the scoring section of lesson 5 shortened to the
+silhouette (Calinski-Harabasz and the soft-DTW case go to the validation
+module), parity edge cases chosen by Claude under the owner's "decidi tu":
+window 0, no window, ties (constant series moves to checkpoint 3).
+
+Plan `docs/superpowers/plans/2026-10-29-redesign-checkpoint-2.md`, Codex
+adversarial review `docs/research/2026-10-29-codex-plan-cp2-review.md`
+(needs changes, 10 Important, 2 Minor). Owner go-ahead to revise with all
+findings, one exception (done): smoke fixture edits are recorded by
+`fixture author`, without a second-model review, because they are engine
+test data, not course content. Plan revised in `b1263e8`. Codex chat
+cleared afterwards (task closed, answer saved).
+
+Owner asked whether code was meant for later: the reader-facing code (code
+labs, Python and R examples) stays for step 3 as decided. The JavaScript
+kernels are site machinery for the live figure. Owner: continue.
+
+Executed with subagents and a review per task (ledger
+`.superpowers/sdd/2026-10-29-redesign-checkpoint-2/progress.md`, deferred
+minor findings listed there for the final review):
+- Task 1 `aa36b84`: `site/kernels.js` (euclidean, dtw, dtwPath), parity
+  with the Python reference on all 66 fixture pairs and the 28 reachable
+  states, window 0, no window, hand-computed ties. Review clean.
+- Task 2 `5d8a68b`: `.live.json` data format with build validation,
+  `live_data_script` (`<` escaped as `\u003c`), SVG markers `data-pair`,
+  `data-w`, `data-part`, static `dtw-explorer.svg`, numbers
+  `euclid_mon_wed` 4.15, `dtw4_mon_wed` 3.51, `dtw10_mon_wed` and
+  `dtwnone_mon_wed` 0.26 (10 is the smallest absorbing window, 9 gives
+  1.51), `tests/live_expect.py`, smoke live figures in gamma. Review clean.
+- Task 3 `40a6e61`, `ae06c0e`: `site/live.js` (pair radios, window slider,
+  no-window box, Reset, readout, atomic activation, fallback to the static
+  figure on failure, redraw at the column width). One fix round on test
+  coverage. Review clean.
+- Task 4 `a55b239`: deep-dive blocks `::: deep <title>`, source-aware
+  validation, search, CSS. Review clean.
+
+Verified by Claude after each task: `uv run pytest -q` (163 passed after
+Task 4), `npm test` e2e ok. Smoke demo served through the git-ignored
+symlink `.mockups/smoke -> ../tests/output/smoke-dist`.
+
 ## 2026-10-29 · Smaller type, reading measure, frontend-design skill
 
 Owner, after the figure fix: text and titles still looked too large "from
