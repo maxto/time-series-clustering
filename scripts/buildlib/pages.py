@@ -225,8 +225,9 @@ def atlas_data(atlas):
         return [{"tag": t.tag, "cond": t.cond} for t in ts]
     items = {it.id: {"name": it.name, "branch": it.branch, "ignores": tags(it.ignores), "needs": tags(it.needs),
                      "draft": not it.reviewed} for it in atlas.items()}
+    ids = {it.name: it.id for it in atlas.items()}
     questions = {q.id: {"text": q.text, "fits": [
-        {"item": next(i.id for i in atlas.items() if i.name == f.item), "mark": f.mark, "reason": f.reason,
+        {"item": ids[f.item], "mark": f.mark, "reason": f.reason,
          "cond": f.cond, "draft": not f.reviewed} for f in q.fits]} for q in atlas.questions()}
     text = json.dumps({"items": items, "questions": questions}, ensure_ascii=False)
     return f'<script type="application/json" id="atlas-data">{text.replace("<", chr(92) + "u003c")}</script>'
@@ -251,7 +252,7 @@ def item_card(it, family, sources, published, root):
 
     rows = []
     if it.branch == "compare":
-        rows.append(tag_row("It ignores", it.ignores, IGNORE_LABELS, "None of the listed properties"))
+        rows.append(tag_row("It ignores", it.ignores, IGNORE_LABELS, ""))
     else:
         rows.append(tag_row("It needs", it.needs, NEED_LABELS, ""))
     for label, value in (("Python", it.python), ("R", it.r)):
