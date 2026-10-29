@@ -31,6 +31,7 @@ A concept-first, English-only mini-course on time series similarity (static site
 - `uv sync`, `npm install`: set up (Python 3.13 pinned, `.python-version`).
 - `npm run build`: `uv run python scripts/build.py` (content/ to dist/, writes figure previews). Options: `--content DIR`, `--dist DIR`, `--previews`. With no `content/_course.md` it prints a note and exits 0.
 - `npm test`: `node tests/e2e.mjs`, which builds fresh itself (the smoke fixture into `tests/output/smoke-dist/`, the real content into `tests/output/dist/` when `content/_course.md` exists, never reading an old `dist/`) and checks each from `file://` and over HTTP under `/time-series-clustering/`.
+- `uv run python scripts/check_sources.py`: network check, not part of the build. Compares each DOI (Crossref) and arXiv id (arXiv API) of `content/_sources.toml` with the registry by normalised title and year. Outcome per identifier: `matched`, `mismatch` (reported with both values, never fixed by editing the registry), `unavailable`, `manual-needed` (SSRN ids and author URLs, unless the source has a dated `manual` record). Exit 1 on any `mismatch`. Writes `content/_sources-check.json`.
 - `uv run pytest`: Python tests (reference code and `tests/test_build.py`).
 - `npm run shots`: builds, then full-page screenshots of the home and every published lesson, light and dark, 1280 and 375 px, in `tests/output/shots/` (cleared first, `manifest.json` records the commit).
 - Every Python command runs through `uv run`.

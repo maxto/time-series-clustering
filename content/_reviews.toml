@@ -7,7 +7,17 @@ note = "pilot baseline reviewed 2026-10-28 (docs/research/2026-10-28-codex-pilot
 
 [[lesson]]
 id = "dtw"
-fingerprint = "062d344cd00ed19a"
-by = "Codex, pilot final review"
+fingerprint = "828751e5e3eaf883"
+by = "Claude subagent (passage read), Codex (review 2026-10-29)"
 date = 2026-10-29
-note = "pilot baseline reviewed 2026-10-28 (docs/research/2026-10-28-codex-pilot-final-review.md and re-review), structure migrated 2026-10-29 without wording change"
+note = "pilot baseline reviewed 2026-10-28, structure migrated 2026-10-29 without wording change, Sakoe and Chiba sentence added and reviewed by Codex 2026-10-29 (docs/research/2026-10-29-codex-sakoe-citation-review.md)"
+
+[[citation]]
+lesson = "dtw"
+key = "sakoe78"
+locator = "Sec. II-B, condition 4 (Eq. 8), p. 44"
+paragraph = "b2cad7543e55e936"
+identity = "58ffd6320ffdebec"
+by = "Claude subagent (passage read), Codex (review 2026-10-29)"
+date = 2026-10-29
+note = "passage read in a scan of the paper (p. 44), reviewed by Codex 2026-10-29 (docs/research/2026-10-29-codex-sakoe-citation-review.md)"
