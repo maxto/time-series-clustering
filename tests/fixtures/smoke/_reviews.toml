@@ -1,10 +1,3 @@
-[[lesson]]
-id = "alpha"
-fingerprint = "d9136763a6ac30e8"
-by = "fixture author"
-date = 2026-10-29
-note = "smoke fixture, not a real review"
-
 [[citation]]
 lesson = "alpha"
 key = "sakoe78"
@@ -105,6 +98,23 @@ note = "smoke fixture, not a real review"
 [[question]]
 id = "finance/same-dates"
 fingerprint = "f5d45e0786c900a1"
+by = "fixture author"
+date = 2026-10-29
+note = "smoke fixture, not a real review"
+
+[[lesson]]
+id = "alpha"
+fingerprint = "7f1264b9f7c78359"
+by = "fixture author"
+date = 2026-10-29
+note = "smoke fixture, not a real review"
+
+[[citation]]
+lesson = "alpha"
+key = "sakoe78"
+locator = "sec. II"
+paragraph = "50d0617f0211f24e"
+identity = "58ffd6320ffdebec"
 by = "fixture author"
 date = 2026-10-29
 note = "smoke fixture, not a real review"

@@ -434,6 +434,19 @@ async function codeChecks(run, p, url, http) {
   await p.keyboard.press('Escape');
   expect(await dlg.count() === 0, `${run}: Escape did not close the citation dialog`);
   expect(await p.evaluate(() => document.activeElement === document.querySelector('a.cite')), `${run}: focus did not return to the citation link`);
+  // a citation in the finance block: the popover must not inherit the finance link and focus colours
+  for (const t of ['light', 'dark']) {
+    await p.evaluate(x => { document.documentElement.dataset.theme = x; }, t);
+    await p.locator('section.finance a.cite').click();
+    await p.keyboard.press('Tab');
+    const cs = await dlg.evaluate(d => ({ bg: getComputedStyle(d).backgroundColor, links: [...d.querySelectorAll('a')].map(a => getComputedStyle(a).color),
+      ring: getComputedStyle(document.activeElement).outlineColor, inside: d.contains(document.activeElement) }));
+    expect(cs.links.length >= 2 && cs.inside, `${run}: ${t}: finance popover has ${cs.links.length} links, focus inside ${cs.inside}`);
+    expect(cs.links.every(c => contrast(c, cs.bg) >= 4.5), `${run}: ${t}: finance popover link contrast ${cs.links.map(c => contrast(c, cs.bg).toFixed(2))}`);
+    expect(contrast(cs.ring, cs.bg) >= 4.5, `${run}: ${t}: finance popover focus ring contrast ${contrast(cs.ring, cs.bg).toFixed(2)}`);
+    await p.keyboard.press('Escape');
+  }
+  await p.evaluate(() => { delete document.documentElement.dataset.theme; });
 }
 
 // The map filters on the smoke home. Items: euclidean (no ignores), correlation (ignores level, scale),

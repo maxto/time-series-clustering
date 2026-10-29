@@ -48,7 +48,7 @@ A second content section, so the order of sections is visible.
 
 ## In finance
 
-A finance note sits in the margin, next to the reading column.
+A finance note sits in the margin, next to the reading column. It cites a source too [@sakoe78, sec. II].
 
 ## Measure card
 
