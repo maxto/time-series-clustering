@@ -14,9 +14,9 @@ Usage: uv run python scripts/check_sources.py [--content DIR]
 
 import argparse
 import datetime
+import http.client
 import json
 import pathlib
-import http.client
 import re
 import sys
 import tomllib
@@ -115,7 +115,7 @@ def main():
         print(f"{key}: " + " | ".join(notes))
     (args.content / "_sources-check.json").write_text(
         json.dumps({"run": datetime.date.today().isoformat(), "sources": result}, indent=2, ensure_ascii=False) + "\n")
-    outcomes = [v for e in result.values() for k, v in e.items() if k != "manual"]
+    outcomes = [e[k] for e in result.values() for k in ("doi", "arxiv") if k in e]
     if outcomes and all(o == "unavailable" for o in outcomes):
         print("\nEverything was unavailable: no identifier was checked (network or service problem).")
     if rest:
