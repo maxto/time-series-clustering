@@ -1,6 +1,6 @@
 """Build the course site from content/ into dist/.
 
-Usage: uv run python scripts/build.py [--content DIR] [--dist DIR] [--previews]
+Usage: uv run python scripts/build.py [--content DIR] [--dist DIR] [--previews] [--preview]
 
 Reads DIR/_course.md (modules and lessons, published or planned) and one NN-<id>.md per
 published lesson, validates everything (schema, sections, prose rules, figures, TeX) and
@@ -10,6 +10,10 @@ reports every problem as one line "<file>: <message>", exit 1. When all is valid
   DIST/assets/               theme.css, theme.js, Geist fonts, KaTeX css and fonts
   DIR/figures/<name>.preview.svg   light preview of each figure for GitHub (default content/
                              only, or with --previews)
+Two modes. The release build (default, DIST defaults to dist/) fails on every map item or sector fit
+without a current review record (one line each). The preview build (--preview, DIST defaults to
+preview/) allows them, marks the home with a draft banner and never writes into dist/. Every page
+carries <html data-build="release|preview" data-root="...">.
 All links are relative, so the site works from file:// and under the Pages subpath.
 """
 
@@ -22,6 +26,7 @@ import sys
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 from buildlib import svg  # noqa: E402
+from buildlib.atlas import load_atlas  # noqa: E402
 from buildlib.cite import check_reviews, load_reviews, load_sources  # noqa: E402
 from buildlib.content import CODE_LANGUAGES, Errors, esc, load_course, load_lessons, markdown, show  # noqa: E402
 from buildlib.katex import render_math  # noqa: E402
@@ -115,7 +120,7 @@ def lesson_sources(lesson, sources):
     return f'<section class="lsrc"><h2>Sources cited in this lesson</h2>\n<ol>{"".join(items)}</ol></section>\n'
 
 
-def lesson_page(lesson, course, md, template, prev, nxt, position, sources):
+def lesson_page(lesson, course, md, template, prev, nxt, position, sources, build_mode="release"):
     e, meta = lesson.entry, lesson.meta
     by_kind = {b.kind: b for b in lesson.blocks if b.kind != "section"}
     body = "\n".join(f'<section id="{b.id}"><h2>{esc(b.title)}</h2>\n{render(md, b.tokens)}</section>'
@@ -131,7 +136,7 @@ def lesson_page(lesson, course, md, template, prev, nxt, position, sources):
     total = len(course.published())
     return fill(template, {
         "meta": head_meta(f"{meta['title']} · {course.title}", meta["lede"], f"{SITE_URL}{e.id}/", "article", course.title),
-        "root": "../", "site": esc(course.title.lower()), "module": esc(f"{e.module} · {e.module_title}"),
+        "build": build_mode, "root": "../", "site": esc(course.title.lower()), "module": esc(f"{e.module} · {e.module_title}"),
         "position": f"{position} / {total}", "progress": f"{round(100 * position / total)}",
         "kicker": esc(f"Lesson {e.number} · {meta['kicker']}"), "title": esc(meta["title"]), "lede": esc(meta["lede"]),
         "oneline": render(md, by_kind["oneline"].tokens), "body": body, "specimens": specimens,
@@ -139,7 +144,15 @@ def lesson_page(lesson, course, md, template, prev, nxt, position, sources):
     })
 
 
-def home_page(course, template, overview):
+def draft_banner(atlas):
+    drafts = (atlas.draft_items(), atlas.draft_fits()) if atlas else ([], [])
+    if not any(drafts):
+        return ""
+    return (f'<div class="draft-banner" role="note">Preview build. {len(drafts[0])} map items and {len(drafts[1])} sector fits'
+            " are drafts, not verified. Do not publish this output.</div>")
+
+
+def home_page(course, template, overview, build_mode="release", banner=""):
     mods = []
     for letter, title, entries in course.modules:
         items = []
@@ -153,6 +166,7 @@ def home_page(course, template, overview):
     n, p = len(course.entries), len(course.published())
     return fill(template, {
         "meta": head_meta(course.title, course.tagline, SITE_URL, "website", course.title),
+        "build": build_mode, "root": "", "banner": banner,
         "site": esc(course.title.lower()), "count": f"{n} lessons · {p} published", "title": esc(course.title),
         "tagline": esc(course.tagline), "overview": f'<figure class="overview">{overview}</figure>' if overview else "",
         "modules": "\n".join(mods),
@@ -193,11 +207,16 @@ def copy_assets(dist):
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--content", type=pathlib.Path, help="content directory (default: content/)")
-    ap.add_argument("--dist", type=pathlib.Path, default=ROOT / "dist", help="output directory (default: dist/)")
+    ap.add_argument("--dist", type=pathlib.Path, help="output directory (default: dist/, or preview/ with --preview)")
+    ap.add_argument("--preview", action="store_true", help="preview build: allow draft map items and fits, write to preview/")
     ap.add_argument("--previews", action="store_true", help="write figure previews also for a --content other than content/")
     args = ap.parse_args()
     content = (args.content or ROOT / "content").resolve()
-    dist = args.dist.resolve()
+    dist = (args.dist or ROOT / ("preview" if args.preview else "dist")).resolve()
+    mode = "preview" if args.preview else "release"
+    if args.preview and dist.is_relative_to(ROOT / "dist"):
+        print(f"{show(dist)}: a preview never writes into dist/ (the release tree)")
+        return 1
     previews = args.previews or content == (ROOT / "content").resolve()
 
     if not (content / "_course.md").exists():
@@ -217,6 +236,12 @@ def main():
     reviews = load_reviews(content, errors)
     lessons = load_lessons(content, course, md, sources, errors)
     check_reviews(lessons, sources, reviews, errors)
+    atlas = load_atlas(content, sources, reviews, course, errors)
+    if atlas and not args.preview:
+        for line in atlas.draft_items():
+            errors.add(content / "_map.toml", line)
+        for line in atlas.draft_fits():
+            errors.add(content / "_sectors.toml", line)
 
     theme_css = (SITE / "theme.css").read_text()
     classes = svg.allowed_classes(theme_css)
@@ -242,9 +267,10 @@ def main():
         prev = published[i - 1] if i > 0 else None
         nxt = published[i + 1] if i + 1 < len(published) else None
         (dist / lesson.entry.id).mkdir()
-        page = lesson_page(lesson, course, md, template, prev, nxt, i + 1, sources)
+        page = lesson_page(lesson, course, md, template, prev, nxt, i + 1, sources, mode)
         (dist / lesson.entry.id / "index.html").write_text(page)
-    (dist / "index.html").write_text(home_page(course, (SITE / "home.html").read_text(), figures.get("overview")))
+    (dist / "index.html").write_text(home_page(
+        course, (SITE / "home.html").read_text(), figures.get("overview"), mode, draft_banner(atlas) if args.preview else ""))
 
     written = []
     if previews and figures:
@@ -252,7 +278,7 @@ def main():
         written = [svg.write_preview(content / "figures" / f"{name}.svg", markup, css, background)
                    for name, markup in figures.items()]
     print(f"build: {len(lessons)} lessons of {len(course.entries)}, {len(figures)} figures,"
-          f" {len(written)} previews -> {show(dist)}")
+          f" {len(written)} previews ({mode}) -> {show(dist)}")
     return 0
 
 

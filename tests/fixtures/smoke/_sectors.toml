@@ -1,0 +1,39 @@
+[[sector]]
+id = "energy"
+name = "Energy"
+about = "Daily load profiles."
+curve = [0.1, 0.4, 0.9, 0.5, 0.2]
+
+[[sector.question]]
+id = "same-hours"
+text = "Same hours, or same shape?"
+starts = ["Euclidean", "DTW"]
+
+[[sector.question.fit]]
+item = "Euclidean"
+mark = "good"
+reason = "When the hour matters, lock-step comparison keeps it."
+sources = [{key = "sakoe78", locator = "sec. II", supports = "fit"}]
+
+[[sector]]
+id = "finance"
+name = "Finance"
+about = "Daily returns."
+curve = [0.5, 0.3, 0.7, 0.4, 0.6]
+
+[[sector.question]]
+id = "same-dates"
+text = "Which assets move together on the same dates?"
+starts = ["Correlation"]
+
+[[sector.question.fit]]
+item = "Correlation"
+mark = "good"
+reason = "Co-movement on the same dates is the classic question."
+sources = [{key = "sakoe78", locator = "sec. II", supports = "fit"}]
+
+[[sector.question.fit]]
+item = "DTW"
+mark = "avoid"
+reason = "Warping pairs different dates."
+sources = [{key = "sakoe78", locator = "sec. II", supports = "fit"}]

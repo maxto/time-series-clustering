@@ -4,7 +4,7 @@
 //    twice: from file:// and from a local HTTP server that serves it under /time-series-clustering/,
 //    the GitHub Pages subpath. The smoke checks pin every engine feature (sections, math, figures,
 //    margin notes, links, planned lessons skipped by previous/next).
-// 2. Builds the real content/ fresh into tests/output/dist (never reading an old dist/) and runs the
+// 2. Builds the real content/ fresh into tests/output/content-preview (preview mode, the map is a draft) (never reading an old dist/) and runs the
 //    general checks on it, when content/_course.md exists.
 //
 // General checks, in both runs: no console error, no failed request, no request to another
@@ -30,11 +30,11 @@ const expect = (ok, msg) => { if (!ok) failures.push(msg); };
 
 fs.mkdirSync(out, { recursive: true });
 const smokeDist = path.join(out, 'smoke-dist');
-const realDist = path.join(out, 'dist');
+const realDist = path.join(out, 'content-preview');
 execFileSync('uv', ['run', 'python', 'scripts/build.py', '--content', 'tests/fixtures/smoke', '--dist', smokeDist],
   { cwd: root, stdio: 'inherit' });
 if (fs.existsSync(path.join(root, 'content', '_course.md'))) {
-  execFileSync('uv', ['run', 'python', 'scripts/build.py', '--dist', realDist], { cwd: root, stdio: 'inherit' });
+  execFileSync('uv', ['run', 'python', 'scripts/build.py', '--preview', '--dist', realDist], { cwd: root, stdio: 'inherit' });
 }
 
 // --- tiny static server: the built directory under PREFIX, 404 for anything else ---
@@ -248,7 +248,7 @@ async function suite(label, dist, contentDir, smoke) {
 }
 
 await suite('smoke', smokeDist, path.join(root, 'tests', 'fixtures', 'smoke'), true);
-if (fs.existsSync(path.join(root, 'content', '_course.md'))) await suite('dist', realDist, path.join(root, 'content'), false);
+if (fs.existsSync(path.join(root, 'content', '_course.md'))) await suite('content-preview', realDist, path.join(root, 'content'), false);
 else console.log('e2e: no content/_course.md yet, skipping the checks on the real build (smoke fixture checked)');
 
 await browser.close();

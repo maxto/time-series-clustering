@@ -4,9 +4,9 @@ A concept-first, English-only mini-course on time series similarity (static site
 
 ## Layout
 
-- `content/`: lessons (`NN-id.md`), `_course.md` (course data), `figures/` (generated SVG, their `*.preview.svg`, and `numbers.json`).
+- `content/`: `_map.toml` and `_sectors.toml` (map of the field and sector questions, draft until reviewed), lessons (`NN-id.md`), `_course.md` (course data), `figures/` (generated SVG, their `*.preview.svg`, and `numbers.json`).
 - `site/`: `theme.css` (tokens, light and dark, layout, the figure classes between the `figure-classes` markers), `theme.js` (theme button, `tsc:theme`), `page.html` (lesson), `home.html`, `favicon.svg`.
-- `scripts/`: `build.py` (content to `dist/`, holds `SITE_URL`), `buildlib/` (build helpers: `content.py` schema, sections, prose and links, `svg.py` figure rules and previews, `katex.py` math batch), `katex.mjs` (TeX to HTML and MathML, called once per build), `make_fixtures.py`, `parity_dtw.py`, `figures.py` (figures and `numbers.json` from the fixture).
+- `scripts/`: `build.py` (content to `dist/`, holds `SITE_URL`), `buildlib/` (build helpers: `atlas.py` map and sector data with derived review state, `content.py` schema, sections, prose and links, `svg.py` figure rules and previews, `katex.py` math batch), `katex.mjs` (TeX to HTML and MathML, called once per build), `make_fixtures.py`, `parity_dtw.py`, `figures.py` (figures and `numbers.json` from the fixture).
 - `code/python/tsc/`: reference package (`distances.py`, `group.py`, `validity.py`). Tests in `code/python/tests/`.
 - `code/r/`: R reference code (`distances.R`, `check_dtw.R`).
 - `fixtures/`: saved numbers (`demand-12.csv`). Frozen once the fixture checks pass. The CSV is the source of truth, the generator only documents it.
@@ -29,11 +29,12 @@ A concept-first, English-only mini-course on time series similarity (static site
 ## Commands
 
 - `uv sync`, `npm install`: set up (Python 3.13 pinned, `.python-version`).
-- `npm run build`: `uv run python scripts/build.py` (content/ to dist/, writes figure previews). Options: `--content DIR`, `--dist DIR`, `--previews`. With no `content/_course.md` it prints a note and exits 0.
-- `npm test`: `node tests/e2e.mjs`, which builds fresh itself (the smoke fixture into `tests/output/smoke-dist/`, the real content into `tests/output/dist/` when `content/_course.md` exists, never reading an old `dist/`) and checks each from `file://` and over HTTP under `/time-series-clustering/`.
+- `npm run build`: the release build, `uv run python scripts/build.py` (content/ to dist/, writes figure previews). It fails, one line per item or fit, on any map item or sector fit without a review record for its current text, so it fails while the map is a draft. Options: `--content DIR`, `--dist DIR`, `--previews`, `--preview`. With no `content/_course.md` it prints a note and exits 0.
+- `npm run preview`: the preview build, `uv run python scripts/build.py --preview` (output in `preview/`, git-ignored). It allows draft map items and fits and marks them. It refuses a `--dist` equal to or inside `dist/`.
+- `npm test`: `node tests/e2e.mjs`, which builds fresh itself (the smoke fixture into `tests/output/smoke-dist/`, the real content in preview mode into `tests/output/content-preview/` when `content/_course.md` exists, never reading an old `dist/`) and checks each from `file://` and over HTTP under `/time-series-clustering/`.
 - `uv run python scripts/check_sources.py`: network check, not part of the build. Compares each DOI (Crossref) and arXiv id (arXiv API) of `content/_sources.toml` with the registry by normalised title and year. Outcome per identifier: `matched`, `mismatch` (reported with both values, never fixed by editing the registry), `unavailable`, `manual-needed` (SSRN ids and author URLs, unless the source has a dated `manual` record). Exit 1 on any `mismatch`. A Crossref 404 is `unavailable` (the DOI may belong to another agency). Writes `content/_sources-check.json`: the script's output, kept as an audit trail, never read by the build.
 - `uv run pytest`: Python tests (reference code and `tests/test_build.py`).
-- `npm run shots`: builds, then full-page screenshots of the home and every published lesson, light and dark, 1280 and 375 px, in `tests/output/shots/` (cleared first, `manifest.json` records the commit).
+- `npm run shots`: builds (preview mode, into `tests/output/shots-site/`), then full-page screenshots of the home and every published lesson, light and dark, 1280 and 375 px, in `tests/output/shots/` (cleared first, `manifest.json` records the commit).
 - Every Python command runs through `uv run`.
 
 ## Global constraints
@@ -55,6 +56,7 @@ A concept-first, English-only mini-course on time series similarity (static site
 ## Rules
 
 - Correctness first. Every factual claim is checked against a primary source (papers, specs, official docs) before it goes in, and a claim that cannot be confirmed stays out. Every content change gets a review by another model, and the reviewer's claims are checked too.
+- Draft map exception (owner, 2026-10-29, design 5.1). The map (`content/_map.toml`) and the sector fits (`content/_sectors.toml`) may hold the mockup's unconfirmed text in local preview builds only, so the owner sees the real size of the map before step 2 verifies it. There is no status field: an item or a fit is reviewed only when `content/_reviews.toml` holds a record for its current fingerprint (`scripts/review.py show-map`, `record-item`, `record-fit`), and a reviewed item also needs a located, non-candidate source for each factual field. Editing it makes it a draft again. The release build rejects every draft and the Pages workflow runs it, so nothing unconfirmed is published. Lessons are not covered by the exception.
 - Tests: write one only when its expected value comes from an independent source (a hand computation, a known-good value, a real file, the spec, an independent package). No test that mirrors the implementation. The owner chooses which edge cases become tests: propose a short list, do not add them unasked. Every bug actually hit gets a regression test that fails before the fix and passes after it.
 - Commits stay local. No push, no repo rename, no GitHub Pages activation without the owner's separate explicit go-ahead for each.
 - Do not edit `HANDOFF.md` or `LOG.md` unless you are the main agent closing a piece of work.

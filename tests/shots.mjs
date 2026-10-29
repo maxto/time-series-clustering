@@ -1,6 +1,6 @@
 // Full-page screenshots of the built site for review by eye: `npm run shots`.
 //
-// Builds content/ into dist/ first, so the captures always match the current tree. Then captures
+// Builds content/ in preview mode (the map is a draft) into tests/output/shots-site/ first, so the captures always match the current tree. Then captures
 // the home and every published lesson (from content/_course.md), light and dark (through the
 // system preference, with no stored choice), at 1280 and 375 px, as full-page PNGs in
 // tests/output/shots/: <page>-<theme>-<width>-full.png. manifest.json records the commit, whether
@@ -13,7 +13,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const dist = path.join(root, 'dist');
+const dist = path.join(root, 'tests', 'output', 'shots-site');
 const out = path.join(root, 'tests', 'output', 'shots');
 const contentDir = path.join(root, 'content');
 
@@ -21,7 +21,7 @@ if (!fs.existsSync(path.join(contentDir, '_course.md'))) {
   console.log('shots: no content/_course.md, nothing to capture');
   process.exit(0);
 }
-execFileSync('uv', ['run', 'python', 'scripts/build.py'], { cwd: root, stdio: 'inherit' });
+execFileSync('uv', ['run', 'python', 'scripts/build.py', '--preview', '--dist', dist], { cwd: root, stdio: 'inherit' });
 
 const ids = [];
 for (const line of fs.readFileSync(path.join(contentDir, '_course.md'), 'utf8').split('\n')) {

@@ -1,0 +1,62 @@
+[[branch]]
+id = "compare"
+name = "Compare"
+sub = "distances and similarities"
+
+[[branch.family]]
+name = "Lock-step"
+lesson = "alpha"
+
+[[branch.family.item]]
+name = "Euclidean"
+does = "Compares the same time steps."
+ignores = []
+python = "scipy euclidean"
+r = "stats::dist"
+sources = [{key = "sakoe78", locator = "sec. II", supports = "does"}, {key = "sakoe78", locator = "sec. II", supports = "python"}, {key = "sakoe78", locator = "sec. II", supports = "r"}]
+
+[[branch.family.item]]
+name = "Correlation"
+does = "One minus the Pearson correlation."
+ignores = [{tag = "level", cond = ""}, {tag = "scale", cond = ""}]
+python = "scipy correlation"
+r = "1 - cor(x, y)"
+sources = [{key = "sakoe78", locator = "sec. II", supports = "does"}, {key = "sakoe78", locator = "sec. II", supports = "python"}, {key = "sakoe78", locator = "sec. II", supports = "r"}, {key = "sakoe78", locator = "sec. II", supports = "ignores:level"}, {key = "sakoe78", locator = "sec. II", supports = "ignores:scale"}]
+
+[[branch.family]]
+name = "Elastic"
+lesson = "gamma"
+
+[[branch.family.item]]
+name = "DTW"
+does = "Aligns the two series, then measures the gap."
+ignores = [{tag = "warp", cond = "alignment within w permitted"}]
+cond = "within w"
+python = "aeon dtw_distance"
+r = "dtw::dtw"
+sources = [{key = "sakoe78", locator = "sec. II", supports = "does"}, {key = "sakoe78", locator = "sec. II", supports = "python"}, {key = "sakoe78", locator = "sec. II", supports = "r"}, {key = "sakoe78", locator = "sec. II", supports = "ignores:warp"}]
+
+[[branch]]
+id = "group"
+name = "Group"
+sub = "clustering methods"
+
+[[branch.family]]
+name = "Hierarchical"
+
+[[branch.family.item]]
+name = "Agglomerative"
+does = "Merges the two closest groups, again and again."
+needs = [{tag = "matrix", cond = "single, complete, average linkage"}]
+cond = "Ward: Euclidean"
+python = "scipy linkage"
+r = "stats::hclust"
+sources = [{key = "sakoe78", locator = "sec. II", supports = "does"}, {key = "sakoe78", locator = "sec. II", supports = "python"}, {key = "sakoe78", locator = "sec. II", supports = "r"}, {key = "sakoe78", locator = "sec. II", supports = "needs:matrix"}]
+
+[[branch.family.item]]
+name = "k-medoids"
+does = "Each centre is a real series."
+needs = [{tag = "matrix", cond = ""}]
+python = "aeon TimeSeriesKMedoids"
+r = "cluster::pam"
+sources = [{key = "sakoe78", locator = "sec. II", supports = "does"}, {key = "sakoe78", locator = "sec. II", supports = "python"}, {key = "sakoe78", locator = "sec. II", supports = "r"}, {key = "sakoe78", locator = "sec. II", supports = "needs:matrix"}]

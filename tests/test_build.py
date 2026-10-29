@@ -31,10 +31,11 @@ def content(tmp_path):
     return target
 
 
-def build(content):
-    dist = content.parent / "dist"
+def build(content, preview=False, dist=None):
+    dist = dist or content.parent / ("preview" if preview else "dist")
     return subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / "build.py"), "--content", str(content), "--dist", str(dist)],
+        [sys.executable, str(ROOT / "scripts" / "build.py"), "--content", str(content), "--dist", str(dist),
+         *(["--preview"] if preview else [])],
         capture_output=True, text=True, cwd=ROOT,
     )
 
@@ -296,3 +297,178 @@ def test_registry_rules(content):
     assert "unknown topic 'speech'" in build(content).stdout
     edit_source(content, "sakoe78", topics=["compare"], doi=None, arxiv=None, ssrn=None, url=None)
     assert "no link" in build(content).stdout
+
+
+# --- map and sector data (Task 4) ---
+
+def toml_value(v):
+    if isinstance(v, list):
+        return "[" + ", ".join(toml_value(x) for x in v) + "]"
+    if isinstance(v, dict):
+        return "{" + ", ".join(f"{k} = {toml_value(x)}" for k, x in v.items()) + "}"
+    return json.dumps(v, ensure_ascii=False)
+
+
+def table_block(path, header, name_field, name):
+    """The text of the [[header]] block whose name_field equals name, and its position."""
+    body = path.read_text()
+    for m in re.finditer(rf"(?ms)^\[\[{re.escape(header)}\]\]\n.*?(?=^\[\[|\Z)", body):
+        if re.search(rf'^{name_field} = "{re.escape(name)}"$', m.group(0), re.M):
+            return m.group(0)
+    raise AssertionError(f"no [[{header}]] with {name_field} = {name!r} in {path.name}")
+
+
+def set_fields(path, header, name_field, name, **fields):
+    old = table_block(path, header, name_field, name)
+    new = old
+    for key, value in fields.items():
+        line = f"{key} = {toml_value(value)}\n"
+        if re.search(rf"^{key} = .*\n", new, re.M):
+            new = re.sub(rf"^{key} = .*\n", lambda _: line, new, count=1, flags=re.M)
+        else:
+            new = re.sub(rf"^({name_field} = .*\n)", lambda m: m.group(1) + line, new, count=1, flags=re.M)
+    mutate(path, old, new)
+
+
+def edit_item(content, name, **fields):
+    set_fields(content / "_map.toml", "branch.family.item", "name", name, **fields)
+
+
+def edit_fit(content, question, **fields):
+    sector, qid = question.split("/")
+    path = content / "_sectors.toml"
+    body = path.read_text()
+    start = body.index(f'id = "{qid}"')
+    m = re.search(r"(?ms)^\[\[sector\.question\.fit\]\]\n.*?(?=^\[\[|\Z)", body[start:])
+    old = m.group(0)
+    new = old
+    for key, value in fields.items():
+        new = re.sub(rf"^{key} = .*\n", lambda _: f"{key} = {toml_value(value)}\n", new, count=1, flags=re.M)
+    assert new != old
+    mutate(path, old, new)
+
+
+def edit_ref(content, name, supports, locator):
+    path = content / "_map.toml"
+    old = table_block(path, "branch.family.item", "name", name)
+    pattern = rf'locator = "[^"]*", supports = "{re.escape(supports)}"'
+    assert re.search(pattern, old), f"no ref supporting {supports!r} in {name!r}"
+    mutate(path, old, re.sub(pattern, lambda _: f'locator = "{locator}", supports = "{supports}"', old, count=1))
+
+
+def duplicate_item(content, name):
+    path = content / "_map.toml"
+    old = table_block(path, "branch.family.item", "name", name)
+    mutate(path, old, old + old.rstrip("\n") + "\n\n")
+
+
+def drop_record(content, header, name_field, name):
+    path = content / "_reviews.toml"
+    mutate(path, table_block(path, header, name_field, name), "")
+
+
+def remove_item_record(content, name):
+    drop_record(content, "item", "name", name)
+
+
+def remove_fit_record(content, question):
+    drop_record(content, "fit", "question", question)
+
+
+def rerecord_item(content, name):
+    drop_record(content, "item", "name", name)
+    shown = review(content, "show-map").stdout
+    m = re.search(rf"^item {re.escape(name)} \| ([0-9a-f]{{16}})", shown, re.M)
+    assert m, shown
+    done = review(content, "record-item", "--name", name, "--fingerprint", m.group(1), "--by", "test reviewer")
+    assert done.returncode == 0, done.stdout + done.stderr
+
+
+def test_smoke_map_builds_in_both_modes(content):
+    assert build(content).returncode == 0
+    assert build(content, preview=True).returncode == 0
+
+
+def test_release_refuses_an_unreviewed_item(content):
+    remove_item_record(content, "Euclidean")
+    result = build(content)
+    assert result.returncode == 1
+    assert "item 'Euclidean' is draft" in result.stdout
+
+
+def test_editing_a_reviewed_item_makes_it_draft(content):
+    edit_item(content, "Euclidean", does="Compares the same time steps, now edited.")
+    assert "item 'Euclidean' is draft" in build(content).stdout
+    assert build(content, preview=True).returncode == 0
+
+
+def test_release_refuses_an_unreviewed_fit(content):
+    remove_fit_record(content, "finance/same-dates")
+    out = build(content).stdout
+    assert "fit finance/same-dates / 'Correlation' is draft" in out
+
+
+def test_preview_allows_drafts_and_marks_them(content):
+    remove_item_record(content, "Euclidean")
+    assert build(content, preview=True).returncode == 0
+    home = (content.parent / "preview" / "index.html").read_text()
+    assert 'class="draft-banner"' in home and 'data-build="preview"' in home
+    assert not (content.parent / "dist").exists()
+
+
+def test_release_pages_carry_the_build_mode(content):
+    assert build(content).returncode == 0
+    assert 'data-build="release"' in (content.parent / "dist" / "index.html").read_text()
+    assert 'data-build="release"' in page(content, "alpha")
+    assert "draft-banner" not in (content.parent / "dist" / "index.html").read_text()
+
+
+def test_preview_never_writes_into_the_release_tree(content):
+    for target in (ROOT / "dist", ROOT / "dist" / "preview"):
+        result = build(content, preview=True, dist=target)
+        assert result.returncode == 1
+        assert "a preview never writes into dist/" in result.stdout
+
+
+def test_duplicate_item_name_fails(content):
+    duplicate_item(content, "Euclidean")
+    assert "item 'Euclidean' appears twice" in build(content, preview=True).stdout
+
+
+def test_fit_on_unknown_item_fails(content):
+    edit_fit(content, "finance/same-dates", item="Nonexistent")
+    assert "unknown item 'Nonexistent'" in build(content, preview=True).stdout
+
+
+def test_reviewed_item_needs_located_support_for_each_field(content):
+    edit_ref(content, "Euclidean", supports="python", locator="")
+    rerecord_item(content, "Euclidean")
+    out = build(content).stdout
+    assert "item 'Euclidean' is draft" in out and "python" in out
+    assert build(content, preview=True).returncode == 0
+
+
+def test_tag_vocabulary(content):
+    edit_item(content, "Euclidean", ignores=[{"tag": "amplitude", "cond": ""}])
+    assert "unknown tag 'amplitude'" in build(content, preview=True).stdout
+
+
+def test_semicolon_in_map_text_fails(content):
+    edit_item(content, "Euclidean", does="One; two")
+    assert "semicolon" in build(content, preview=True).stdout
+
+
+def test_ref_key_must_be_in_the_registry(content):
+    mutate(content / "_map.toml", 'key = "sakoe78", locator = "sec. II", supports = "does"}',
+           'key = "nobody99", locator = "sec. II", supports = "does"}')
+    assert "key 'nobody99' is not in _sources.toml" in build(content, preview=True).stdout
+
+
+def test_family_lesson_must_be_in_the_course(content):
+    mutate(content / "_map.toml", 'lesson = "alpha"', 'lesson = "nowhere"')
+    assert "lesson 'nowhere' is not listed in _course.md" in build(content, preview=True).stdout
+
+
+def test_ignores_belong_to_the_compare_branch(content):
+    edit_item(content, "k-medoids", ignores=[{"tag": "level", "cond": ""}])
+    assert "'ignores' is for the compare branch only" in build(content, preview=True).stdout

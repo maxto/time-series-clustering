@@ -1,5 +1,8 @@
 # Build the course and publish dist/ to GitHub Pages on every push to master.
 # Inactive until the owner approves the push and the Pages activation.
+# The build step is the release build: it fails while any map item or sector fit lacks a review record
+# (by design, until the map is reviewed), and the upload below runs only when it succeeds, so a draft
+# or stale output is never published.
 # Needs only Python (uv) and Node (KaTeX, Geist): no R, no Chrome.
 name: Pages
 

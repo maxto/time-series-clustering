@@ -1,0 +1,436 @@
+[[branch]]
+id = "compare"
+name = "Compare"
+sub = "distances and similarities"
+
+[[branch.family]]
+name = "Lock-step"
+lesson = "lock-step"
+
+[[branch.family.item]]
+name = "Euclidean"
+does = "Square root of the summed squared differences, time step by time step."
+ignores = []
+python = "scipy euclidean, aeon euclidean_distance"
+r = "stats::dist"
+
+[[branch.family.item]]
+name = "Manhattan"
+does = "Sum of absolute differences. One large gap weighs less than under Euclidean."
+ignores = []
+python = "scipy cityblock"
+r = "dist(method = \"manhattan\")"
+
+[[branch.family.item]]
+name = "Minkowski"
+does = "The Lp family: p = 1 is Manhattan, p = 2 Euclidean."
+ignores = []
+python = "scipy minkowski"
+r = "dist(method = \"minkowski\")"
+
+[[branch.family.item]]
+name = "Chebyshev"
+does = "The largest single gap. One bad time step decides."
+ignores = []
+python = "scipy chebyshev"
+r = "dist(method = \"maximum\")"
+
+[[branch.family.item]]
+name = "Canberra"
+does = "Absolute differences divided by the size of the values: small values weigh more."
+ignores = []
+python = "scipy canberra"
+r = "dist(method = \"canberra\")"
+
+[[branch.family.item]]
+name = "Hamming"
+does = "For binary or categorical series: the share of time steps that differ."
+ignores = []
+python = "scipy hamming"
+r = "custom: mean(x != y)"
+
+[[branch.family.item]]
+name = "Correlation"
+does = "One minus the Pearson correlation on the same time steps."
+ignores = [{tag = "level", cond = ""}, {tag = "scale", cond = ""}]
+python = "scipy correlation"
+r = "1 - cor(x, y)"
+
+[[branch.family]]
+name = "Sliding"
+lesson = "sliding"
+
+[[branch.family.item]]
+name = "Cross-correlation"
+does = "The best correlation over all lags of one series against the other."
+ignores = [{tag = "scale", cond = ""}, {tag = "shift", cond = ""}]
+python = "scipy.signal.correlate"
+r = "stats::ccf"
+
+[[branch.family.item]]
+name = "SBD"
+does = "Shape-based distance: one minus the best normalised cross-correlation. Ignores level too after z-normalisation."
+ignores = [{tag = "scale", cond = ""}, {tag = "shift", cond = ""}]
+python = "aeon sbd_distance"
+r = "dtwclust::SBD"
+
+[[branch.family]]
+name = "Elastic"
+lesson = "dtw"
+
+[[branch.family.item]]
+name = "DTW"
+does = "Dynamic time warping: aligns the two series, then measures the gap. A window limits the stretch."
+ignores = [{tag = "warp", cond = "alignment within w permitted, not a guarantee of small cost"}]
+cond = "within w"
+python = "aeon dtw_distance, tslearn dtw"
+r = "dtw::dtw, dtwclust::dtw_basic"
+
+[[branch.family.item]]
+name = "Fréchet"
+does = "The shortest leash that lets two walkers follow both curves in order."
+ignores = [{tag = "warp", cond = ""}, {tag = "length", cond = ""}]
+python = ""
+r = ""
+
+[[branch.family.item]]
+name = "LCSS"
+does = "Longest common subsequence: counts matches within a threshold, gaps allowed."
+ignores = [{tag = "warp", cond = ""}, {tag = "noise", cond = ""}, {tag = "length", cond = ""}]
+python = "aeon lcss_distance"
+r = ""
+
+[[branch.family.item]]
+name = "EDR"
+does = "Edit distance on real sequences: edits needed, with a match threshold."
+ignores = [{tag = "warp", cond = ""}, {tag = "noise", cond = ""}, {tag = "length", cond = ""}]
+python = "aeon edr_distance"
+r = ""
+
+[[branch.family.item]]
+name = "ERP"
+does = "Edit distance with real penalty: gaps cost their distance from a constant."
+ignores = [{tag = "warp", cond = ""}, {tag = "length", cond = ""}]
+python = "aeon erp_distance"
+r = ""
+
+[[branch.family.item]]
+name = "MSM"
+does = "Move-split-merge: the cheapest edits that turn one series into the other."
+ignores = [{tag = "warp", cond = ""}, {tag = "length", cond = ""}]
+python = "aeon msm_distance"
+r = ""
+
+[[branch.family.item]]
+name = "TWE"
+does = "Time warp edit: an edit distance that also charges for time stamps."
+ignores = [{tag = "warp", cond = ""}, {tag = "length", cond = ""}]
+python = "aeon twe_distance"
+r = ""
+
+[[branch.family]]
+name = "Kernel"
+
+[[branch.family.item]]
+name = "GAK"
+does = "Global alignment kernel: sums over all alignments instead of keeping the best."
+ignores = [{tag = "warp", cond = ""}, {tag = "length", cond = ""}]
+python = "tslearn gak"
+r = ""
+
+[[branch.family]]
+name = "Feature-based"
+lesson = "features"
+
+[[branch.family.item]]
+name = "ACF / PACF"
+does = "Compare autocorrelation functions instead of values."
+ignores = [{tag = "level", cond = ""}, {tag = "scale", cond = ""}, {tag = "shift", cond = ""}, {tag = "length", cond = ""}]
+python = "statsmodels acf"
+r = "stats::acf"
+
+[[branch.family.item]]
+name = "Periodogram"
+does = "Compare spectra: which frequencies carry the variation."
+ignores = [{tag = "shift", cond = ""}]
+python = "scipy.signal.periodogram"
+r = "stats::spec.pgram"
+
+[[branch.family.item]]
+name = "Wavelets"
+does = "Compare coefficients at several time scales."
+ignores = [{tag = "noise", cond = ""}]
+python = "PyWavelets"
+r = "waveslim"
+
+[[branch.family.item]]
+name = "SAX"
+does = "Symbols for coarse shapes after z-normalisation and averaging."
+ignores = [{tag = "level", cond = ""}, {tag = "scale", cond = ""}, {tag = "noise", cond = ""}]
+python = "aeon SAX"
+r = ""
+
+[[branch.family.item]]
+name = "catch22"
+does = "22 summary features chosen to separate many kinds of series."
+ignores = [{tag = "length", cond = ""}]
+python = "pycatch22"
+r = "Rcatch22"
+
+[[branch.family]]
+name = "Model and complexity"
+lesson = "models"
+
+[[branch.family.item]]
+name = "AR models"
+does = "Fit an autoregressive model to each series, compare the coefficients."
+ignores = [{tag = "level", cond = ""}, {tag = "scale", cond = ""}, {tag = "shift", cond = ""}, {tag = "length", cond = ""}]
+python = "statsmodels AutoReg"
+r = "stats::ar"
+
+[[branch.family.item]]
+name = "Cepstral"
+does = "Compare cepstral coefficients derived from a linear-prediction model."
+ignores = [{tag = "level", cond = ""}, {tag = "scale", cond = ""}, {tag = "shift", cond = ""}, {tag = "length", cond = ""}]
+python = ""
+r = ""
+
+[[branch.family.item]]
+name = "CID"
+does = "Complexity-invariant: Euclidean corrected by how much each series wiggles."
+ignores = []
+python = ""
+r = ""
+
+[[branch.family.item]]
+name = "Ordinal patterns"
+does = "Compare how often each up-down pattern occurs (permutation distribution)."
+ignores = [{tag = "level", cond = ""}, {tag = "scale", cond = ""}, {tag = "shift", cond = ""}, {tag = "length", cond = ""}]
+python = "ordpy"
+r = ""
+
+[[branch.family.item]]
+name = "Compression (NCD)"
+does = "How much better two series compress together than apart."
+ignores = [{tag = "length", cond = ""}]
+python = "zlib, bz2"
+r = "memCompress"
+
+[[branch.family]]
+name = "Learned and subsequence"
+lesson = "learned"
+
+[[branch.family.item]]
+name = "Shapelets"
+does = "Short, telling subsequences. A series is described by how close it comes to each."
+ignores = [{tag = "shift", cond = ""}, {tag = "length", cond = ""}]
+python = "aeon, tslearn"
+r = ""
+
+[[branch.family.item]]
+name = "Embeddings"
+does = "A network maps each series to a vector. What it ignores depends on the training."
+ignores = []
+python = "aeon, tslearn"
+r = ""
+
+[[branch]]
+id = "group"
+name = "Group"
+sub = "clustering methods"
+
+[[branch.family]]
+name = "Partitioning"
+lesson = "match-the-algorithm"
+
+[[branch.family.item]]
+name = "k-means"
+does = "Moves k centres to the mean of their members."
+needs = [{tag = "vectors", cond = ""}]
+python = "sklearn KMeans, tslearn TimeSeriesKMeans"
+r = "stats::kmeans"
+
+[[branch.family.item]]
+name = "k-medoids"
+does = "Like k-means, but each centre is a real series. Works from any distance matrix."
+needs = [{tag = "matrix", cond = ""}]
+python = "aeon TimeSeriesKMedoids"
+r = "cluster::pam"
+
+[[branch.family.item]]
+name = "k-Shape"
+does = "k-means with SBD and a shape-extracting centroid."
+needs = [{tag = "series", cond = ""}]
+python = "tslearn KShape"
+r = "dtwclust::tsclust"
+
+[[branch.family.item]]
+name = "TADPole"
+does = "Density peaks under DTW, with bounds that skip most comparisons."
+needs = [{tag = "series", cond = ""}]
+python = ""
+r = "dtwclust::TADPole"
+
+[[branch.family.item]]
+name = "Affinity propagation"
+does = "Series vote for exemplars through a similarity matrix."
+needs = [{tag = "similarity", cond = "precomputed similarities, not distances"}]
+cond = "similarities"
+python = "sklearn AffinityPropagation"
+r = "apcluster"
+
+[[branch.family]]
+name = "Hierarchical"
+lesson = "match-the-algorithm"
+
+[[branch.family.item]]
+name = "Agglomerative"
+does = "Merge the two closest groups, again and again. Average linkage in lesson 1."
+needs = [{tag = "matrix", cond = "single, complete, average linkage"}, {tag = "vectors", cond = "Ward: Euclidean geometry"}]
+cond = "Ward: Euclidean"
+python = "scipy linkage"
+r = "stats::hclust"
+
+[[branch.family.item]]
+name = "Divisive"
+does = "Start from one group and split."
+needs = [{tag = "matrix", cond = ""}]
+python = ""
+r = "cluster::diana"
+
+[[branch.family]]
+name = "Fuzzy"
+lesson = "match-the-algorithm"
+
+[[branch.family.item]]
+name = "Fuzzy c-means"
+does = "Each series belongs to every group with a degree."
+needs = [{tag = "vectors", cond = ""}]
+python = "scikit-fuzzy"
+r = "e1071::cmeans, cluster::fanny"
+
+[[branch.family]]
+name = "Density"
+lesson = "match-the-algorithm"
+
+[[branch.family.item]]
+name = "DBSCAN"
+does = "Groups where series are dense, leaves the rest as noise. No k to choose."
+needs = [{tag = "matrix", cond = ""}]
+python = "sklearn DBSCAN"
+r = "dbscan::dbscan"
+
+[[branch.family.item]]
+name = "SNN"
+does = "Density measured by shared nearest neighbours."
+needs = [{tag = "matrix", cond = ""}]
+python = ""
+r = "dbscan::sNNclust"
+
+[[branch.family]]
+name = "Model-based"
+lesson = "match-the-algorithm"
+
+[[branch.family.item]]
+name = "Gaussian mixtures"
+does = "Each group is a probability distribution, fitted by EM."
+needs = [{tag = "vectors", cond = ""}]
+python = "sklearn GaussianMixture"
+r = "mclust"
+
+[[branch.family.item]]
+name = "SOM"
+does = "A grid of prototypes that learns the layout of the data."
+needs = [{tag = "vectors", cond = ""}]
+python = "MiniSom"
+r = "kohonen"
+
+[[branch.family.item]]
+name = "Deep clustering"
+does = "Learns a representation and the groups together."
+needs = [{tag = "series", cond = ""}]
+python = ""
+r = ""
+
+[[branch]]
+id = "validate"
+name = "Validate"
+sub = "validity indices"
+
+[[branch.family]]
+name = "Internal"
+lesson = "internal-indices"
+
+[[branch.family.item]]
+name = "Silhouette"
+does = "Is each series closer to its own group than to the next one? Works from any distance matrix."
+needs = [{tag = "matrix", cond = "dissimilarities"}]
+cond = "dissimilarities"
+python = "sklearn silhouette_score(metric=\"precomputed\")"
+r = "cluster::silhouette"
+
+[[branch.family.item]]
+name = "Dunn"
+does = "Smallest gap between groups over largest group diameter."
+needs = [{tag = "matrix", cond = ""}]
+python = ""
+r = "clValid::dunn"
+
+[[branch.family.item]]
+name = "Calinski-Harabasz"
+does = "Spread between centroids over spread inside groups. Needs centroids, so not with DTW."
+needs = [{tag = "vectors", cond = "Euclidean centroids"}]
+cond = "Euclidean"
+python = "sklearn calinski_harabasz_score"
+r = "fpc, clusterCrit"
+
+[[branch.family.item]]
+name = "Davies-Bouldin"
+does = "Average similarity of each group to its closest one. Lower is better. Needs centroids."
+needs = [{tag = "vectors", cond = "Euclidean centroids"}]
+cond = "Euclidean"
+python = "sklearn davies_bouldin_score"
+r = "clusterCrit"
+
+[[branch.family.item]]
+name = "Xie-Beni"
+does = "For fuzzy groups: compactness over separation."
+needs = [{tag = "vectors", cond = ""}]
+python = ""
+r = "clusterCrit"
+
+[[branch.family]]
+name = "External"
+lesson = "external-and-stability"
+
+[[branch.family.item]]
+name = "Rand / ARI"
+does = "Share of pairs on which two groupings agree. The adjusted version corrects for chance."
+needs = [{tag = "labels", cond = ""}]
+python = "sklearn adjusted_rand_score"
+r = "mclust::adjustedRandIndex"
+
+[[branch.family.item]]
+name = "Jaccard"
+does = "Pairs grouped together in both, over pairs grouped together in either."
+needs = [{tag = "labels", cond = ""}]
+python = ""
+r = "clusterCrit"
+
+[[branch.family.item]]
+name = "Fowlkes-Mallows"
+does = "Geometric mean of pair precision and recall."
+needs = [{tag = "labels", cond = ""}]
+python = "sklearn fowlkes_mallows_score"
+r = "clusterCrit"
+
+[[branch.family]]
+name = "Stability"
+lesson = "external-and-stability"
+
+[[branch.family.item]]
+name = "Resampling"
+does = "Do the groups survive when the data are resampled or perturbed?"
+needs = [{tag = "matrix", cond = ""}]
+python = ""
+r = "fpc::clusterboot"

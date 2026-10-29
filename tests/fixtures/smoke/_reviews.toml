@@ -21,3 +21,62 @@ fingerprint = "6797dd416e9e10d5"
 by = "fixture author"
 date = 2026-10-29
 note = "smoke fixture, not a real review"
+
+[[item]]
+name = "Euclidean"
+fingerprint = "b0409b9c3ced7a05"
+by = "fixture author"
+date = 2026-10-29
+note = "smoke fixture, not a real review"
+
+[[item]]
+name = "Correlation"
+fingerprint = "0d468948ab4bd15c"
+by = "fixture author"
+date = 2026-10-29
+note = "smoke fixture, not a real review"
+
+[[item]]
+name = "DTW"
+fingerprint = "4df8a0991c3c58ef"
+by = "fixture author"
+date = 2026-10-29
+note = "smoke fixture, not a real review"
+
+[[item]]
+name = "Agglomerative"
+fingerprint = "578a4056a2633639"
+by = "fixture author"
+date = 2026-10-29
+note = "smoke fixture, not a real review"
+
+[[item]]
+name = "k-medoids"
+fingerprint = "abf4e98192c82013"
+by = "fixture author"
+date = 2026-10-29
+note = "smoke fixture, not a real review"
+
+[[fit]]
+question = "energy/same-hours"
+item = "Euclidean"
+fingerprint = "4586f995a5514f2c"
+by = "fixture author"
+date = 2026-10-29
+note = "smoke fixture, not a real review"
+
+[[fit]]
+question = "finance/same-dates"
+item = "Correlation"
+fingerprint = "4300b74ea808b469"
+by = "fixture author"
+date = 2026-10-29
+note = "smoke fixture, not a real review"
+
+[[fit]]
+question = "finance/same-dates"
+item = "DTW"
+fingerprint = "32da1e4dd4b46600"
+by = "fixture author"
+date = 2026-10-29
+note = "smoke fixture, not a real review"
