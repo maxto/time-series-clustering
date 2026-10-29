@@ -80,3 +80,31 @@ fingerprint = "32da1e4dd4b46600"
 by = "fixture author"
 date = 2026-10-29
 note = "smoke fixture, not a real review"
+
+[[sector]]
+id = "energy"
+fingerprint = "e101f64ae78c22fd"
+by = "fixture author"
+date = 2026-10-29
+note = "smoke fixture, not a real review"
+
+[[sector]]
+id = "finance"
+fingerprint = "e97a7e6ccade60d5"
+by = "fixture author"
+date = 2026-10-29
+note = "smoke fixture, not a real review"
+
+[[question]]
+id = "energy/same-hours"
+fingerprint = "b461287bcdff417c"
+by = "fixture author"
+date = 2026-10-29
+note = "smoke fixture, not a real review"
+
+[[question]]
+id = "finance/same-dates"
+fingerprint = "f5d45e0786c900a1"
+by = "fixture author"
+date = 2026-10-29
+note = "smoke fixture, not a real review"

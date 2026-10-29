@@ -88,6 +88,8 @@ class Reviews:
     citations: set = field(default_factory=set)  # (lesson, key, locator, paragraph, identity)
     items: dict = field(default_factory=dict)  # name -> {fingerprint}
     fits: dict = field(default_factory=dict)  # (question, item) -> {fingerprint}
+    questions: dict = field(default_factory=dict)  # public question id -> {fingerprint}
+    sectors: dict = field(default_factory=dict)  # sector id -> {fingerprint}
 
 
 def read_toml(path, errors):
@@ -153,7 +155,8 @@ def load_reviews(content, errors):
     data = read_toml(path, errors)
     reviews = Reviews()
     shapes = {"lesson": ("id", "fingerprint"), "citation": ("lesson", "key", "locator", "paragraph", "identity"),
-              "item": ("name", "fingerprint"), "fit": ("question", "item", "fingerprint")}
+              "item": ("name", "fingerprint"), "fit": ("question", "item", "fingerprint"),
+              "question": ("id", "fingerprint"), "sector": ("id", "fingerprint")}
     for table in sorted(set(data) - set(shapes)):
         errors.add(path, f"unknown table [[{table}]]")
     for table, fields in shapes.items():
@@ -168,6 +171,10 @@ def load_reviews(content, errors):
                 reviews.citations.add(tuple(rec[f] for f in fields))
             elif table == "item":
                 reviews.items.setdefault(rec["name"], set()).add(rec["fingerprint"])
+            elif table == "question":
+                reviews.questions.setdefault(rec["id"], set()).add(rec["fingerprint"])
+            elif table == "sector":
+                reviews.sectors.setdefault(rec["id"], set()).add(rec["fingerprint"])
             else:
                 reviews.fits.setdefault((rec["question"], rec["item"]), set()).add(rec["fingerprint"])
     return reviews

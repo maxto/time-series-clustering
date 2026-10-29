@@ -424,10 +424,15 @@ def test_release_pages_carry_the_build_mode(content):
 
 
 def test_preview_never_writes_into_the_release_tree(content):
+    def snapshot(target):
+        return None if not target.exists() else sorted((str(f), f.stat().st_mtime_ns) for f in [target, *target.rglob("*")])
+
     for target in (ROOT / "dist", ROOT / "dist" / "preview"):
+        before = snapshot(target)
         result = build(content, preview=True, dist=target)
         assert result.returncode == 1
         assert "a preview never writes into dist/" in result.stdout
+        assert snapshot(target) == before
 
 
 def test_duplicate_item_name_fails(content):
@@ -472,3 +477,43 @@ def test_family_lesson_must_be_in_the_course(content):
 def test_ignores_belong_to_the_compare_branch(content):
     edit_item(content, "k-medoids", ignores=[{"tag": "level", "cond": ""}])
     assert "'ignores' is for the compare branch only" in build(content, preview=True).stdout
+
+
+def edit_block(content, file, header, name_field, name, **fields):
+    set_fields(content / file, header, name_field, name, **fields)
+
+
+REOPENING_EDITS = [
+    ("item cond", lambda c: edit_item(c, "DTW", cond="within a wider w"), "item 'DTW' is draft"),
+    ("item python", lambda c: edit_item(c, "Euclidean", python="scipy sqeuclidean"), "item 'Euclidean' is draft"),
+    ("item r", lambda c: edit_item(c, "Euclidean", r="dist(x)"), "item 'Euclidean' is draft"),
+    ("tag cond", lambda c: edit_item(c, "DTW", ignores=[{"tag": "warp", "cond": "alignment within w, edited"}]),
+     "item 'DTW' is draft"),
+    ("ref locator", lambda c: edit_ref(c, "Correlation", "ignores:level", "sec. IX"), "item 'Correlation' is draft"),
+    ("fit mark", lambda c: edit_fit(c, "finance/same-dates", mark="avoid"), "fit finance/same-dates / 'Correlation' is draft"),
+    ("fit reason", lambda c: edit_fit(c, "finance/same-dates", reason="A different reason."),
+     "fit finance/same-dates / 'Correlation' is draft"),
+    ("question text", lambda c: edit_block(c, "_sectors.toml", "sector.question", "id", "same-hours", text="Another question?"),
+     "question energy/same-hours is draft"),
+    ("question starts", lambda c: edit_block(c, "_sectors.toml", "sector.question", "id", "same-hours", starts=["Euclidean"]),
+     "question energy/same-hours is draft"),
+    ("sector about", lambda c: edit_block(c, "_sectors.toml", "sector", "id", "energy", about="Another description."),
+     "sector 'energy' is draft"),
+    ("sector curve", lambda c: edit_block(c, "_sectors.toml", "sector", "id", "energy", curve=[0.0, 1.0]),
+     "sector 'energy' is draft"),
+]
+
+
+@pytest.mark.parametrize("edit,expected", [(e, x) for _, e, x in REOPENING_EDITS], ids=[n for n, _, _ in REOPENING_EDITS])
+def test_a_substantive_edit_reopens_review(content, edit, expected):
+    edit(content)
+    out = build(content).stdout
+    assert expected in out
+    assert build(content, preview=True).returncode == 0
+
+
+def test_release_refuses_an_unreviewed_question_and_sector(content):
+    drop_record(content, "question", "id", "energy/same-hours")
+    drop_record(content, "sector", "id", "finance")
+    out = build(content).stdout
+    assert "question energy/same-hours is draft" in out and "sector 'finance' is draft" in out

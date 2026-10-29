@@ -148,7 +148,7 @@ def draft_banner(atlas):
     drafts = (atlas.draft_items(), atlas.draft_fits()) if atlas else ([], [])
     if not any(drafts):
         return ""
-    return (f'<div class="draft-banner" role="note">Preview build. {len(drafts[0])} map items and {len(drafts[1])} sector fits'
+    return (f'<div class="draft-banner" role="note">Preview build. {len(drafts[0])} map items and {len(drafts[1]) + len(atlas.draft_sectors())} sector fits, questions and sectors'
             " are drafts, not verified. Do not publish this output.</div>")
 
 
@@ -240,7 +240,7 @@ def main():
     if atlas and not args.preview:
         for line in atlas.draft_items():
             errors.add(content / "_map.toml", line)
-        for line in atlas.draft_fits():
+        for line in atlas.draft_fits() + atlas.draft_sectors():
             errors.add(content / "_sectors.toml", line)
 
     theme_css = (SITE / "theme.css").read_text()

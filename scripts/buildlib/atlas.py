@@ -6,6 +6,7 @@ _reviews.toml holds a record for its current fingerprint, so editing it makes it
 A reviewed item also needs, for each factual field, a located source that is not a candidate.
 """
 
+import json
 import math
 import re
 from dataclasses import dataclass, field
@@ -114,6 +115,11 @@ class Question:
     text: str
     starts: list = field(default_factory=list)
     fits: list = field(default_factory=list)
+    recorded: bool = False
+
+    @property
+    def fingerprint(self):
+        return fingerprint("\n".join([self.id, self.text, *self.starts]))
 
 
 @dataclass
@@ -123,6 +129,11 @@ class Sector:
     about: str
     curve: list
     questions: list = field(default_factory=list)
+    recorded: bool = False
+
+    @property
+    def fingerprint(self):
+        return fingerprint("\n".join([self.id, self.name, self.about, json.dumps(self.curve)]))
 
 
 @dataclass
@@ -156,8 +167,18 @@ class Atlas:
                 out.append(f"fit {ft.question} / '{ft.item}' is draft: no located confirmed source for the fit")
         return out
 
+    def questions(self):
+        return [q for s in self.sectors for q in s.questions]
+
+    def draft_sectors(self):
+        out = [f"sector '{s.id}' is draft: no review record for its current text (fingerprint {s.fingerprint},"
+               " see scripts/review.py show-map)" for s in self.sectors if not s.recorded]
+        out += [f"question {q.id} is draft: no review record for its current text and starts (fingerprint {q.fingerprint},"
+                " see scripts/review.py show-map)" for q in self.questions() if not q.recorded]
+        return out
+
     def drafts(self):
-        return [*self.draft_items(), *self.draft_fits()]
+        return [*self.draft_items(), *self.draft_fits(), *self.draft_sectors()]
 
 
 class Reader:
@@ -362,6 +383,10 @@ def load_atlas(content, sources, reviews, course, errors):
         it.recorded = it.fingerprint in reviews.items.get(it.name, set())
         it.gaps = [s for s in it.required_support() if not has_support(it.all_refs(), s)]
         it.reviewed = it.recorded and not it.gaps
+    for s in atlas.sectors:
+        s.recorded = s.fingerprint in reviews.sectors.get(s.id, set())
+    for q in atlas.questions():
+        q.recorded = q.fingerprint in reviews.questions.get(q.id, set())
     for ft in atlas.fits():
         ft.recorded = ft.fingerprint in reviews.fits.get((ft.question, ft.item), set())
         ft.gaps = [] if has_support(ft.sources, "fit") else ["fit"]

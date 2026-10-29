@@ -6,6 +6,8 @@ Usage:
   uv run python scripts/review.py record --content DIR --lesson ID --cite KEY --locator L --paragraph P --by TEXT
   uv run python scripts/review.py show-map    --content DIR
   uv run python scripts/review.py record-item --content DIR --name NAME --fingerprint F --by TEXT [--note TEXT]
+  uv run python scripts/review.py record-question --content DIR --id SECTOR/QUESTION --fingerprint F --by TEXT [--note TEXT]
+  uv run python scripts/review.py record-sector --content DIR --id SECTOR --fingerprint F --by TEXT [--note TEXT]
   uv run python scripts/review.py record-fit  --content DIR --question Q --item NAME --fingerprint F --by TEXT [--note TEXT]
 
 `show` prints the fingerprint of the lesson text and, for each citation, its locator, its
@@ -14,7 +16,7 @@ paragraph and the paragraph fingerprint, with whether a record already matches.
 one, so the reviewer approves exactly what they read. It records a review done by a person or a
 model and verifies nothing else: the second-model review must be done before a record is written.
 `show-map` lists every map item and sector fit with its fingerprint and whether a record matches.
-`record-item` and `record-fit` refuse a fingerprint that is not the current one, like `record`.
+`record-item`, `record-fit`, `record-question` and `record-sector` refuse a fingerprint that is not the current one, like `record`.
 """
 
 import argparse
@@ -85,6 +87,10 @@ def show_map(args):
     for ft in atlas.fits():
         state = "reviewed" if ft.reviewed else ("recorded, source gaps" if ft.recorded else "draft")
         print(f"fit {ft.question} | {ft.item} | {ft.fingerprint} | {state}")
+    for s in atlas.sectors:
+        print(f"sector {s.id} | {s.fingerprint} | {'reviewed' if s.recorded else 'draft'}")
+    for q in atlas.questions():
+        print(f"question {q.id} | {q.fingerprint} | {'reviewed' if q.recorded else 'draft'}")
 
 
 def toml_value(v):
@@ -124,6 +130,12 @@ def record_map(args):
     if args.cmd == "record-item":
         found = next((it for it in atlas.items() if it.name == args.name), None)
         what, fields = f"item {args.name!r}", {"name": args.name}
+    elif args.cmd == "record-question":
+        found = next((q for q in atlas.questions() if q.id == args.id), None)
+        what, fields = f"question {args.id!r}", {"id": args.id}
+    elif args.cmd == "record-sector":
+        found = next((s for s in atlas.sectors if s.id == args.id), None)
+        what, fields = f"sector {args.id!r}", {"id": args.id}
     else:
         found = next((ft for ft in atlas.fits() if (ft.question, ft.item) == (args.question, args.item)), None)
         what, fields = f"fit {args.question} / {args.item!r}", {"question": args.question, "item": args.item}
@@ -133,7 +145,8 @@ def record_map(args):
     if args.fingerprint != found.fingerprint:
         print(f"fingerprint {args.fingerprint} is not the current one ({found.fingerprint}): the text changed", file=sys.stderr)
         return 1
-    append(args.content, "item" if args.cmd == "record-item" else "fit", {**fields, "fingerprint": found.fingerprint}, args)
+    table = {"record-item": "item", "record-fit": "fit", "record-question": "question", "record-sector": "sector"}[args.cmd]
+    append(args.content, table, {**fields, "fingerprint": found.fingerprint}, args)
     print("recorded")
     return 0
 
@@ -154,13 +167,15 @@ def main():
     rec.add_argument("--note")
     sm = sub.add_parser("show-map")
     sm.add_argument("--content", type=pathlib.Path, required=True)
-    for name in ("record-item", "record-fit"):
+    for name in ("record-item", "record-fit", "record-question", "record-sector"):
         p = sub.add_parser(name)
         p.add_argument("--content", type=pathlib.Path, required=True)
         p.add_argument("--fingerprint", required=True)
         p.add_argument("--by", required=True)
         p.add_argument("--note")
     sub.choices["record-item"].add_argument("--name", required=True)
+    sub.choices["record-question"].add_argument("--id", required=True)
+    sub.choices["record-sector"].add_argument("--id", required=True)
     sub.choices["record-fit"].add_argument("--question", required=True)
     sub.choices["record-fit"].add_argument("--item", required=True)
     args = ap.parse_args()
@@ -168,7 +183,7 @@ def main():
     if args.cmd == "show-map":
         show_map(args)
         return 0
-    if args.cmd in ("record-item", "record-fit"):
+    if args.cmd in ("record-item", "record-fit", "record-question", "record-sector"):
         return record_map(args)
     if args.cmd == "show":
         show(args)
