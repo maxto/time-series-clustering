@@ -1105,31 +1105,34 @@ async function liveChecks(run, url, isLocal) {
   }
   expect(await liveFig(p, 0).locator('fieldset').count() === 0, `${run}: live-a has one pair and must show no pair group`);
   expect(await liveFig(p, 1).locator('fieldset legend').innerText() === 'Pair', `${run}: live-b pair group legend`);
-  const names = await p.locator('main figure[data-live] input[type=radio]').evaluateAll(rs => [...new Set(rs.map(r => r.name))]);
-  expect(names.length === 1, `${run}: radio group names ${names} (one group, unique per figure)`);
+  const radioNames = await p.locator('main figure[data-live] input[type=radio]').evaluateAll(rs => rs.map(r => [r.name, [...document.querySelectorAll('figure[data-live]')].indexOf(r.closest('figure'))]));
+  expect(radioNames.length === 2 && radioNames.every(([n, f]) => n === 'live-2-pair' && f === 1), `${run}: radio names ${JSON.stringify(radioNames)}, expected only live-2-pair on live-b`);
+  expect(await p.locator('figure[data-live]').evaluateAll(fs => new Set(fs.flatMap(f => [...new Set([...f.querySelectorAll('input[type=radio]')].map(r => r.name))])).size === fs.filter(f => f.querySelector('input[type=radio]')).length), `${run}: a radio name is shared across figures`);
 
   // keyboard only on live-b: pair group, then the slider, then Reset
   const b = liveFig(p, 1);
+  // Review Focus 4: live-a (checked inputs, path points, readout) is the same after every live-b step
+  const a0 = await liveSnapshot(p, 0);
+  const step = async (e, label) => {
+    await liveState(run, p, 1, e, label);
+    expect(JSON.stringify(await liveSnapshot(p, 0)) === JSON.stringify(a0), `${run}: live-a changed after live-b step: ${label}`);
+  };
   await b.locator('svg').click({ position: { x: 5, y: 5 } });
   await p.keyboard.press('Tab');
   expect(await activeIs(p, 'input[type=radio]:checked') && await p.evaluate(() => document.activeElement.closest('figure') === document.querySelectorAll('figure[data-live]')[1]), `${run}: Tab did not land on the checked pair radio of live-b`);
   await p.keyboard.press('ArrowDown');
   expect(await b.locator('input[type=radio]:checked').evaluate(r => r.labels[0].textContent.trim()) === 'ba and bc', `${run}: ArrowDown did not check "ba and bc"`);
-  await liveState(run, p, 1, B['1,1'], 'live-b ba and bc, w=1');
+  await step(B['1,1'], 'live-b ba and bc, w=1');
   await p.keyboard.press('Tab');
   expect(await activeIs(p, 'input[type=range]'), `${run}: second Tab did not reach the slider`);
-  for (const w of [2, 3]) { await p.keyboard.press('ArrowRight'); await liveState(run, p, 1, B[`1,${w}`], `live-b ba and bc, w=${w}`); }
-  for (const w of [2, 1, 0]) { await p.keyboard.press('ArrowLeft'); await liveState(run, p, 1, B[`1,${w}`], `live-b ba and bc, w=${w}`); }
-  // Review Focus 4: live-a does not move while live-b changes
-  const a0 = await liveSnapshot(p, 0);
+  for (const w of [2, 3]) { await p.keyboard.press('ArrowRight'); await step(B[`1,${w}`], `live-b ba and bc, w=${w}`); }
+  for (const w of [2, 1, 0]) { await p.keyboard.press('ArrowLeft'); await step(B[`1,${w}`], `live-b ba and bc, w=${w}`); }
   await p.keyboard.press('ArrowRight');
   await p.keyboard.press('Tab');
   expect(await activeIs(p, 'button'), `${run}: Tab after the slider did not reach Reset`);
-  expect(JSON.stringify(await liveSnapshot(p, 0)) === JSON.stringify(a0), `${run}: live-a changed while live-b was changed`);
   await p.keyboard.press('Enter');
-  await liveState(run, p, 1, B['0,1'], 'live-b after Reset');
+  await step(B['0,1'], 'live-b after Reset');
   expect(await b.locator('input[type=range]').inputValue() === '1' && await b.locator('input[type=radio]:checked').evaluate(r => r.labels[0].textContent.trim()) === 'ba and bb', `${run}: Reset did not restore the pair and window controls`);
-  expect(JSON.stringify(await liveSnapshot(p, 0)) === JSON.stringify(a0), `${run}: live-a changed after live-b was reset`);
 
   // keyboard only on live-a: slider, No window (Space), retained value, Reset
   const a = liveFig(p, 0);
@@ -1202,12 +1205,16 @@ async function liveChecks(run, url, isLocal) {
 
   // Review Focus 2, blocked: no live.js, then no kernels.js. The static figures stand alone.
   for (const blocked of ['assets/live.js', 'assets/kernels.js']) {
-    ctx = await failureContext(run, OPEN, isLocal, { blocked, liveErrors: true });
+    // live.js blocked: only that URL is exempt. kernels.js blocked: also the safe-failure "live figure:" errors, one per figure.
+    ctx = await failureContext(run, OPEN, isLocal, blocked === 'assets/live.js' ? { blocked } : { blocked, liveErrors: true });
     p = await ctx.newPage();
+    const seen = [];
+    p.on('console', m => m.type() === 'error' && m.text().startsWith('live figure:') && seen.push(m.text()));
     await p.goto(url('gamma/index.html'));
     await p.waitForTimeout(400);
     expect(await count(p, 'main figure figcaption') === 2, `${run}: ${blocked} blocked: captions missing`);
     expect(await count(p, 'main figure input, main figure button, main figure .live-ctl, main figure .live-out') === 0, `${run}: ${blocked} blocked: controls or readout shown`);
+    expect(seen.length === (blocked === 'assets/kernels.js' ? 2 : 0), `${run}: ${blocked} blocked: ${seen.length} "live figure:" errors, expected ${blocked === 'assets/kernels.js' ? 2 : 0}`);
     for (const k of [0, 1]) {
       expect(await liveFig(p, k).locator('svg').first().isVisible(), `${run}: ${blocked} blocked: static SVG ${k} not visible`);
       await liveGeometry(p, liveFig(p, k), (k === 0 ? A : B)['0,1'], `${run}: ${blocked} blocked: figure ${k}`);
