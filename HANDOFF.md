@@ -1,9 +1,9 @@
 # HANDOFF — time-series-clustering
 
-Closed: 2026-10-29 12:47 CET (HEAD verified before this update: 728584e)
-Last operation: static figures no longer enlarged (owner report), e2e
-regression check added. Before that: SDD workspaces deleted, ledgers kept in
-`docs/research/`, Codex and bash panes cleared.
+Closed: 2026-10-29 14:56 CET (HEAD verified before this update: 52799e8)
+Last operation: smaller type scale and a 34em reading measure (owner),
+`frontend-design` skill installed in `.claude/skills/`. Before that: static
+figures no longer enlarged, SDD workspaces deleted, panes cleared.
 
 ## Goal
 
@@ -45,11 +45,16 @@ Plan executed:
 
 1. **Owner review of checkpoint 1** (owner). Static figures were shown
    2x enlarged: fixed 2026-10-29 (shown at their drawn 360 px, LOG entry
-   "Static figures no longer enlarged"), owner to recheck. Other points:
+   "Static figures no longer enlarged"), owner confirmed. Type made
+   smaller (LOG "Smaller type, reading measure, frontend-design skill"). Other points:
    one connector line only (root to Compare) in the 760 px column, need-tag
    label wording on map cards. Status: demo ready, waiting.
 2. **Checkpoint 2 plan** (lesson 5 end to end: live DTW figures, lesson text
-   to the first-phase source rule). Status: after item 1.
+   to the first-phase source rule). Include the owner's "not a brick"
+   direction (2026-10-29): lessons rich but not an endless scroll. Lever 1
+   (reading measure) done, levers 2 and 3 (collapsible deep-dives, a summary
+   line per section) proposed, to decide with the owner. Use the
+   `frontend-design` skill for the critique. Status: after item 1.
 3. **Map and sector content is a draft** (design step 2). Release build
    refuses it. Known: R `dist(method = "binary")` is not Hamming,
    `TSclust` and `TSdist` archived on CRAN, affinity propagation takes

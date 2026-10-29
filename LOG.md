@@ -1,5 +1,41 @@
 # LOG — time-series-clustering
 
+## 2026-10-29 · Smaller type, reading measure, frontend-design skill
+
+Owner, after the figure fix: text and titles still looked too large "from
+the title on". Decision (approved by the owner, done): body text 17 px
+instead of 18 (as the pilot and ai-one-token-at-a-time), lesson title 44 px
+instead of 56, home title 50 instead of 64, lede 19.5 instead of 22,
+section titles 25 instead of 30, the one line 19 instead of 21, the common
+mistake 17.5 instead of 19, finance and measure text one step smaller,
+phones 16 px text. Column 720 px without the contents and 680 px next to
+it, instead of 800 and 760. Replaces the "800 px with 18 px text, 760 px
+next to it" rule of design 4.1 (amended there).
+
+Owner's go-ahead to install a UI/UX skill ("installa la skill, vedi te"):
+Anthropic's `frontend-design` (Apache-2.0) copied from
+`~/resources/anthropic-skills/skills/frontend-design/` into
+`.claude/skills/frontend-design/`, and the project recorded in the
+catalog's "Used by" column (`~/resources/README.md`, left uncommitted in
+that repo, which another session also has open). `ui-ux-pro-max` was not
+installed: the catalog verdict is reference only and its palettes would
+fight the approved tokens. Colours stay as chosen (owner: "per i colori va
+bene questo, come l'altro corso").
+
+Applying the skill's line-length rule (both skills say under 80, 65 to 75
+ideal): measured 87 to 89 characters per line at 680 px, because Geist is
+narrow. Decision (done, under the owner's "vedi te"): running text
+(paragraphs, lists, the one line, the common mistake, the lede) stops at
+34em, 578 px, measured 73 to 78 characters, while figures, finance,
+measure and code keep the full column. This is the first of the three
+"not a brick" levers. The other two (collapsible deep-dive sections, a
+summary line per section) are proposed, not decided, and go to the
+checkpoint 2 planning together with the live figures.
+
+Verified: `npm test` e2e ok (assertions updated to 17 px, 680 and 720 px,
+new check: reading measure 578 px at 1280), `npm run preview` ok,
+screenshots of lesson 5 at 1440 and 375 px and of the home map looked at.
+
 ## 2026-10-29 · Static figures no longer enlarged
 
 Owner report: figures and the home image looked giant and zoomed. Root

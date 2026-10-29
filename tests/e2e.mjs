@@ -280,8 +280,8 @@ async function lessonContract(run, p) {
   // sources
   expect(await count(p, 'section.lsrc li#src-sakoe78') === 1, `${run}: #src-sakoe78 not in section.lsrc`);
   expect(await attr('a.cite', 'href') === '#src-sakoe78', `${run}: citation does not point to #src-sakoe78`);
-  // measures: one width for everything, 18 px text
-  expect(await p.locator('section.content p').first().evaluate(e => getComputedStyle(e).fontSize) === '18px', `${run}: body text is not 18 px`);
+  // measures: 17 px text (owner, 2026-10-29, design 4.1)
+  expect(await p.locator('section.content p').first().evaluate(e => getComputedStyle(e).fontSize) === '17px', `${run}: body text is not 17 px`);
 }
 
 // Layout at the widths of design 4.1: fixed contents at 1180 px and above, a drawer below.
@@ -291,7 +291,9 @@ async function layoutChecks(run, p, url) {
   await p.goto(url('alpha/index.html'));
   expect(await p.locator('nav#contents').isVisible() && !(await p.locator('button.menu').isVisible()), `${run}: 1280 px: contents fixed, no menu button`);
   expect(await w('nav#contents') === 290, `${run}: contents column is ${await w('nav#contents')} px, expected 290`);
-  expect(await w('.hero') === 760 && await w('section.finance') === 760 && await w('#code .codebox') === 760, `${run}: 1280 px column is not 760 px for hero/finance/code`);
+  expect(await w('.hero') === 680 && await w('section.finance') === 680 && await w('#code .codebox') === 680, `${run}: 1280 px column is not 680 px for hero/finance/code`);
+  // running text stops at 34em (578 px at 17 px), about 75 characters, inside the 680 px column
+  expect(await w('section.content > p') === 578, `${run}: 1280 px reading measure is ${await w('section.content > p')} px, expected 578`);
   // finance block surface: --fin-bg of each theme (light --ink #161a23, dark --fig-bg #171a21), with a border
   const fin = () => p.locator('section.finance').evaluate(e => { const c = getComputedStyle(e); return [c.backgroundColor, c.borderTopWidth]; });
   const [lightBg, lightBorder] = await fin();
@@ -303,7 +305,7 @@ async function layoutChecks(run, p, url) {
   await p.setViewportSize({ width: 1100, height: 900 });
   await p.waitForTimeout(400); // the drawer hides after its slide-out transition
   expect(!(await p.locator('nav#contents').isVisible()) && await p.locator('button.menu').isVisible(), `${run}: 1100 px: contents drawer closed, menu button shown`);
-  expect(await w('.hero') === 800 && await w('section.finance') === 800, `${run}: 1100 px column is not 800 px`);
+  expect(await w('.hero') === 720 && await w('section.finance') === 720, `${run}: 1100 px column is not 720 px`);
   await p.setViewportSize({ width: 390, height: 800 });
   await p.locator('button.menu').click();
   await p.waitForTimeout(400);

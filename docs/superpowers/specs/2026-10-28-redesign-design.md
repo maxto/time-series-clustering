@@ -186,9 +186,15 @@ parity tests (section 6).
   answers and citations are reachable (native disclosure), both code
   languages are visible one after the other.
 - **Reading column:** one width for everything (text, figures, finance
-  block, code, exercises), on desktop, tablet and phone. 800 px with
-  18 px text without the contents column, 760 px next to it. No
-  full-width bands. Phones: everything stacks, padding 18 px.
+  block, code, exercises), on desktop, tablet and phone. 720 px with
+  17 px text without the contents column, 680 px next to it. Running
+  text (paragraphs, lists, the one line, the common mistake, the lede)
+  stops at 34em, about 75 characters, so lines stay readable in the narrow
+  Geist face. Figures, the finance and measure blocks and code keep the
+  full column. No full-width bands. Phones: everything stacks, padding
+  18 px, 16 px text. Amended 2026-10-29 by the owner after the checkpoint
+  1 demo (text and titles looked too large): it was 800 and 760 px with
+  18 px text, 56 px lesson titles and no reading measure.
 - **Themes:** light and dark, the approved tokens and figure variables of
   `AGENTS.md` and `docs/design/dark-theme.md`. Every new component
   (sidebar, search results, map, cards, popovers, exercises, finance
