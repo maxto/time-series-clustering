@@ -1,5 +1,197 @@
 # LOG — time-series-clustering
 
+## 2026-10-29 · Redesign design written and reviewed by Codex
+
+Continues the redesign brainstorm (HANDOFF item 1). Wrote
+`docs/superpowers/specs/2026-10-28-redesign-design.md` (amends
+`2026-10-28-course-design.md`), ran a builder check (Sonnet subagent),
+then a Codex adversarial review: request
+`docs/research/2026-10-28-codex-redesign-request.md`, answer
+`docs/research/2026-10-28-codex-redesign-review.md`. Committed with the
+pilot closure notes and the two pilot final reviews (HANDOFF item 4,
+done). No code changed.
+
+**Verified:** the review file exists and was read in full. Nothing else
+run in this step.
+
+**Decisions**
+
+- Approved (owner, "strada 1"): extend the pilot engine (Python build,
+  plain JS and SVG for live figures). Rejects Observable Framework and
+  Quarto (a new toolchain for the same result).
+- Approved (owner, "ok"): the builder check's seven questions settled as
+  Claude's calls, marked "Claude's call" in the design (six marked in the
+  text, Codex counted five call sites: to reconcile when the doc is
+  amended).
+- Codex verdict: "Ready for the owner after the listed changes", no
+  Critical findings. Eight Important findings: sector coverage per lesson
+  weakened, map claims need their conditions (affinity propagation takes
+  similarities, Ward needs Euclidean geometry, co-movement versus similar
+  dynamics in finance), the draft map conflicts with the AGENTS.md rule,
+  a DOI check is not a claim check (record a support location), live
+  parity must cover every reader-reachable state (constant series, ties),
+  a state contract between figures and answers (with reset), the new
+  lesson contract must replace the AGENTS schema explicitly, a transfer
+  task per lesson. Minor: keyboard and drawer behaviour, the call count,
+  the meaning of "frozen". Step 1 split into three checkpoints.
+- Proposed (Claude, agreeing with Codex on every finding): per lesson one
+  developed sector example plus two short transfer exercises for the
+  other main sectors, not an example in every section. Map items carry
+  visible conditions. Support location recorded per non-obvious claim.
+  Measure card kept as a block, Check becomes an exercise.
+- Open (owner): (1) a narrow exception for a visibly labelled draft map
+  in the local preview only, with release builds refusing draft items,
+  lessons still fully verified. (2) Owner reviews after checkpoint 1
+  (look: shell, map, phone, dark theme) and after checkpoint 3 (all).
+
+**HANDOFF reconciliation:** item 1 now "amend the design doc after the
+owner's two answers". Item 4 (commit of the closure notes) done, this
+commit. Other items unchanged.
+
+## 2026-10-28 · Pilot review: redesign direction
+
+Owner reviewed the pilot (item 1 of the previous HANDOFF, done): the look
+is too thin and too close to ai-one-token-at-a-time. This course is a
+learning course, the other one a short read. Brainstorm with clickable
+mockups (companion screens in `.superpowers/brainstorm/`, then
+`.mockups/course/`). No code or content changed, no commits.
+
+**Verified:** each mockup screen in headless Chrome at 1440, 1280, 820
+and 390 px with no page errors. In-browser DTW gives the course numbers
+(Euclidean 3.71, DTW w=4 0.22 on mon and sat) under the course convention.
+Search, map filters, sector filter, popover cards and contents drawer
+clicked through.
+
+**Decisions**
+
+- Approved (owner): explorable-essay format ("A"). Rejects scrollytelling
+  ("B": weak on phones, a story rather than a lesson to revisit) and an
+  app-like course shell ("C").
+- Approved (owner): one reading column, every block (text, figures,
+  finance, code) the same width, on desktop, tablet and phone. Rejects
+  full-width bands. Width proposed by Claude and accepted: 800 px with
+  18 px text, 760 px next to the contents.
+- Approved (owner): navigation as in ai-one-token-at-a-time: contents fixed
+  on the left from 1180 px, behind a menu button below that, with the open
+  lesson's sections listed under it. Search box in the top bar ("metti
+  anche la ricerca"). Replaces the pilot's single top bar.
+- Approved (owner): code is read and copied only (Python and R tabs,
+  libraries listed under it). Rejects running code in the page (Pyodide,
+  webR): weight and reading come first.
+- Approved (owner): more operative course: worked examples and exercises
+  in every lesson, more figures, longer lessons. Replaces "lean lessons".
+- Approved (owner): a map of the field at the start of the course, built
+  from the README tables and the course taxonomy (compare, group,
+  validate), with item cards and filters (what to ignore, distance matrix
+  only, sector). Why: the README catalogue was lost in the pilot. Card
+  content is a draft to verify.
+- Approved (owner): examples from main sectors (energy, finance, weather,
+  retail, industry, health), and suitability depends on the sector: the
+  map marks good fits and fits to avoid per sector. Open: how many sectors
+  recur as main examples.
+- Approved (owner): three main sectors recur in every lesson with worked
+  examples and exercises: energy (the existing fixture), finance, weather.
+  Retail, industry and health stay in the map's sector filter and appear
+  in some exercises. Each main sector gets an authored dataset like the
+  energy one, plus, where the licence allows, a script that downloads real
+  data for the exercises. Rejects six recurring sectors (six datasets to
+  build and check).
+- Proposed by Claude, shown in the mockups, not objected to:
+  predict-then-reveal questions in lessons, finance block always before
+  the code, live figures in JavaScript under the course DTW convention.
+- Approved (owner): logo "TS" in a blue square, as "AI" in the other
+  course. Rejects TSC, TS with a wave, letterless mark.
+- Approved (owner): sources for everything. Every definition (each
+  measure, method, validity index) cites its primary source. The owner
+  supplied only the README's few references, Claude finds the rest.
+  Link policy (owner, refined in conversation): one reference source per
+  item, the one that defines it, linked in up to four places (publisher
+  via DOI, arXiv, SSRN, authors' page) so the reader picks one. No "free
+  to read" label anywhere: access depends on the reader, and a free label
+  can be wrong. Rejects Claude's first version with free labels. A Sources
+  page, a sources list per lesson, one source in each map card.
+  Then narrowed (owner): not hundreds of sources. A couple of reference
+  works cover the map (proposed: Paparrizos et al. 2024 for distances,
+  Aghabozorgi et al. 2015 for methods, Arbelaitz et al. 2013 for validity
+  indices, all checked on Crossref or arXiv), and each lesson cites only
+  what its paragraphs use, in the paragraph itself (a click shows the
+  source and its links) and in a short list at the end. Rejects an upfront
+  search for the original paper of every one of the 100+ items: sources
+  are found while each lesson is written. The three reference works were
+  approved by the owner. Mockup references
+  checked on Crossref (14 DOIs) and the arXiv API (4 ids). The SSRN page
+  refuses automated requests (HTTP 403), so SSRN links need a manual check.
+- Done (owner request): one plain preview server, port 60610, no key.
+  Stopped 60611 and the companion server on 63317.
+- Found: R `dist(method = "binary")` is a Jaccard-type distance, not
+  Hamming as the README says.
+
+**HANDOFF reconciliation:** "owner review of the pilot" done (this entry).
+"Merge pilot" kept, now deferred until the redesign plan. "Preview server
+60610" kept as the one server. Added: redesign brainstorm, map content to
+verify, commit of the closure notes still waiting.
+
+## 2026-10-28 · Pilot built and reviewed (branch `pilot`)
+
+Subagent-driven execution of `docs/superpowers/plans/2026-10-28-pilot.md`.
+Claude as PM, implementers on Sonnet (Tasks 1 to 4) and Opus (Tasks 5 to 9),
+reviewers: Sonnet for Tasks 1 to 4, Codex (GPT-6 Astra) from Task 5 on and
+for the whole branch. Run ledger: `.superpowers/sdd/2026-10-28-pilot/progress.md`
+(git-ignored, to be deleted after the owner's ok).
+
+**Commits on `pilot`** (from master `196e416`): `6a8bc72` setup and fixture,
+`5b0dea3` Python distances, `816e04e` dark theme rules, `3197dda` grouping
+and validity, `a99b2bc` R DTW and parity, `df22549` + `e5c6986` engine,
+`f147268` + `ef3e721` figures, `5295eff` group-colour rule, `d5c44b6` +
+`4665ec4` overview and lesson 1, `364d5e1` + `ef52f00` lesson 5,
+`e828b35` `59434d0` `1d5f42d` `6925633` `0575db2` final fix wave.
+
+**Verified** (on `0575db2`): 38 pytest (30 reference tests with expected
+values from hand computation, dtw-python, aeon, scikit-learn and the
+fixture's declared groups), R vs Python and R vs R `dtw` worst difference
+0, figures and numbers regenerate byte-identical, `npm test` (e2e on
+file:// and under `/time-series-clustering/`: no external request, no
+failed asset, exact prev/next for every lesson, theme persistence, system
+dark fallback, 375 px), contrast table in both themes, keyboard focus, 12
+full-page screenshots. Codex independently re-checked the numbers, the R
+parity, the regeneration and the page links (`docs/research/2026-10-28-codex-pilot-final-review.md`,
+`...-final-rereview.md`).
+
+**Bugs caught by review and fixed:** small-text contrast under 4.5:1 in
+light; fragment links with no heading ids; e2e navigation assertions that
+could pass with missing pager links; figure shading descriptions false in
+dark; lesson 1 implying Euclidean ignores shape; a finance note claiming
+more than its source; lesson 5 stating the soft-DTW divergence guarantee
+without the source's conditions; stale screenshots.
+
+**Decisions**
+
+- Done (owner, mid-run): dark theme = the palette and rules approved for
+  ai-one-token-at-a-time (`docs/design/dark-theme.md`). Replaces the
+  provisional dark tokens. Closes the HANDOFF item "dark palette".
+- Approved (owner): "content first, code later, starting from existing
+  libraries". The owner meant this for the course order. The pilot already
+  had its code and was finished as planned. Applies from design step 2 on.
+- Approved (owner): Codex is the adversarial reviewer, "as usual". Done:
+  task reviews from Task 5 on and the whole-branch review by Codex, instead
+  of Sonnet reviewers.
+- Done (Claude rulings, each in the run ledger with its cost if wrong):
+  branch in the same checkout instead of a worktree; smoke content kept as
+  a permanent test fixture (`tests/fixtures/smoke/`) instead of deleted;
+  build exits 0 with a note when no `content/_course.md`; F-group edge
+  checks automated; contrast fixed by switching small text to `--ink-2`
+  without changing brand tokens; grouping figures colour by group while
+  two-series figures keep A ink / B accent (plan amended, `5295eff`);
+  lesson 5 stays `planned` until written; a verbatim one-line fix accepted
+  without a separate re-review; Codex's LEAVE items parked.
+- Proposed, owner to judge in review: light cards and pager on white,
+  more prominent dark alignment links.
+
+**HANDOFF reconciliation:** "Pilot execution" done (this entry). "Dark
+palette" done (dark-theme rules adopted). Added: owner review, merge and
+workspace deletion, parked items (moved to the copied Codex final review),
+next-phase direction.
+
 ## 2026-10-28 · Pilot plan reviewed and approved, Codex hooks fixed
 
 **Done**
