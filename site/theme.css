@@ -197,6 +197,22 @@ figure { margin: 40px 0; background: var(--fig-bg); border: 1px solid var(--rule
    centred on the panel, never enlarged (live figures redraw at the real width instead, design 6) */
 figure svg { display: block; width: 100%; max-width: 360px; margin: 0 auto; height: auto; }
 figcaption { font: 12px/1.5 var(--f-mono); color: var(--fig-label); margin-top: 10px; }
+/* live figures: the SVG redraws at the real width (viewBox in CSS pixels), so the 360 px cap goes.
+   Controls are quiet: real inputs in the figure's mono label type, the page tokens only. */
+figure svg.live { max-width: none; }
+.live-ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; margin-top: 14px; font: 12px/1.5 var(--f-mono); color: var(--fig-label); }
+.live-ctl fieldset { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin: 0; padding: 0; border: 0; min-width: 0; }
+.live-ctl legend { float: left; padding: 0; margin-right: 14px; }
+.live-ctl label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.live-ctl input { accent-color: var(--accent); margin: 0; }
+.live-ctl input[type="range"] { width: 140px; }
+.live-ctl input:disabled { cursor: not-allowed; }
+.live-win { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.live-w { white-space: nowrap; }
+.live-win label { cursor: default; }
+.live-ctl button { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 2px 12px; cursor: pointer; }
+.live-ctl button:hover { border-color: var(--accent); }
+.live-out { font: 12px/1.5 var(--f-mono); color: var(--ink); margin: 10px 0 0; }
 
 /* finance block: its own dark surface in both themes. --fin-bg is set on :root and never re-pointed, so the
    background does not follow the text colours below. Inside, the text, link, focus and figure variables are

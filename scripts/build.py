@@ -117,7 +117,7 @@ def copy_assets(dist):
     assets = dist / "assets"
     (assets / "fonts").mkdir(parents=True)
     (assets / "katex" / "fonts").mkdir(parents=True)
-    for name in ("theme.css", "theme.js", "course.js", "map.js", "kernels.js", "favicon.svg"):
+    for name in ("theme.css", "theme.js", "course.js", "map.js", "kernels.js", "live.js", "favicon.svg"):
         shutil.copyfile(SITE / name, assets / name)
     geist = NODE / "geist" / "dist" / "fonts"
     shutil.copyfile(geist / "geist-sans" / "Geist-Variable.woff2", assets / "fonts" / "Geist-Variable.woff2")

@@ -64,23 +64,38 @@ const browser = await chromium.launch({
   args: ['--disable-gpu', '--disable-software-rasterizer', '--use-gl=swiftshader'],
 });
 
-// A context that records console errors, failed requests, HTTP errors and requests to other origins.
-async function context(run, opts, isLocal) {
+// A context that records console errors, failed requests, HTTP errors, requests to other origins and any
+// fetch or XHR request (the site makes none at runtime). `allow` is for the failure runs of the live figure
+// and exempts only: the one blocked URL (its request, its failed load and the console line about it) with
+// `blocked` (a path suffix, e.g. "assets/live.js"), and console errors that start "live figure:" with `liveErrors`.
+async function context(run, opts, isLocal, allow = {}) {
   const ctx = await browser.newContext(opts);
+  const isBlocked = url => !!allow.blocked && url.endsWith(allow.blocked);
   await ctx.route('**/*', route => {
     const url = route.request().url();
+    if (isBlocked(url)) return route.abort();
     if (isLocal(url)) return route.continue();
     failures.push(`${run}: request to another origin: ${url}`);
     return route.abort();
   });
-  ctx.on('requestfailed', r => isLocal(r.url()) && failures.push(`${run}: request failed: ${r.url()} (${r.failure()?.errorText})`));
+  ctx.on('request', r => ['fetch', 'xhr'].includes(r.resourceType()) && failures.push(`${run}: ${r.resourceType()} request to ${r.url()}`));
+  ctx.on('requestfailed', r => isLocal(r.url()) && !isBlocked(r.url()) && failures.push(`${run}: request failed: ${r.url()} (${r.failure()?.errorText})`));
   ctx.on('response', r => r.status() >= 400 && failures.push(`${run}: HTTP ${r.status()} for ${r.url()}`));
   ctx.on('page', p => {
-    p.on('console', m => m.type() === 'error' && failures.push(`${run}: console error on ${p.url()}: ${m.text()}`));
+    p.on('console', m => {
+      if (m.type() !== 'error') return;
+      if (allow.liveErrors && m.text().startsWith('live figure:')) return;
+      if (allow.blocked && isBlocked(m.location().url || '')) return;
+      failures.push(`${run}: console error on ${p.url()}: ${m.text()}`);
+    });
     p.on('pageerror', e => failures.push(`${run}: page error on ${p.url()}: ${e.message}`));
   });
   return ctx;
 }
+
+// Failure runs of the live figure: like context, but it exempts only the one blocked URL, or only the
+// console errors that start "live figure:", and still fails on anything else.
+const failureContext = (run, opts, isLocal, allow) => context(run, opts, isLocal, allow);
 
 const bodyBg = p => p.evaluate(() => getComputedStyle(document.body).backgroundColor);
 const theme = p => p.evaluate(() => document.documentElement.dataset.theme || null);
@@ -946,8 +961,8 @@ async function liveGeometry(p, figure, expected, label) {
   const n = expected.n;
   if (g.pair !== `${na}-${nb}`) bad(`data-pair is ${g.pair}, expected ${na}-${nb}`);
   if (g.w !== String(expected.w ?? 'none')) bad(`data-w is ${g.w}, expected ${expected.w ?? 'none'}`);
-  if (!g.desc.includes(`${expected.euclidean}`) || !g.desc.includes(`${expected.dtw}`) || !g.desc.includes(na) || !g.desc.includes(nb)) {
-    bad(`desc does not state the pair and both distances (${expected.euclidean}, ${expected.dtw}): ${g.desc.slice(0, 80)}`);
+  if (!g.desc.includes(`Euclidean distance ${expected.euclidean}, DTW distance ${expected.dtw}`) || !g.desc.includes(na) || !g.desc.includes(nb)) {
+    bad(`desc does not state the pair and "Euclidean distance ${expected.euclidean}, DTW distance ${expected.dtw}": ${g.desc.slice(0, 100)}`);
   }
   if (g.grid.length !== 1 || g.paths.length !== 1 || g.a.length !== 1 || g.b.length !== 1) { bad('markers: need one grid, path, series-a and series-b'); return; }
   const { x: gx, y: gy, size } = g.grid[0];
@@ -1010,6 +1025,7 @@ async function liveStaticChecks(run, browserContext, url) {
   const figs = p.locator('main figure[data-live="dtw"]');
   expect(await figs.count() === 2, `${run}: gamma needs two live figures, has ${await figs.count()}`);
   expect(await count(p, 'main figure') === 2 && await count(p, 'main figure script.live-data') === 2, `${run}: gamma figure and data script count`);
+  expect(await count(p, 'main figure input, main figure button, main figure .live-ctl, main figure .live-out') === 0, `${run}: no JS: live figures show controls or a readout`);
   const dir = 'tests/fixtures/smoke/figures/';
   const cases = [['live-a', 0, 1, 7, '1.41', '1.00'], ['live-b', 0, 1, 10, '1.00', '0.00']];
   for (const [k, [name, pair, w, ncells, euclid, dist]] of cases.entries()) {
@@ -1019,6 +1035,204 @@ async function liveStaticChecks(run, browserContext, url) {
     await liveGeometry(p, figs.nth(k), exp, `${run}: ${name} static`);
   }
   await p.close();
+}
+
+// --- The live figures on the smoke gamma page (the real lesson is checked with its own figure later). ---
+const LIVE_DIR = 'tests/fixtures/smoke/figures/';
+const LIVE_FILES = ['live-a', 'live-b'];
+const figureClassNames = () => {
+  const css = fs.readFileSync(path.join(root, 'site', 'theme.css'), 'utf8');
+  const block = css.slice(css.indexOf('/* figure-classes:start */'), css.indexOf('/* figure-classes:end */'));
+  return new Set([...block.matchAll(/figure svg \.([a-z-]+)/g)].map(m => m[1]));
+};
+// Words for a window of w samples at 30-minute sampling (the smoke data), written here from the input contract.
+const winWords = w => `w = ${w} sample${w === 1 ? '' : 's'} (${w * 30 < 60 ? w * 30 + ' min' : (w * 30 / 60) + ' h'})`;
+const readoutOf = e => `${e.pair[0]} and ${e.pair[1]}, ${e.w === null ? 'no window' : winWords(e.w)}: DTW ${e.dtw}, Euclidean ${e.euclidean}`;
+
+// Every state the checks can reach, from tests/live_expect.py in one call per file.
+function liveTable() {
+  const table = {};
+  const states = { 'live-a': [[0, 'none'], ...[0, 1, 2].map(w => [0, w])], 'live-b': [0, 1].flatMap(pr => [0, 1, 2, 3].map(w => [pr, w])) };
+  for (const name of LIVE_FILES) {
+    table[name] = {};
+    liveExpect(LIVE_DIR + name + '.live.json', states[name]).forEach((e, k) => { table[name][`${states[name][k][0]},${states[name][k][1]}`] = e; });
+  }
+  return table;
+}
+
+const liveFig = (p, k) => p.locator('main figure[data-live="dtw"]').nth(k);
+const readoutText = (p, k) => liveFig(p, k).locator('.live-out').innerText({ timeout: 1500 }).catch(() => '(no readout)');
+// What a figure shows: checked inputs, path points and readout. Used to prove the other figure did not move.
+const liveSnapshot = (p, k) => liveFig(p, k).evaluate(f => ({
+  checked: [...f.querySelectorAll('input')].map(i => (i.type === 'range' ? i.value : i.checked) + (i.disabled ? 'd' : '')),
+  path: f.querySelector('[data-part="path"]')?.getAttribute('points'), out: f.querySelector('.live-out')?.textContent,
+}));
+// Check figure k against state `e` (an object of liveTable) and its readout line.
+async function liveState(run, p, k, e, label) {
+  await liveGeometry(p, liveFig(p, k), e, `${run}: ${label}`);
+  const out = await readoutText(p, k);
+  expect(out === readoutOf(e), `${run}: ${label}: readout "${out}", expected "${readoutOf(e)}"`);
+}
+const activeIs = (p, sel) => p.evaluate(s => document.activeElement.matches(s), sel);
+
+async function liveChecks(run, url, isLocal) {
+  const T = liveTable();
+  const A = T['live-a'], B = T['live-b'];
+  const OPEN = { viewport: { width: 1280, height: 900 }, colorScheme: 'light' };
+  let ctx = await context(run, OPEN, isLocal);
+  let p = await ctx.newPage();
+  await p.goto(url('gamma/index.html'));
+  await p.waitForSelector('main figure[data-live] .live-out', { timeout: 3000 }).catch(() => failures.push(`${run}: no live readout appeared`));
+
+  // initial agreement, the figure classes, no colour attributes
+  await liveState(run, p, 0, A['0,1'], 'live-a initial');
+  await liveState(run, p, 1, B['0,1'], 'live-b initial');
+  expect(await readoutText(p, 0) === 'aa and ab, w = 1 sample (30 min): DTW 1.00, Euclidean 1.41', `${run}: live-a readout text`);
+  expect(await readoutText(p, 1) === 'ba and bb, w = 1 sample (30 min): DTW 0.00, Euclidean 1.00', `${run}: live-b readout text`);
+  const allowed = figureClassNames();
+  for (const k of [0, 1]) {
+    const bad = await liveFig(p, k).locator('svg').first().evaluate((svg, ok) => {
+      const out = [];
+      for (const el of [svg, ...svg.querySelectorAll('*')]) {
+        for (const c of el.classList) if (!ok.includes(c) && !(el === svg && c === 'live')) out.push(`${el.tagName}.${c}`);
+        for (const a of ['fill', 'stroke', 'style']) if (el.hasAttribute(a)) out.push(`${el.tagName}[${a}]`);
+      }
+      return out;
+    }, [...allowed]);
+    expect(bad.length === 0, `${run}: live SVG ${k} uses classes or attributes outside the figure rules: ${bad.slice(0, 5)}`);
+    expect(await liveFig(p, k).locator('svg.live').count() === 1 && await liveFig(p, k).locator('svg').count() === 1, `${run}: live figure ${k} needs exactly one svg.live`);
+    expect(await liveFig(p, k).locator('svg.live').evaluate(s => getComputedStyle(s).maxWidth) === 'none', `${run}: live SVG ${k} keeps the 360 px cap`);
+  }
+  expect(await liveFig(p, 0).locator('fieldset').count() === 0, `${run}: live-a has one pair and must show no pair group`);
+  expect(await liveFig(p, 1).locator('fieldset legend').innerText() === 'Pair', `${run}: live-b pair group legend`);
+  const names = await p.locator('main figure[data-live] input[type=radio]').evaluateAll(rs => [...new Set(rs.map(r => r.name))]);
+  expect(names.length === 1, `${run}: radio group names ${names} (one group, unique per figure)`);
+
+  // keyboard only on live-b: pair group, then the slider, then Reset
+  const b = liveFig(p, 1);
+  await b.locator('svg').click({ position: { x: 5, y: 5 } });
+  await p.keyboard.press('Tab');
+  expect(await activeIs(p, 'input[type=radio]:checked') && await p.evaluate(() => document.activeElement.closest('figure') === document.querySelectorAll('figure[data-live]')[1]), `${run}: Tab did not land on the checked pair radio of live-b`);
+  await p.keyboard.press('ArrowDown');
+  expect(await b.locator('input[type=radio]:checked').evaluate(r => r.labels[0].textContent.trim()) === 'ba and bc', `${run}: ArrowDown did not check "ba and bc"`);
+  await liveState(run, p, 1, B['1,1'], 'live-b ba and bc, w=1');
+  await p.keyboard.press('Tab');
+  expect(await activeIs(p, 'input[type=range]'), `${run}: second Tab did not reach the slider`);
+  for (const w of [2, 3]) { await p.keyboard.press('ArrowRight'); await liveState(run, p, 1, B[`1,${w}`], `live-b ba and bc, w=${w}`); }
+  for (const w of [2, 1, 0]) { await p.keyboard.press('ArrowLeft'); await liveState(run, p, 1, B[`1,${w}`], `live-b ba and bc, w=${w}`); }
+  // Review Focus 4: live-a does not move while live-b changes
+  const a0 = await liveSnapshot(p, 0);
+  await p.keyboard.press('ArrowRight');
+  await p.keyboard.press('Tab');
+  expect(await activeIs(p, 'button'), `${run}: Tab after the slider did not reach Reset`);
+  expect(JSON.stringify(await liveSnapshot(p, 0)) === JSON.stringify(a0), `${run}: live-a changed while live-b was changed`);
+  await p.keyboard.press('Enter');
+  await liveState(run, p, 1, B['0,1'], 'live-b after Reset');
+  expect(await b.locator('input[type=range]').inputValue() === '1' && await b.locator('input[type=radio]:checked').evaluate(r => r.labels[0].textContent.trim()) === 'ba and bb', `${run}: Reset did not restore the pair and window controls`);
+  expect(JSON.stringify(await liveSnapshot(p, 0)) === JSON.stringify(a0), `${run}: live-a changed after live-b was reset`);
+
+  // keyboard only on live-a: slider, No window (Space), retained value, Reset
+  const a = liveFig(p, 0);
+  await a.locator('svg').click({ position: { x: 5, y: 5 } });
+  await p.keyboard.press('Tab');
+  expect(await activeIs(p, 'input[type=range]'), `${run}: live-a: first Tab did not reach the slider`);
+  await p.keyboard.press('ArrowRight');
+  await liveState(run, p, 0, A['0,2'], 'live-a w=2');
+  await p.keyboard.press('Tab');
+  expect(await activeIs(p, 'input[type=checkbox]'), `${run}: live-a: Tab did not reach No window`);
+  expect((await a.locator('input[type=checkbox]').evaluate(c => c.labels[0].textContent.trim())) === 'No window', `${run}: live-a checkbox label`);
+  await p.keyboard.press('Space');
+  expect(await a.locator('input[type=range]').isDisabled(), `${run}: live-a: No window did not disable the slider`);
+  await liveState(run, p, 0, A['0,none'], 'live-a no window');
+  expect((await readoutText(p, 0)).startsWith('aa and ab, no window: DTW '), `${run}: live-a readout form with no window`);
+  await p.keyboard.press('Space');
+  expect(await a.locator('input[type=range]').isEnabled() && await a.locator('input[type=range]').inputValue() === '2', `${run}: live-a: the slider did not keep its value`);
+  await liveState(run, p, 0, A['0,2'], 'live-a unchecked, retained w=2');
+  await p.keyboard.press('Tab');
+  await p.keyboard.press('Enter');
+  await liveState(run, p, 0, A['0,1'], 'live-a after Reset');
+  expect(await a.locator('input[type=checkbox]').isChecked() === false, `${run}: live-a: Reset left No window checked`);
+  await a.locator('input[type=checkbox]').check();
+  await a.locator('button').click();
+  await liveState(run, p, 0, A['0,1'], 'live-a Reset from no window');
+  expect(await a.locator('input[type=range]').isEnabled(), `${run}: live-a: Reset from no window left the slider disabled`);
+
+  // Review Focus 3: width. live-b at ba and bc, w = 2, from 1440 to 375 px
+  await p.setViewportSize({ width: 1440, height: 900 });
+  await b.locator('input[type=radio]').nth(1).check();
+  await b.locator('input[type=range]').fill('2');
+  await p.waitForTimeout(500);
+  await liveState(run, p, 1, B['1,2'], 'live-b before resize');
+  const widths = () => b.evaluate(f => {
+    const cs = getComputedStyle(f), svg = f.querySelector('svg');
+    return { content: f.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), rendered: svg.getBoundingClientRect().width, viewBox: svg.viewBox.baseVal.width };
+  });
+  let m = await widths();
+  expect(Math.abs(m.rendered - m.content) <= 1 && Math.abs(m.viewBox - m.content) <= 1, `${run}: live-b at 1440: content ${m.content}, rendered ${m.rendered}, viewBox ${m.viewBox}`);
+  await p.setViewportSize({ width: 375, height: 812 });
+  await p.waitForTimeout(500);
+  m = await widths();
+  expect(Math.abs(m.rendered - m.content) <= 1 && Math.abs(m.viewBox - m.content) <= 1, `${run}: live-b at 375: content ${m.content}, rendered ${m.rendered}, viewBox ${m.viewBox}`);
+  expect(m.content < 340, `${run}: live-b at 375: content width ${m.content} is not the phone width`);
+  await liveState(run, p, 1, B['1,2'], 'live-b after resize');
+  expect(await p.evaluate(() => document.documentElement.scrollWidth) <= 375, `${run}: gamma overflows at 375 px with the live figures`);
+  await ctx.close();
+
+  // focus ring on every control, both themes
+  for (const scheme of ['light', 'dark']) {
+    ctx = await context(run, { ...OPEN, colorScheme: scheme }, isLocal);
+    p = await ctx.newPage();
+    await p.goto(url('gamma/index.html'));
+    await p.waitForSelector('main figure[data-live] .live-out', { timeout: 3000 }).catch(() => failures.push(`${run}: no live readout appeared`));
+    for (const k of [0, 1]) {
+      const n = await liveFig(p, k).locator('input, button').count();
+      expect(n >= 3, `${run}: live figure ${k} has ${n} controls`);
+      for (let c = 0; c < n; c++) {
+        const ring = await liveFig(p, k).locator('input, button').nth(c).evaluate(el => {
+          el.focus({ focusVisible: true });
+          const cs = getComputedStyle(el);
+          return [cs.outlineWidth, cs.outlineStyle, cs.outlineColor, getComputedStyle(el.closest('figure')).backgroundColor, `${el.tagName}[${el.type}]`];
+        });
+        const ok = ring[1] !== 'none' && parseFloat(ring[0]) >= 2 && contrast(ring[2], ring[3]) >= 4.5;
+        expect(ok, `${run}: ${scheme}: live figure ${k} ${ring[4]} focus ring ${ring[0]} ${ring[1]} ${ring[2]} on ${ring[3]} = ${contrast(ring[2], ring[3]).toFixed(2)}`);
+      }
+    }
+    await ctx.close();
+  }
+
+  // Review Focus 2, blocked: no live.js, then no kernels.js. The static figures stand alone.
+  for (const blocked of ['assets/live.js', 'assets/kernels.js']) {
+    ctx = await failureContext(run, OPEN, isLocal, { blocked, liveErrors: true });
+    p = await ctx.newPage();
+    await p.goto(url('gamma/index.html'));
+    await p.waitForTimeout(400);
+    expect(await count(p, 'main figure figcaption') === 2, `${run}: ${blocked} blocked: captions missing`);
+    expect(await count(p, 'main figure input, main figure button, main figure .live-ctl, main figure .live-out') === 0, `${run}: ${blocked} blocked: controls or readout shown`);
+    for (const k of [0, 1]) {
+      expect(await liveFig(p, k).locator('svg').first().isVisible(), `${run}: ${blocked} blocked: static SVG ${k} not visible`);
+      await liveGeometry(p, liveFig(p, k), (k === 0 ? A : B)['0,1'], `${run}: ${blocked} blocked: figure ${k}`);
+    }
+    await ctx.close();
+  }
+
+  // Review Focus 2, after activation: dtwPath throws for the 4-sample series of live-b only (the kernels are shared)
+  ctx = await failureContext(run, OPEN, isLocal, { liveErrors: true });
+  const errors = [];
+  p = await ctx.newPage();
+  p.on('console', mm => mm.type() === 'error' && errors.push(mm.text()));
+  await p.goto(url('gamma/index.html'));
+  await p.waitForSelector('main figure[data-live] .live-out', { timeout: 3000 }).catch(() => failures.push(`${run}: no live readout appeared`));
+  await liveFig(p, 1).locator('input[type=radio]').nth(1).check();
+  await liveState(run, p, 1, B['1,1'], 'live-b before the failure');
+  await p.evaluate(() => { const real = window.TSC_KERNELS.dtwPath; window.TSC_KERNELS.dtwPath = (x, y, w) => { if (x.length === 4) throw new Error('boom'); return real(x, y, w); }; });
+  await liveFig(p, 1).locator('input[type=range]').fill('2');
+  await liveGeometry(p, liveFig(p, 1), B['0,1'], `${run}: live-b after the failure`);
+  expect(await count(p, 'main figure:nth-of-type(2) input, main figure:nth-of-type(2) button, main figure:nth-of-type(2) .live-ctl') === 0 || await liveFig(p, 1).locator('input, button, .live-ctl').count() === 0, `${run}: live-b kept its controls after the failure`);
+  expect(await liveFig(p, 1).locator('.live-out').innerText() === 'The interactive figure stopped. Shown: the initial setting, ba and bb, w = 1 sample (30 min).', `${run}: live-b failure readout: ${await liveFig(p, 1).locator('.live-out').innerText()}`);
+  expect(errors.filter(t => t.startsWith('live figure:')).length === 1 && errors.length === 1, `${run}: failure console errors: ${JSON.stringify(errors)}`);
+  await liveFig(p, 0).locator('input[type=range]').fill('2');
+  await liveState(run, p, 0, A['0,2'], 'live-a after live-b failed');
+  await ctx.close();
 }
 
 // Published lesson ids in course order, read from the source _course.md (not from the built pages).
@@ -1124,6 +1338,7 @@ async function suite(label, dist, contentDir, smoke) {
       await noJsChecks(run.name, ctx, run.url);
       await liveStaticChecks(run.name, ctx, run.url);
       await ctx.close();
+      await liveChecks(run.name, run.url, run.isLocal);
     }
 
     // dark system preference with no stored choice: pages start dark
