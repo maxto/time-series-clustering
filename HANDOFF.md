@@ -1,10 +1,9 @@
 # HANDOFF — time-series-clustering
 
-Closed: 2026-10-29 11:06 CET (HEAD verified before this update: 7f28d4f)
-Last operation: checkpoint 1 of the redesign built on branch `redesign`
-(9 tasks, task reviews, Codex whole-branch review and one fix wave), tests
-green, demo served for the owner. LOG entry "Checkpoint 1 built (shell,
-format, draft map)".
+Closed: 2026-10-29 12:17 CET (HEAD verified before this update: 976c502)
+Last operation: the two SDD workspaces deleted with the owner's go-ahead,
+ledgers kept in `docs/research/`. Before that: checkpoint 1 built and
+verified (LOG entry "Checkpoint 1 built (shell, format, draft map)").
 
 ## Goal
 
@@ -32,8 +31,10 @@ Plan executed:
   Rebuild with `npm run preview` after changes. Server verified 11:06, to
   check at resume.
 - Screenshots: `tests/output/shots/` (16 PNG, manifest), git-ignored.
-- SDD workspace `.superpowers/sdd/2026-10-29-redesign-checkpoint-1/`
-  (ledger with every ruling and deferred minor finding), git-ignored.
+- SDD workspaces deleted 2026-10-29 with the owner's go-ahead. Their
+  ledgers (every ruling and deferred minor finding) are tracked in
+  `docs/research/2026-10-28-sdd-pilot-ledger.md` and
+  `docs/research/2026-10-29-sdd-cp1-ledger.md`.
 - Codex pane of this project (`term_58cbd4cb...`): idle, its answers saved
   in `docs/research/`. Keep its context until checkpoint 1 is closed with
   the owner.
@@ -58,25 +59,22 @@ Plan executed:
    model (design 1.1). Reference works approved. Status: applies from
    checkpoint 2.
 5. **Deferred edge cases and minor findings** of checkpoint 1, listed in the
-   ledger (`progress.md`) and in the Codex branch review's disposition
-   table: to propose to the owner as a short list. Status: to do with
+   ledger (`docs/research/2026-10-29-sdd-cp1-ledger.md`) and in the Codex
+   branch review's disposition table: to propose to the owner as a short list. Status: to do with
    checkpoint 2 planning.
-6. **Delete the SDD workspaces** `.superpowers/sdd/2026-10-28-pilot/` and
-   `.superpowers/sdd/2026-10-29-redesign-checkpoint-1/` (git-ignored). Each
-   needs the owner's go-ahead. Status: not asked yet.
-7. **Branches:** `redesign` builds on `pilot`. Merging into `master` needs
+6. **Branches:** `redesign` builds on `pilot`. Merging into `master` needs
    the owner's go-ahead. Status: after the redesign checkpoints.
-8. **Exercises, transfer tasks, finance and weather fixtures:** design step
+7. **Exercises, transfer tasks, finance and weather fixtures:** design step
    4, each with the owner's go-ahead. Status: deferred.
-9. **Parked items** of the pilot (Codex final triage):
+8. **Parked items** of the pilot (Codex final triage):
    `docs/research/2026-10-28-codex-pilot-final-review.md`. Status: parked.
-10. **Content first, existing libraries first** (owner, 2026-10-28) for the
-    remaining lessons and code labs. Status: applies from step 3.
-11. **Licence:** MIT code + CC BY 4.0 content proposed, owner to confirm.
+9. **Content first, existing libraries first** (owner, 2026-10-28) for the
+   remaining lessons and code labs. Status: applies from step 3.
+10. **Licence:** MIT code + CC BY 4.0 content proposed, owner to confirm.
     PDF rights to check. Status: to decide.
-12. **Remote steps, each with its own go-ahead:** push, repo rename,
+11. **Remote steps, each with its own go-ahead:** push, repo rename,
     GitHub Pages activation. Status: not started.
-13. **Codex sessions in other projects** still hold the old hooks (exit
+12. **Codex sessions in other projects** still hold the old hooks (exit
     127) until restarted. Owner: the `~/infra/agents` session, told
     2026-10-28. Status: handed over, to check there.
 

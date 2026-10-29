@@ -1,5 +1,20 @@
 # LOG — time-series-clustering
 
+## 2026-10-29 · SDD workspaces deleted, ledgers kept in docs/research
+
+Owner's go-ahead ("ok", 2026-10-29) to delete the two git-ignored SDD
+workspaces. Done: both ledgers copied first, byte-identical (`cmp`), to
+`docs/research/2026-10-28-sdd-pilot-ledger.md` and
+`docs/research/2026-10-29-sdd-cp1-ledger.md`, then
+`.superpowers/sdd/2026-10-28-pilot/` and
+`.superpowers/sdd/2026-10-29-redesign-checkpoint-1/` deleted (briefs,
+reports, review diffs, pilot task-level Codex reviews). The ledger paths
+named in the entries below and in
+`docs/research/2026-10-29-codex-cp1-branch-review-request.md` now live at
+these two files. Decision (done): keep the ledgers tracked because they hold
+every ruling and the deferred minor findings that HANDOFF item 5 still
+needs. The diffs are reproducible from git and were not kept.
+
 ## 2026-10-29 · Checkpoint 1 built (shell, format, draft map)
 
 Plan `docs/superpowers/plans/2026-10-29-redesign-checkpoint-1.md` (9 tasks)
