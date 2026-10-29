@@ -34,6 +34,8 @@ The next published lesson is [Gamma](lesson:gamma). The math is rendered by [KaT
 
 Jump down to [the subheading](#a-subheading).
 
+The band of [@sakoe78, sec. II] limited the path to a strip around the diagonal.
+
 ![A small hand-made figure: series A in ink, series B in accent](figures/overview.svg)
 
 ### A subheading

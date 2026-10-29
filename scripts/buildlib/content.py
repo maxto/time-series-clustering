@@ -14,6 +14,8 @@ from markdown_it import MarkdownIt
 from markdown_it.token import Token
 from mdit_py_plugins.dollarmath import dollarmath_plugin
 
+from .cite import CITE, Citation, fingerprint
+
 LESSON_KEYS = ("id", "module", "title", "kicker", "sector", "lede", "ignores", "keeps", "python", "r")
 LIST_KEYS = ("ignores", "keeps", "python", "r")
 PROSE_KEYS = ("title", "kicker", "lede", "ignores", "keeps")
@@ -49,8 +51,23 @@ def show(path):
         return str(path)
 
 
+def cite_rule(state, silent):
+    """Inline rule for [@key, locator]. Runs only in prose: code spans and fences are skipped by the parser."""
+    if state.src[state.pos:state.pos + 2] != "[@":
+        return False
+    m = CITE.match(state.src, state.pos)
+    if not m:
+        return False
+    if not silent:
+        tok = state.push("tsc_cite", "", 0)
+        tok.meta = {"key": m.group(1), "locator": (m.group(2) or "").strip(), "label": m.group(1)}
+    state.pos = m.end()
+    return True
+
+
 def markdown():
     md = MarkdownIt("commonmark", {"html": False})
+    md.inline.ruler.before("link", "tsc_cite", cite_rule)
     md.use(dollarmath_plugin, allow_labels=False, double_inline=True)
     return md
 
@@ -91,6 +108,8 @@ class Lesson:
     meta: dict
     blocks: list  # [Block] in document order
     code: dict = field(default_factory=dict)  # "python" / "r" -> code text, only those present
+    citations: list = field(default_factory=list)  # [Citation] in document order
+    fingerprint: str = ""  # whole text after {{n:}} plus the identity of every cited source
     math: list = field(default_factory=list)  # math tokens, rendered in one batch later
     fragments: list = field(default_factory=list)  # "#id" link targets, checked against heading ids
 
@@ -207,7 +226,7 @@ def walk_inline(children):
             yield from walk_inline(tok.children)
 
 
-def load_lessons(content, course, md, errors):
+def load_lessons(content, course, md, sources, errors):
     by_id = {e.id: e for e in course.entries}
     published = {e.id for e in course.published()}
     numbers = Numbers(content)
@@ -233,15 +252,16 @@ def load_lessons(content, course, md, errors):
         files[lid] = path
         if number != entry.number:
             errors.add(path, f"file number {number:02d} does not match position {entry.number} in _course.md")
-        lessons.append(load_lesson(path, entry, md, numbers, published, content, errors))
+        lessons.append(load_lesson(path, entry, md, numbers, published, content, sources, errors))
     for e in course.published():
         if e.id not in files:
             errors.add(content / "_course.md", f"published lesson {e.id!r} has no file {e.number:02d}-{e.id}.md")
     return [lesson for lesson in lessons if lesson]
 
 
-def load_lesson(path, entry, md, numbers, published, content, errors):
-    meta, body = split_front(path.read_text(), path, errors)
+def load_lesson(path, entry, md, numbers, published, content, sources, errors):
+    text = NUMBER.sub(lambda m: numbers.get(m.group(1), path, errors), path.read_text())
+    meta, body = split_front(text, path, errors)
     for key in LESSON_KEYS:
         if key not in meta:
             errors.add(path, f"missing front matter key {key!r}")
@@ -261,15 +281,16 @@ def load_lesson(path, entry, md, numbers, published, content, errors):
         value = meta.get(key, "")
         check_prose(", ".join(value) if isinstance(value, list) else value, path, errors, key)
 
-    body = NUMBER.sub(lambda m: numbers.get(m.group(1), path, errors), body)
     tokens = md.parse(body)
     blocks = split_blocks(tokens, path, errors)
     lesson = Lesson(entry, path, meta, blocks)
     for b in blocks:
         check_prose(b.title, path, errors, f"heading {b.title}")
-        check_tokens(b, lesson, published, content, errors)
+        check_tokens(b, lesson, published, content, sources, errors)
         if b.kind == "code":
             collect_code(b, lesson, errors)
+    identities = sorted({sources[c.key].identity for c in lesson.citations if c.key in sources})
+    lesson.fingerprint = fingerprint("\n".join([text, *identities]))
     ids = heading_ids(blocks, path, errors)
     for frag in lesson.fragments:
         if frag not in ids:
@@ -380,7 +401,7 @@ def collect_code(block, lesson, errors):
             errors.add(lesson.path, f"'## Code' holds only paragraphs and fenced code, found {tok.type}")
 
 
-def check_tokens(block, lesson, published, content, errors):
+def check_tokens(block, lesson, published, content, sources, errors):
     """Prose rules, math collection, links and figures for the tokens of one block."""
     path, tokens, section = lesson.path, block.tokens, block.title
     figures_ok = block.kind in FIGURE_KINDS
@@ -396,8 +417,11 @@ def check_tokens(block, lesson, published, content, errors):
             if images and not (alone and figures_ok):
                 errors.add(path, "an image must be a figure: alone in its own paragraph inside a content section"
                                  " or '## In finance'")
+            paragraph = fingerprint(tok.content)
             for c in walk_inline(tok.children):
-                if c.type == "text":
+                if c.type == "tsc_cite":
+                    check_cite(c, paragraph, lesson, sources, errors)
+                elif c.type == "text":
                     check_prose(c.content, path, errors, f"section {section}")
                 elif c.type in MATH:
                     lesson.math.append(c)
@@ -406,6 +430,18 @@ def check_tokens(block, lesson, published, content, errors):
             if images and alone and figures_ok:
                 figure_token(tokens, i, images[0], path, content, errors)
         i += 1
+
+
+def check_cite(tok, paragraph, lesson, sources, errors):
+    key, locator = tok.meta["key"], tok.meta["locator"]
+    if key not in sources:
+        errors.add(lesson.path, f"citation [@{key}]: unknown source '{key}' (not in _sources.toml)")
+        return
+    if not locator:
+        errors.add(lesson.path, f"citation [@{key}] needs a locator (page, section or theorem), as in [@{key}, p. 3]")
+        return
+    tok.meta["label"] = sources[key].label
+    lesson.citations.append(Citation(key, locator, paragraph))
 
 
 def check_link(tok, lesson, published, errors):

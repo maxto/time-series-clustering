@@ -1,0 +1,7 @@
+[sakoe78]
+authors = ["Sakoe, Hiroaki", "Chiba, Seibi"]
+year = 1978
+title = "Dynamic programming algorithm optimization for spoken word recognition"
+venue = "IEEE Transactions on Acoustics, Speech, and Signal Processing 26(1), 43-49"
+doi = "10.1109/TASSP.1978.1163055"
+topics = ["compare"]

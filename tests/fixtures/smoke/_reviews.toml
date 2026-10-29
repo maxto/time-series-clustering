@@ -1,0 +1,23 @@
+[[lesson]]
+id = "alpha"
+fingerprint = "d9136763a6ac30e8"
+by = "fixture author"
+date = 2026-10-29
+note = "smoke fixture, not a real review"
+
+[[citation]]
+lesson = "alpha"
+key = "sakoe78"
+locator = "sec. II"
+paragraph = "6689d441bf755c19"
+identity = "58ffd6320ffdebec"
+by = "fixture author"
+date = 2026-10-29
+note = "smoke fixture, not a real review"
+
+[[lesson]]
+id = "gamma"
+fingerprint = "6797dd416e9e10d5"
+by = "fixture author"
+date = 2026-10-29
+note = "smoke fixture, not a real review"

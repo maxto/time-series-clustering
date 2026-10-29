@@ -12,10 +12,15 @@ import re
 import shutil
 import subprocess
 import sys
+import tomllib
 
 import pytest
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "scripts"))
+
+from buildlib.cite import fingerprint  # noqa: E402
+
 SMOKE = ROOT / "tests" / "fixtures" / "smoke"
 
 
@@ -77,6 +82,38 @@ def add_subheading(path, title):
     mutate(path, "## A second section\n", f"### {title}\n\nUnder a repeated subheading.\n\n## A second section\n")
 
 
+def review(content, *args):
+    return subprocess.run([sys.executable, str(ROOT / "scripts" / "review.py"), *args, "--content", str(content)],
+                          capture_output=True, text=True, cwd=ROOT)
+
+
+def record_lesson(content, lesson_id):
+    """Approve the current text of a lesson, the way a reviewer does: read its fingerprint, then record it."""
+    shown = review(content, "show", "--lesson", lesson_id)
+    m = re.search(r"^fingerprint: ([0-9a-f]{16})", shown.stdout, re.M)
+    assert m, shown.stdout + shown.stderr
+    done = review(content, "record", "--lesson", lesson_id, "--fingerprint", m.group(1), "--by", "test reviewer")
+    assert done.returncode == 0, done.stdout + done.stderr
+
+
+def edit_source(content, key, **changes):
+    """Change fields of one entry of _sources.toml. A value of None removes the field."""
+    path = content / "_sources.toml"
+    data = tomllib.loads(path.read_text())
+    assert key in data
+    for name, value in changes.items():
+        if value is None:
+            data[key].pop(name, None)
+        else:
+            data[key][name] = value
+    out = []
+    for k, fields in data.items():
+        out.append(f"[{k}]")
+        out += [f"{name} = {json.dumps(value, ensure_ascii=False)}" for name, value in fields.items()]
+        out.append("")
+    path.write_text("\n".join(out))
+
+
 def page(content, lesson_id):
     return (content.parent / "dist" / lesson_id / "index.html").read_text()
 
@@ -103,6 +140,7 @@ def test_semicolon_in_prose_fails(content):
 
 def test_semicolon_in_code_and_math_passes(content):
     add_to_lesson(content, "Code `a; b` and math $a; b$ inline.\n\n```python\nx = 1; y = 2\n```\n\n$$\na; b\n$$")
+    record_lesson(content, "alpha")
     result = build(content)
     assert result.returncode == 0, result.stdout + result.stderr
 
@@ -127,6 +165,7 @@ def test_number_with_missing_key_fails(content):
 def test_number_is_substituted_from_numbers_file(content):
     (content / "figures" / "numbers.json").write_text(json.dumps({"present": 1.23}))
     add_to_lesson(content, "The distance is {{n:present}}.")
+    record_lesson(content, "alpha")
     result = build(content)
     assert result.returncode == 0, result.stdout + result.stderr
     page = (content.parent / "dist" / "alpha" / "index.html").read_text()
@@ -179,6 +218,7 @@ def test_unknown_sector_is_rejected(content):
 
 def test_figure_in_finance_block_builds(content):
     append_to_block(content / "01-alpha.md", "In finance", "![Caption](figures/overview.svg)")
+    record_lesson(content, "alpha")
     result = build(content)
     assert result.returncode == 0, result.stdout + result.stderr
 
@@ -191,6 +231,7 @@ def test_heading_slug_equal_to_block_id_is_rejected(content):
 
 def test_repeated_heading_gets_suffix(content):
     add_subheading(content / "01-alpha.md", "A subheading")
+    record_lesson(content, "alpha")
     result = build(content)
     assert result.returncode == 0, result.stdout + result.stderr
     assert 'id="a-subheading-2"' in page(content, "alpha")
@@ -199,3 +240,59 @@ def test_repeated_heading_gets_suffix(content):
 def test_unknown_code_language_is_rejected(content):
     mutate(content / "01-alpha.md", "```r", "```julia")
     assert "julia" in build(content).stdout
+
+
+def test_fingerprint_of_a_literal_text():  # expected value from: printf 'a b c' | sha256sum | cut -c1-16
+    assert fingerprint("  a \n b\tc ") == "0e9f64031fcb2bc7"
+
+
+def test_citation_renders_label_and_source_entry(content):
+    result = build(content)
+    assert result.returncode == 0, result.stdout + result.stderr
+    out = page(content, "alpha")
+    assert '<a class="cite" href="#src-sakoe78" data-ref="sakoe78">Sakoe and Chiba (1978)</a>' in out
+    assert 'id="src-sakoe78"' in out and "Hiroaki Sakoe and Seibi Chiba" in out
+
+
+def test_unknown_citation_key_fails(content):
+    add_to_lesson(content, "As shown by [@nobody99, p. 1].")
+    assert "unknown source 'nobody99'" in build(content).stdout
+
+
+def test_citation_without_locator_fails(content):
+    add_to_lesson(content, "As shown by [@sakoe78].")
+    assert "needs a locator" in build(content).stdout
+
+
+def test_any_edit_reopens_the_lesson_review(content):
+    mutate(content / "01-alpha.md", "A fixture lesson", "A fixture lesson,")  # front matter lede
+    assert "lesson 'alpha' has no review for its current text" in build(content).stdout
+
+
+def test_removed_citation_reopens_the_lesson_review(content):
+    mutate(content / "01-alpha.md", "The band of [@sakoe78, sec. II] limited", "The band limited")
+    assert "lesson 'alpha' has no review" in build(content).stdout
+
+
+def test_citation_in_list_item_needs_its_record(content):
+    add_to_lesson(content, "- a list item citing [@sakoe78, sec. II]")
+    record_lesson(content, "alpha")  # lesson record only
+    assert "citation [@sakoe78, sec. II] has no review record" in build(content).stdout
+
+
+def test_citation_in_caption_needs_its_record(content):
+    add_to_lesson(content, "![Band of [@sakoe78, sec. II]](figures/overview.svg)")
+    record_lesson(content, "alpha")
+    assert "has no review record" in build(content).stdout
+
+
+def test_changed_source_identity_reopens(content):
+    edit_source(content, "sakoe78", year=1979)
+    assert "has no review" in build(content).stdout
+
+
+def test_registry_rules(content):
+    edit_source(content, "sakoe78", topics=["speech"])
+    assert "unknown topic 'speech'" in build(content).stdout
+    edit_source(content, "sakoe78", topics=["compare"], doi=None, arxiv=None, ssrn=None, url=None)
+    assert "no link" in build(content).stdout

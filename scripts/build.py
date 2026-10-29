@@ -22,6 +22,7 @@ import sys
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 from buildlib import svg  # noqa: E402
+from buildlib.cite import check_reviews, load_reviews, load_sources  # noqa: E402
 from buildlib.content import CODE_LANGUAGES, Errors, esc, load_course, load_lessons, markdown, show  # noqa: E402
 from buildlib.katex import render_math  # noqa: E402
 
@@ -60,10 +61,15 @@ def setup_markdown(figures):
         caption = self.renderInline(meta["caption"], options, env)
         return f'<figure>{figures[meta["name"]]}<figcaption>{caption}</figcaption></figure>\n'
 
+    def cite(self, tokens, idx, options, env):
+        meta = tokens[idx].meta
+        return f'<a class="cite" href="#src-{meta["key"]}" data-ref="{meta["key"]}">{esc(meta["label"])}</a>'
+
     md.add_render_rule("math_inline", math_inline)
     md.add_render_rule("math_inline_double", math_inline)
     md.add_render_rule("math_block", math_block)
     md.add_render_rule("tsc_figure", figure)
+    md.add_render_rule("tsc_cite", cite)
     md.add_render_rule("tsc_skip", lambda self, tokens, idx, options, env: "")
     return md
 
@@ -96,11 +102,25 @@ def pager(prev, nxt):
     return "".join(out)
 
 
-def lesson_page(lesson, course, md, template, prev, nxt, position):
+def lesson_sources(lesson, sources):
+    """Minimal list of the sources the lesson cites, in order of first citation (Task 5 styles it)."""
+    keys = list(dict.fromkeys(c.key for c in lesson.citations))
+    if not keys:
+        return ""
+    items = []
+    for k in keys:
+        s = sources[k]
+        links = " ".join(f'<a href="{esc(url)}">{esc(name)}</a>' for name, url in s.links)
+        items.append(f'<li id="src-{k}">{esc(s.full_authors)} ({s.year}). <cite>{esc(s.title)}</cite>. {esc(s.venue)}. {links}</li>')
+    return f'<section class="lsrc"><h2>Sources cited in this lesson</h2>\n<ol>{"".join(items)}</ol></section>\n'
+
+
+def lesson_page(lesson, course, md, template, prev, nxt, position, sources):
     e, meta = lesson.entry, lesson.meta
     by_kind = {b.kind: b for b in lesson.blocks if b.kind != "section"}
     body = "\n".join(f'<section id="{b.id}"><h2>{esc(b.title)}</h2>\n{render(md, b.tokens)}</section>'
                      for b in lesson.blocks if b.kind == "section")
+    body += "\n" + lesson_sources(lesson, sources)
     # Temporary rendering, replaced with the new templates in Task 5.
     specimens = ""
     if "measure" in by_kind:
@@ -193,7 +213,10 @@ def main():
     errors = Errors()
     md = markdown()
     course = load_course(content, errors)
-    lessons = load_lessons(content, course, md, errors)
+    sources = load_sources(content, errors)
+    reviews = load_reviews(content, errors)
+    lessons = load_lessons(content, course, md, sources, errors)
+    check_reviews(lessons, sources, reviews, errors)
 
     theme_css = (SITE / "theme.css").read_text()
     classes = svg.allowed_classes(theme_css)
@@ -219,7 +242,7 @@ def main():
         prev = published[i - 1] if i > 0 else None
         nxt = published[i + 1] if i + 1 < len(published) else None
         (dist / lesson.entry.id).mkdir()
-        page = lesson_page(lesson, course, md, template, prev, nxt, i + 1)
+        page = lesson_page(lesson, course, md, template, prev, nxt, i + 1, sources)
         (dist / lesson.entry.id / "index.html").write_text(page)
     (dist / "index.html").write_text(home_page(course, (SITE / "home.html").read_text(), figures.get("overview")))
 
