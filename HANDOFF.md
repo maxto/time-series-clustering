@@ -35,9 +35,9 @@ Plan executed:
   ledgers (every ruling and deferred minor finding) are tracked in
   `docs/research/2026-10-28-sdd-pilot-ledger.md` and
   `docs/research/2026-10-29-sdd-cp1-ledger.md`.
-- Codex pane of this project (`term_58cbd4cb...`): idle, its answers saved
-  in `docs/research/`. Keep its context until checkpoint 1 is closed with
-  the owner.
+- Codex pane of this project (`term_58cbd4cb...`): chat cleared 2026-10-29
+  12:20 at the owner's full-clean request (new-chat banner checked), all its
+  answers saved in `docs/research/`. The bash pane was cleared too.
 - The fix-wave commit `7f28d4f` carries a "Sonnet 5.5" co-author trailer
   instead of the session's line. Left as is (changing it rewrites history).
 
