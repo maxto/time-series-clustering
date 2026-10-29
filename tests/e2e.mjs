@@ -318,9 +318,10 @@ async function layoutChecks(run, p, url) {
 const rgbOf = c => c.match(/[\d.]+/g).map(Number);
 const lum = ([r, g, b]) => { const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }; return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b); };
 const contrast = (a, b) => { const [x, y] = [lum(rgbOf(a)), lum(rgbOf(b))].sort((m, n) => n - m); return (x + 0.05) / (y + 0.05); };
-// published values: black on white 21, #767676 on white 4.54
+// published values: black on white 21, #767676 on white 4.54, #777777 on white 4.48
 expect(Math.abs(contrast('rgb(0, 0, 0)', 'rgb(255, 255, 255)') - 21) < 0.01, 'contrast helper: black on white is not 21');
 expect(Math.abs(contrast('rgb(118, 118, 118)', 'rgb(255, 255, 255)') - 4.54) < 0.01, 'contrast helper: #767676 on white is not 4.54');
+expect(Math.abs(contrast('rgb(119, 119, 119)', 'rgb(255, 255, 255)') - 4.48) < 0.01, 'contrast helper: #777777 on white is not 4.48');
 // text colour of an element against the first opaque background found going up the tree (the page root is the last resort)
 const textContrast = (p, sel) => p.locator(sel).first().evaluate(e => {
   const alpha = c => (c.match(/[\d.]+/g) || [0, 0, 0, 1])[3] === undefined ? 1 : Number(c.match(/[\d.]+/g)[3]);
@@ -713,8 +714,9 @@ const PAGE_TEXT_COLOURS = String.raw`(() => {
     out.unshift(n.tagName.toLowerCase() + (n.id ? '#' + n.id : '') + [...n.classList].slice(0, 2).map(c => '.' + c).join('')); return out.join(' > '); };
   const visible = el => { const r = el.getBoundingClientRect(); const cs = getComputedStyle(el);
     return r.width > 1 && r.height > 1 && cs.visibility === 'visible' && cs.display !== 'none' && !el.closest('.katex-mathml, svg, script, style, [hidden]'); };
-  // body text: the paragraph or list item itself (its own colour). Links, emphasis, code and popovers inside it are other text.
-  const bodyScope = 'main :is(section.content, .oneline, .mistake) :is(p, li)';
+  // body text: any text inside a paragraph or list item of the reading column (the wrappers .oneline and .mistake, or the p itself)
+  // whose computed colour equals that paragraph's own colour (strong, code, math included). Links, accent emphasis and popovers are other text.
+  const bodyScope = 'main :is(section.content, .oneline, .mistake) :is(p, li), main :is(p, li):is(.oneline, .mistake)';
   const rows = [];
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
   const seen = new Set();
@@ -725,7 +727,8 @@ const PAGE_TEXT_COLOURS = String.raw`(() => {
     seen.add(el);
     const bg = bgUnder(el);
     const fg = parse(getComputedStyle(el).color); fg[3] *= opacityOf(el);
-    const own = el.matches('p, li') && el.matches(bodyScope);
+    const blk = el.closest('p, li');
+    const own = !!blk && blk.matches(bodyScope) && !el.closest('a, .cite, .pop') && getComputedStyle(el).color === getComputedStyle(blk).color;
     rows.push([name(el), css(over(fg, bg)), css(bg), own ? 10 : 4.5, own ? 'body' : 'text']);
   }
   // figure text: its fill against the shapes under its centre, over the figure's own background
@@ -809,7 +812,6 @@ async function contrastMatrix(run, p, url, pages) {
             return true;
           });
           if (info) {
-            await p.keyboard.press('Shift');
             const ring = await p.evaluate(() => {
               const a = document.querySelector('section.finance a[href]:not(.cite)') || document.querySelector('section.finance a.cite');
               a.focus({ focusVisible: true });
@@ -852,7 +854,8 @@ async function widthChecks(run, p, url, pages) {
         if (page === 'index.html') await p.locator('#map details').evaluateAll(ds => ds.forEach(d => { d.open = true; }));
         const r = await p.evaluate(() => ({
           doc: document.documentElement.scrollWidth, view: document.documentElement.clientWidth,
-          clipped: [...document.querySelectorAll('summary.chip, .sector, a.q')].filter(e => e.scrollWidth > e.clientWidth)
+          // inline boxes report clientWidth 0, so only boxes that lay out their content are compared
+          clipped: [...document.querySelectorAll('summary.chip, .sector, a.q')].filter(e => getComputedStyle(e).display !== 'inline' && e.scrollWidth > e.clientWidth)
             .map(e => `${e.tagName.toLowerCase()}.${e.className} "${e.textContent.trim().slice(0, 24)}" ${e.scrollWidth}>${e.clientWidth}`),
         }));
         expect(r.doc <= width, `${run}: widths: ${page}, ${theme}, ${width} px: scrollWidth ${r.doc} exceeds the viewport`);
