@@ -19,6 +19,9 @@ ATTRS = {"xmlns", "viewBox", "role", "aria-label", "aria-hidden", "id", "class",
          "stroke-opacity", "marker-start", "marker-mid", "marker-end", "markerWidth", "markerHeight", "refX", "refY",
          "orient", "markerUnits", "preserveAspectRatio"}
 COLOUR_ATTRS = {"fill", "stroke", "color", "stop-color", "flood-color", "lighting-color"}
+# The only data- attributes: pair and window on the root, a part name on a drawn element (AGENTS.md, live figures).
+PARTS = {"grid", "cell", "path", "link", "series-a", "series-b"}
+MARKERS = {"data-pair": re.compile(r"[a-z0-9]+-[a-z0-9]+"), "data-w": re.compile(r"[0-9]+|none")}
 BLOCK = re.compile(r"/\* figure-classes:start \*/(.*?)/\* figure-classes:end \*/", re.S)
 
 
@@ -68,6 +71,16 @@ def check_svg(path, classes, errors):
             elif name in COLOUR_ATTRS:
                 if not (name in ("fill", "stroke") and value == "none"):
                     errors.add(path, f'colour attribute {name}="{value}" on <{tag}>: use a class from site/theme.css')
+            elif name in MARKERS:
+                if el is not root:
+                    errors.add(path, f"{name} is allowed on the root <svg> only, not on <{tag}>")
+                elif not MARKERS[name].fullmatch(value):
+                    errors.add(path, f'{name}="{value}" is not a valid marker value')
+            elif name == "data-part":
+                if tag not in DRAWN:
+                    errors.add(path, f"data-part on <{tag}>: only on a drawn element")
+                elif value not in PARTS:
+                    errors.add(path, f'data-part="{value}" is not one of {sorted(PARTS)}')
             elif name not in ATTRS:
                 errors.add(path, f"attribute {name!r} on <{tag}> not allowed")
         used = set((el.get("class") or "").split())

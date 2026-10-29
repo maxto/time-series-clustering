@@ -233,6 +233,12 @@ def atlas_data(atlas):
     return f'<script type="application/json" id="atlas-data">{text.replace("<", chr(92) + "u003c")}</script>'
 
 
+def live_data_script(data):
+    """The data of a live figure as JSON in a script element. `<` is escaped, so no `</script>` can end it early."""
+    text = json.dumps(data, ensure_ascii=False)
+    return f'<script type="application/json" class="live-data">{text.replace("<", chr(92) + "u003c")}</script>'
+
+
 def ref_line(ref, sources, root):
     s = sources[ref.key]
     where = ("candidate source, not yet confirmed" if ref.candidate else ref.locator.strip() or "source pending")

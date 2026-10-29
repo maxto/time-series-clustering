@@ -29,11 +29,11 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from buildlib import svg  # noqa: E402
 from buildlib.atlas import load_atlas  # noqa: E402
 from buildlib.cite import check_reviews, cited_sources, load_reviews, load_sources  # noqa: E402
-from buildlib.content import Errors, esc, load_course, load_lessons, markdown, show  # noqa: E402
+from buildlib.content import LIVE_SUFFIX, Errors, esc, load_course, load_lessons, load_live, markdown, show  # noqa: E402
 from buildlib.katex import render_math  # noqa: E402
 from buildlib.search import build_index, index_script  # noqa: E402
-from buildlib.pages import (contents_nav, fill, head_meta, lessons_section, lesson_page, map_section, sectors_section,  # noqa: E402
-                            sources_page, top_bar)
+from buildlib.pages import (contents_nav, fill, head_meta, lessons_section, lesson_page, live_data_script, map_section,  # noqa: E402
+                            sectors_section, sources_page, top_bar)
 
 SITE_URL = "https://maxto.github.io/time-series-clustering/"
 REPO_URL = "https://github.com/maxto/Time-Series-Clustering"  # the repo is not renamed yet
@@ -44,7 +44,7 @@ NODE = ROOT / "node_modules"
 MARKER = ".tsc-build"
 
 
-def setup_markdown(figures):
+def setup_markdown(figures, live):
     md = markdown()
 
     def math_inline(self, tokens, idx, options, env):
@@ -56,7 +56,11 @@ def setup_markdown(figures):
     def figure(self, tokens, idx, options, env):
         meta = tokens[idx].meta
         caption = self.renderInline(meta["caption"], options, env)
-        return f'<figure>{figures[meta["name"]]}<figcaption>{caption}</figcaption></figure>\n'
+        name = meta["name"]
+        if name in live:
+            return (f'<figure data-live="{live[name]["component"]}">{figures[name]}{live_data_script(live[name])}'
+                    f'<figcaption>{caption}</figcaption></figure>\n')
+        return f'<figure>{figures[name]}<figcaption>{caption}</figcaption></figure>\n'
 
     def cite(self, tokens, idx, options, env):
         meta = tokens[idx].meta
@@ -175,12 +179,20 @@ def main():
     for path in sorted((content / "figures").glob("*.svg")):
         if not path.name.endswith(".preview.svg"):
             figures[path.stem] = svg.check_svg(path, classes, errors)
+    live = {}
+    for path in sorted((content / "figures").glob("*" + LIVE_SUFFIX)):
+        name = path.name[:-len(LIVE_SUFFIX)]
+        if not (content / "figures" / f"{name}.svg").exists():
+            errors.add(path, f"no static fallback {show(content / 'figures' / (name + '.svg'))}: a live figure needs its SVG")
+        data = load_live(path, errors)
+        if data is not None:
+            live[name] = data
     render_math(lessons, ROOT, errors)
     if errors:
         print("\n".join(errors))
         return 1
 
-    md = setup_markdown(figures)
+    md = setup_markdown(figures, live)
     if not prepare_dist(dist, errors):
         print("\n".join(errors))
         return 1

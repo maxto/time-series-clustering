@@ -1,6 +1,10 @@
 {
+  "dtw10_mon_wed": "0.26",
   "dtw4_mon_sat": "0.22",
+  "dtw4_mon_wed": "3.51",
+  "dtwnone_mon_wed": "0.26",
   "euclid_mon_sat": "3.71",
+  "euclid_mon_wed": "4.15",
   "ratio_mon_sat": "0.06",
   "silhouette_dtw4_k2": "0.53"
 }

@@ -912,6 +912,115 @@ async function noJsChecks(run, browserContext, url) {
   await p.close();
 }
 
+// Expected state of a live figure from tests/live_expect.py (data file + reference package + the contract),
+// never from a built figure. Returns the parsed list, one object per requested [pairIndex, w] state.
+function liveExpect(dataFile, states) {
+  const args = ['run', 'python', 'tests/live_expect.py', dataFile, ...states.flatMap(([pair, w]) => [String(pair), String(w)])];
+  return JSON.parse(execFileSync('uv', args, { cwd: root, encoding: 'utf8' }));
+}
+
+// Read the geometry of one live figure through its data-part markers and compare it with `expected`
+// (one object of liveExpect). `figure` is a locator of the <figure> or of its <svg>. Checks: the root
+// markers, the band cells (position, count, opacity), the path through the cell centres, the series
+// rows affine in the data of the named pair on one shared scale, the links matched to series points,
+// and the distances in <desc>. Failures are pushed to `failures` with the label.
+async function liveGeometry(p, figure, expected, label) {
+  const svg = figure.locator('svg').first();
+  const g = await svg.evaluate(el => {
+    const pts = s => s.getAttribute('points').trim().split(/\s+/).map(t => t.split(',').map(Number));
+    const part = k => [...el.querySelectorAll(`[data-part="${k}"]`)];
+    const grid = part('grid');
+    const num = (e, a) => Number(e.getAttribute(a));
+    return {
+      pair: el.getAttribute('data-pair'), w: el.getAttribute('data-w'),
+      desc: el.querySelector('desc')?.textContent ?? '',
+      grid: grid.map(r => ({ x: num(r, 'x'), y: num(r, 'y'), size: num(r, 'width'), h: num(r, 'height') })),
+      cells: part('cell').map(r => ({ x: num(r, 'x'), y: num(r, 'y'), w: num(r, 'width'), h: num(r, 'height'), op: num(r, 'opacity') })),
+      paths: part('path').map(pts), a: part('series-a').map(pts), b: part('series-b').map(pts),
+      links: part('link').map(l => [num(l, 'x1'), num(l, 'y1'), num(l, 'x2'), num(l, 'y2')]),
+    };
+  });
+  const bad = m => failures.push(`${label}: ${m}`);
+  const near = (x, y, tol) => Math.abs(x - y) <= tol;
+  const [na, nb] = expected.pair;
+  const n = expected.n;
+  if (g.pair !== `${na}-${nb}`) bad(`data-pair is ${g.pair}, expected ${na}-${nb}`);
+  if (g.w !== String(expected.w ?? 'none')) bad(`data-w is ${g.w}, expected ${expected.w ?? 'none'}`);
+  if (!g.desc.includes(`${expected.euclidean}`) || !g.desc.includes(`${expected.dtw}`) || !g.desc.includes(na) || !g.desc.includes(nb)) {
+    bad(`desc does not state the pair and both distances (${expected.euclidean}, ${expected.dtw}): ${g.desc.slice(0, 80)}`);
+  }
+  if (g.grid.length !== 1 || g.paths.length !== 1 || g.a.length !== 1 || g.b.length !== 1) { bad('markers: need one grid, path, series-a and series-b'); return; }
+  const { x: gx, y: gy, size } = g.grid[0];
+  const cell = size / n;
+  // band cells: set of "i,j" with opacity
+  if (g.cells.length !== expected.cells.length) bad(`${g.cells.length} band cells, expected ${expected.cells.length}`);
+  const want = new Map(expected.cells.map(([i, j], k) => [`${i},${j}`, expected.opacity[k]]));
+  const seen = new Set();
+  for (const c of g.cells) {
+    if (!near(c.w, cell, 0.1) || !near(c.h, cell, 0.1)) bad(`cell size ${c.w}x${c.h}, expected ${cell.toFixed(2)}`);
+    const j = Math.round((c.x - gx) / cell), i = Math.round((gy + size - c.y) / cell) - 1;
+    if (!near(c.x, gx + j * cell, 0.1) || !near(c.y, gy + size - (i + 1) * cell, 0.1)) bad(`cell at ${c.x},${c.y} is not on the grid`);
+    const key = `${i},${j}`;
+    if (!want.has(key)) bad(`unexpected band cell (${key})`);
+    else if (!near(c.op, want.get(key), 0.0051)) bad(`cell (${key}) opacity ${c.op}, expected ${want.get(key)}`);
+    seen.add(key);
+  }
+  for (const key of want.keys()) if (!seen.has(key)) bad(`band cell (${key}) missing`);
+  // path through the cell centres
+  const path = g.paths[0].map(([x, y]) => [Math.round((gy + size - y) / cell - 0.5), Math.round((x - gx) / cell - 0.5)]);
+  g.paths[0].forEach(([x, y], k) => {
+    const [i, j] = path[k];
+    if (!near(x, gx + (j + 0.5) * cell, 0.1) || !near(y, gy + size - (i + 0.5) * cell, 0.1)) bad(`path point ${k} is not on a cell centre`);
+  });
+  if (JSON.stringify(path) !== JSON.stringify(expected.path)) bad(`path ${JSON.stringify(path)}, expected ${JSON.stringify(expected.path)}`);
+  // series: one point per sample, x growing, y decreasing affine in the value, one shared scale, A above B
+  const rows = [[na, g.a[0]], [nb, g.b[0]]];
+  const slopes = [];
+  for (const [name, pts] of rows) {
+    const v = expected.series[name];
+    if (pts.length !== n) { bad(`${name}: ${pts.length} points, expected ${n}`); continue; }
+    for (let k = 1; k < n; k++) if (!(pts[k][0] > pts[k - 1][0])) bad(`${name}: x does not grow at sample ${k}`);
+    const vmin = Math.min(...v), vmax = Math.max(...v);
+    const kmin = v.indexOf(vmin), kmax = v.indexOf(vmax);
+    if (vmax > vmin) {
+      const slope = (pts[kmax][1] - pts[kmin][1]) / (vmax - vmin);
+      slopes.push(slope);
+      if (!(slope < 0)) bad(`${name}: y does not decrease with the value`);
+      v.forEach((val, k) => { if (!near(pts[k][1], pts[kmin][1] + slope * (val - vmin), 0.3)) bad(`${name}: sample ${k} is not affine in its value`); });
+    } else if (!pts.every(q => near(q[1], pts[0][1], 0.1))) bad(`${name}: constant series is not flat`);
+  }
+  if (slopes.length === 2 && !near(slopes[0], slopes[1], Math.abs(slopes[0]) * 0.08)) bad(`the two series do not share a value scale (${slopes})`);
+  if (g.a[0].length === n && g.b[0].length === n && Math.max(...g.a[0].map(q => q[1])) >= Math.min(...g.b[0].map(q => q[1]))) bad('series A is not above series B');
+  // links: the kept path steps, from point i of A to point j of B
+  const wantLinks = expected.links.map(k => expected.path[k]);
+  if (g.links.length !== wantLinks.length) bad(`${g.links.length} links, expected ${wantLinks.length}`);
+  const found = g.links.map(([x1, y1, x2, y2]) => {
+    const i = g.a[0].findIndex(q => near(q[0], x1, 0.15) && near(q[1], y1, 0.15));
+    const j = g.b[0].findIndex(q => near(q[0], x2, 0.15) && near(q[1], y2, 0.15));
+    return [i, j];
+  });
+  if (JSON.stringify(found) !== JSON.stringify(wantLinks)) bad(`links ${JSON.stringify(found)}, expected ${JSON.stringify(wantLinks)}`);
+}
+
+// Gamma holds the two live figures (alpha keeps its single static one). Static SVG with JavaScript off,
+// compared with the expected state of the initial pair and window, and with the hand-computed distances.
+async function liveStaticChecks(run, browserContext, url) {
+  const p = await browserContext.newPage();
+  await p.goto(url('gamma/index.html'));
+  const figs = p.locator('main figure[data-live="dtw"]');
+  expect(await figs.count() === 2, `${run}: gamma needs two live figures, has ${await figs.count()}`);
+  expect(await count(p, 'main figure') === 2 && await count(p, 'main figure script.live-data') === 2, `${run}: gamma figure and data script count`);
+  const dir = 'tests/fixtures/smoke/figures/';
+  const cases = [['live-a', 0, 1, 7, '1.41', '1.00'], ['live-b', 0, 1, 10, '1.00', '0.00']];
+  for (const [k, [name, pair, w, ncells, euclid, dist]] of cases.entries()) {
+    const [exp] = liveExpect(dir + name + '.live.json', [[pair, w]]);
+    expect(exp.cells.length === ncells && exp.euclidean === euclid && exp.dtw === dist,
+      `${run}: ${name} expected state differs from the hand computation: ${exp.cells.length} cells, ${exp.euclidean}, ${exp.dtw}`);
+    await liveGeometry(p, figs.nth(k), exp, `${run}: ${name} static`);
+  }
+  await p.close();
+}
+
 // Published lesson ids in course order, read from the source _course.md (not from the built pages).
 function publishedIds(contentDir) {
   const ids = [];
@@ -1013,6 +1122,7 @@ async function suite(label, dist, contentDir, smoke) {
     if (smoke) {
       ctx = await context(run.name, { viewport: { width: 1280, height: 900 }, javaScriptEnabled: false }, run.isLocal);
       await noJsChecks(run.name, ctx, run.url);
+      await liveStaticChecks(run.name, ctx, run.url);
       await ctx.close();
     }
 

@@ -1,0 +1,8 @@
+{
+"component": "dtw",
+"sample_minutes": 30,
+"series": {"ba": [0, 0, 1, 1], "bb": [0, 1, 1, 1], "bc": [1, 1, 0, 0]},
+"pairs": [["ba", "bb"], ["ba", "bc"]],
+"w": {"min": 0, "max": 3, "initial": 1, "none": false},
+"initial": {"pair": 0}
+}

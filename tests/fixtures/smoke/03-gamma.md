@@ -23,6 +23,10 @@ Back to [Alpha](lesson:alpha), the first lesson.
 
 A check section holds a short validity example, for instance a silhouette of $0.42$ on a precomputed matrix.
 
+![Live figure A: two series of three samples](figures/live-a.svg)
+
+![Live figure B: two pairs of series of four samples](figures/live-b.svg)
+
 ## Common mistake
 
 Linking to a lesson that has no page yet.

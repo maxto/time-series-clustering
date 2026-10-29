@@ -6,6 +6,7 @@ build run reports all of them.
 
 import html
 import json
+import math
 import pathlib
 import re
 from dataclasses import dataclass, field
@@ -504,3 +505,92 @@ def figure_token(tokens, i, image, path, content, errors):
 
 def esc(text):
     return html.escape(text, quote=True)
+
+
+LIVE_KEYS = {"component", "sample_minutes", "series", "pairs", "w", "initial"}
+LIVE_SUFFIX = ".live.json"
+LIVE_MAX_SAMPLES = 48  # budget: 48 by 48 = 2,304 cells
+
+
+def _is_int(v):
+    return isinstance(v, int) and not isinstance(v, bool)
+
+
+def _is_number(v):
+    return isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
+
+
+def load_live(path, errors):
+    """Read and validate the data file of a live figure. Returns the dict, or None after reporting every problem."""
+    bad = len(errors)
+
+    def err(field, msg):
+        errors.add(path, f"{field}: {msg}")
+
+    try:
+        data = json.loads(path.read_text())
+    except ValueError as e:
+        err("json", f"not valid JSON ({e})")
+        return None
+    if not isinstance(data, dict):
+        err("json", "must be an object")
+        return None
+    for k in sorted(set(data) - LIVE_KEYS):
+        err("keys", f"unexpected key {k!r}")
+    for k in sorted(LIVE_KEYS - set(data)):
+        err("keys", f"missing key {k!r}")
+    if len(errors) > bad:
+        return None
+    if data["component"] != "dtw":
+        err("component", f"{data['component']!r} is not a known component (only 'dtw')")
+    sm = data["sample_minutes"]
+    if not _is_int(sm) or sm <= 0:
+        err("sample_minutes", "must be a positive integer")
+    series, n = data["series"], None
+    if not isinstance(series, dict) or not series:
+        err("series", "must be a non-empty object")
+        series = {}
+    for name, row in series.items():
+        if not re.fullmatch(r"[a-z0-9]+", name):
+            err("series", f"name {name!r} must match [a-z0-9]+")
+        field = f"series.{name}"
+        if not isinstance(row, list) or not row or not all(_is_number(v) for v in row):
+            err(field, "must be a non-empty list of finite numbers")
+            continue
+        if len(row) > LIVE_MAX_SAMPLES:
+            err(field, f"{len(row)} samples, at most {LIVE_MAX_SAMPLES}")
+        if n is None:
+            n = len(row)
+        elif len(row) != n:
+            err(field, f"{len(row)} samples, the other rows have {n}")
+    pairs = data["pairs"]
+    if not isinstance(pairs, list) or not pairs:
+        err("pairs", "must be a non-empty list")
+        pairs = []
+    for k, pair in enumerate(pairs):
+        if (not isinstance(pair, list) or len(pair) != 2 or not all(isinstance(x, str) for x in pair)
+                or pair[0] == pair[1]):
+            err(f"pairs[{k}]", "must be two distinct series names")
+        elif any(x not in series for x in pair):
+            err(f"pairs[{k}]", f"names a series that does not exist: {pair}")
+    w = data["w"]
+    if not isinstance(w, dict) or set(w) != {"min", "max", "initial", "none"}:
+        err("w", "must be an object with exactly min, max, initial, none")
+    else:
+        top = None if n is None else n - 1
+        if not _is_int(w["min"]) or w["min"] < 0:
+            err("w.min", "must be an integer >= 0")
+        if not _is_int(w["max"]) or (_is_int(w["min"]) and w["max"] < w["min"]):
+            err("w.max", "must be an integer >= w.min")
+        elif top is not None and w["max"] > top:
+            err("w.max", f"{w['max']} is above the series length - 1 = {top}")
+        if not _is_int(w["initial"]) or not (_is_int(w["min"]) and _is_int(w["max"]) and w["min"] <= w["initial"] <= w["max"]):
+            err("w.initial", "must be an integer in [w.min, w.max]")
+        if not isinstance(w["none"], bool):
+            err("w.none", "must be true or false")
+    init = data["initial"]
+    if not isinstance(init, dict) or set(init) != {"pair"}:
+        err("initial", "must be an object with exactly pair")
+    elif not _is_int(init["pair"]) or not 0 <= init["pair"] < len(pairs):
+        err("initial.pair", f"must be an index into pairs (0 to {len(pairs) - 1})")
+    return None if len(errors) > bad else data

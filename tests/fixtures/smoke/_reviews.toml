@@ -132,3 +132,10 @@ fingerprint = "91e67523c956a50f"
 by = "fixture author"
 date = 2026-10-29
 note = "smoke fixture, not a real review"
+
+[[lesson]]
+id = "gamma"
+fingerprint = "ee5459c81fa9e23f"
+by = "fixture author"
+date = 2026-10-29
+note = "smoke fixture, not a real review"

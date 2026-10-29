@@ -703,3 +703,105 @@ def test_a_condition_without_condition_support_is_draft(content):
     out = build(content).stdout
     assert "item 'DTW' is draft: no located confirmed source for cond" in out
     assert build(content, preview=True).returncode == 0
+
+
+# --- live figures (Task 2 of checkpoint 2) -----------------------------------------------
+
+LIVE_A = "figures/live-a.live.json"
+
+
+def gamma_figures(content):
+    html = page(content, "gamma")
+    return re.findall(r'<figure data-live="dtw">(.*?)</figure>', html, re.S)
+
+
+def test_live_figure_embeds_its_data(content):
+    result = build(content)
+    assert result.returncode == 0, result.stdout + result.stderr
+    figs = gamma_figures(content)
+    assert len(figs) == 2
+    got = []
+    for fig in figs:
+        scripts = re.findall(r'<script type="application/json" class="live-data">(.*?)</script>', fig, re.S)
+        assert len(scripts) == 1
+        assert "<svg" in fig.split("<script")[0] and "<figcaption>" in fig.split("</script>")[1]
+        got.append(json.loads(scripts[0]))
+    expected = [json.loads((content / "figures" / f"live-{k}.live.json").read_text()) for k in "ab"]
+    assert got == expected
+    assert not re.search(r'\bid="live', page(content, "gamma"))
+    # alpha keeps its single static figure, rendered without the live wrapper
+    alpha = page(content, "alpha")
+    assert "data-live" not in alpha and "live-data" not in alpha
+
+
+def test_live_data_escapes_lt():
+    from buildlib.pages import live_data_script
+    data = {"k": "</script><b>x</b>"}
+    out = live_data_script(data)
+    assert out.count("</script>") == 1 and out.endswith("</script>")
+    inner = re.fullmatch(r'<script type="application/json" class="live-data">(.*)</script>', out, re.S).group(1)
+    assert "<" not in inner
+    assert json.loads(inner) == data
+
+
+def live_edit(content, name, fn):
+    path = content / "figures" / name
+    data = json.loads(path.read_text())
+    fn(data)
+    path.write_text(json.dumps(data))
+
+
+LIVE_CASES = [
+    ("component", lambda d: d.update(component="fft")),
+    ("keys", lambda d: d.update(extra=1)),
+    ("series.aa", lambda d: d["series"].update(aa=[0, "1", 0])),
+    ("series.aa", lambda d: d["series"].update(aa=[0.0] * 49, ab=[0.0] * 49)),
+    ("series.ab", lambda d: d["series"].update(ab=[0, 1])),
+    ("pairs[0]", lambda d: d.update(pairs=[["aa", "zz"]])),
+    ("w.max", lambda d: d["w"].update(max=3)),
+    ("w.initial", lambda d: d["w"].update(initial=2, max=2, min=0) or d["w"].update(initial=-1)),
+    ("w.none", lambda d: d["w"].update(none="yes")),
+    ("initial.pair", lambda d: d["initial"].update(pair=1)),
+    ("sample_minutes", lambda d: d.update(sample_minutes=0)),
+]
+
+
+@pytest.mark.parametrize("field,fn", LIVE_CASES, ids=[f"{i}-{c[0]}" for i, c in enumerate(LIVE_CASES)])
+def test_live_data_errors(content, field, fn):
+    path = content / "figures" / "live-a.live.json"
+    before = path.read_text()
+    live_edit(content, "live-a.live.json", fn)
+    assert path.read_text() != before, "the mutation changed nothing"
+    result = build(content)
+    assert result.returncode == 1, result.stdout
+    lines = [ln for ln in result.stdout.splitlines() if "live-a.live.json" in ln]
+    assert any(f"{field}:" in ln for ln in lines), result.stdout
+    assert not (content.parent / "dist").exists()
+
+
+def test_live_data_without_a_static_svg_fails(content):
+    (content / "figures" / "live-a.svg").unlink()
+    result = build(content)
+    assert result.returncode == 1
+    assert "live-a.live.json" in result.stdout and "live-a.svg" in result.stdout
+
+
+def test_live_data_that_is_not_json_fails(content):
+    (content / "figures" / "live-a.live.json").write_text("{")
+    result = build(content)
+    assert result.returncode == 1 and "live-a.live.json" in result.stdout
+
+
+@pytest.mark.parametrize("old,new,needle", [
+    ('data-w="1"', 'data-w="four"', "data-w"),
+    ('data-part="series-a"', 'data-part="other"', "data-part"),
+    ("<text class=\"t-sm t-mono\" x=\"4\" y=\"14\">", '<text data-pair="aa-ab" class="t-sm t-mono" x="4" y="14">', "data-pair"),
+    ('data-w="1"', 'data-w="1" data-x="3"', "data-x"),
+], ids=["w-not-integer", "part-value", "pair-on-child", "other-data"])
+def test_figure_markers(content, old, new, needle):
+    svg = content / "figures" / "live-a.svg"
+    mutate(svg, old, new)
+    result = build(content)
+    assert result.returncode == 1
+    errs = [ln for ln in result.stdout.splitlines() if "live-a.svg" in ln]
+    assert len(errs) == 1 and needle in errs[0], result.stdout
