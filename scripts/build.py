@@ -5,8 +5,9 @@ Usage: uv run python scripts/build.py [--content DIR] [--dist DIR] [--previews] 
 Reads DIR/_course.md (modules and lessons, published or planned) and one NN-<id>.md per
 published lesson, validates everything (schema, sections, prose rules, figures, TeX) and
 reports every problem as one line "<file>: <message>", exit 1. When all is valid it writes:
-  DIST/index.html            home: overview graphic and module list, planned lessons "coming"
+  DIST/index.html            home: hero, map of the field, sector cards, lesson index (planned lessons "coming")
   DIST/<id>/index.html       one page per published lesson
+  DIST/sources/index.html    every registered source with its links and where it is cited
   DIST/assets/               theme.css, theme.js, Geist fonts, KaTeX css and fonts
   DIR/figures/<name>.preview.svg   light preview of each figure for GitHub (default content/
                              only, or with --previews)
@@ -27,10 +28,11 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 from buildlib import svg  # noqa: E402
 from buildlib.atlas import load_atlas  # noqa: E402
-from buildlib.cite import check_reviews, load_reviews, load_sources  # noqa: E402
+from buildlib.cite import check_reviews, cited_sources, load_reviews, load_sources  # noqa: E402
 from buildlib.content import Errors, esc, load_course, load_lessons, markdown, show  # noqa: E402
 from buildlib.katex import render_math  # noqa: E402
-from buildlib.pages import contents_nav, fill, head_meta, lesson_page, top_bar  # noqa: E402
+from buildlib.pages import (contents_nav, fill, head_meta, lessons_section, lesson_page, map_section, sectors_section,  # noqa: E402
+                            sources_page, top_bar)
 
 SITE_URL = "https://maxto.github.io/time-series-clustering/"
 REPO_URL = "https://github.com/maxto/Time-Series-Clustering"  # the repo is not renamed yet
@@ -68,34 +70,23 @@ def setup_markdown(figures):
     return md
 
 
-def draft_banner(atlas):
-    drafts = (atlas.draft_items(), atlas.draft_fits()) if atlas else ([], [])
-    if not any(drafts):
-        return ""
-    return (f'<div class="draft-banner" role="note">Preview build. {len(drafts[0])} map items and {len(drafts[1]) + len(atlas.draft_sectors())} sector fits, questions and sectors'
-            " are drafts, not verified. Do not publish this output.</div>")
-
-
-def home_page(course, template, overview, finance_ids, build_mode="release", banner=""):
-    mods = []
-    for letter, title, entries in course.modules:
-        items = []
-        for e in entries:
-            if e.status == "published":
-                items.append(f'<li id="lesson-{e.id}"><span class="n">{e.number}</span><a href="{e.id}/index.html">{esc(e.title)}</a></li>')
-            else:
-                items.append(f'<li class="planned" id="lesson-{e.id}"><span class="n">{e.number}</span><span>{esc(e.title)}</span>'
-                             '<span class="coming">coming</span></li>')
-        mods.append(f'<section class="module"><h2>{letter} · {esc(title)}</h2><ol>{"".join(items)}</ol></section>')
-    n, p = len(course.entries), len(course.published())
+def home_page(course, template, overview, atlas, sources, finance_ids, build_mode="release"):
+    published = course.published()
+    by_id = {e.id: e for e in course.entries}
+    cta = (f'<p class="cta"><a class="start" href="{published[0].id}/index.html">Start with lesson 1</a></p>' if published else "")
+    n = len(course.entries)
+    atlas_html = ""
+    if atlas:
+        atlas_html = (map_section(atlas, sources, by_id, "", build_mode == "preview") + sectors_section(atlas))
     return fill(template, {
         "meta": head_meta(course.title, course.tagline, SITE_URL, "website", course.title),
-        "build": build_mode, "root": "", "banner": banner,
+        "build": build_mode, "root": "",
         "top": top_bar("", course.title, REPO_URL, progress=False),
         "contents": contents_nav(course, "", finance_ids, current="home"),
-        "count": f"{n} lessons · {p} published", "title": esc(course.title),
-        "tagline": esc(course.tagline), "overview": f'<figure class="overview">{overview}</figure>' if overview else "",
-        "modules": "\n".join(mods),
+        "count": f"{n} lessons · {len(published)} published", "title": esc(course.title),
+        "tagline": esc(course.tagline), "cta": cta,
+        "overview": f'<figure class="overview">{overview}</figure>' if overview else "",
+        "atlas": atlas_html, "lessons": lessons_section(course, finance_ids),
     })
 
 
@@ -197,7 +188,11 @@ def main():
         page = lesson_page(lesson, course, md, template, prev, nxt, sources, finance_ids, mode, SITE_URL, REPO_URL)
         (dist / lesson.entry.id / "index.html").write_text(page)
     (dist / "index.html").write_text(home_page(
-        course, (SITE / "home.html").read_text(), figures.get("overview"), finance_ids, mode, draft_banner(atlas) if args.preview else ""))
+        course, (SITE / "home.html").read_text(), figures.get("overview"), atlas, sources, finance_ids, mode))
+    (dist / "sources").mkdir()
+    in_map = {r.key for it in atlas.items() for r in it.all_refs()} | {r.key for ft in atlas.fits() for r in ft.sources} if atlas else set()
+    (dist / "sources" / "index.html").write_text(sources_page(
+        course, (SITE / "sources.html").read_text(), sources, cited_sources(lessons), in_map, finance_ids, mode, SITE_URL, REPO_URL))
 
     written = []
     if previews and figures:

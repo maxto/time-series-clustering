@@ -5,8 +5,10 @@ ids, classes and attributes are listed in the Task 5 brief of the redesign plan.
 HTML and reads without JavaScript. All links are relative to `root` ("" on the home, "../" below it).
 """
 
+import json
 import re
 
+from .cite import TOPICS
 from .content import CODE_LANGUAGES, esc
 
 LANG_NAMES = {"python": "Python", "r": "R"}
@@ -191,4 +193,183 @@ def lesson_page(lesson, course, md, template, prev, nxt, sources, finance_ids, b
         "top": top_bar("../", course.title, repo_url, progress=True),
         "contents": contents_nav(course, "../", finance_ids, current=e.id, toc=toc),
         "main": main,
+    })
+
+
+# ---------------------------------------------------------------------------------------------
+# Home and sources page. The DOM here is the contract of the behaviour script (map filters, sector
+# questions, source topics): ids, classes and data attributes are listed in the Task 6 brief.
+# ---------------------------------------------------------------------------------------------
+
+IGNORE_LABELS = {"level": "level", "scale": "scale", "shift": "a global shift", "warp": "local timing",
+                 "noise": "noise", "length": "different lengths"}
+NEED_LABELS = {"matrix": "a distance matrix", "similarity": "a similarity matrix", "vectors": "feature vectors",
+               "series": "the series themselves", "labels": "labels"}
+BRANCH_ORDER = ("compare", "group", "validate")
+DRAFT = '<span class="draft">draft</span>'
+LINK_POLICY = ("Each source links to the publisher through its DOI, to arXiv or SSRN, or to the authors' page. "
+               "Only legitimate copies of the cited work are linked. The build does not check that links still work, "
+               "so a link may have moved. If one fails, search for the title.")
+TOPIC_LABELS = {"survey": "Surveys", "compare": "Compare", "group": "Group", "validate": "Validate",
+                "finance": "Finance", "software": "Software"}
+
+
+def draft_banner_text():
+    return ("Draft map. Local preview only. What each item ignores or needs, its functions and its sector fits "
+            "are not yet checked against sources. A release build refuses this map until every item is checked.")
+
+
+def atlas_data(atlas):
+    """The JSON the behaviour script reads: items by id and questions by public id, with a draft flag each."""
+    def tags(ts):
+        return [{"tag": t.tag, "cond": t.cond} for t in ts]
+    items = {it.id: {"name": it.name, "branch": it.branch, "ignores": tags(it.ignores), "needs": tags(it.needs),
+                     "draft": not it.reviewed} for it in atlas.items()}
+    questions = {q.id: {"text": q.text, "fits": [
+        {"item": next(i.id for i in atlas.items() if i.name == f.item), "mark": f.mark, "reason": f.reason,
+         "cond": f.cond, "draft": not f.reviewed} for f in q.fits]} for q in atlas.questions()}
+    text = json.dumps({"items": items, "questions": questions}, ensure_ascii=False)
+    return f'<script type="application/json" id="atlas-data">{text.replace("<", chr(92) + "u003c")}</script>'
+
+
+def ref_line(ref, sources, root):
+    s = sources[ref.key]
+    where = ("candidate source, not yet confirmed" if ref.candidate else ref.locator.strip() or "source pending")
+    return (f'<li><a href="{root}sources/index.html#src-{ref.key}">{esc(s.label)}</a>, {esc(where)} '
+            f'<span class="sup">({esc(ref.supports.replace(":", ": "))})</span></li>')
+
+
+def item_card(it, family, sources, published, root):
+    parts = [f'<p class="does">{esc(it.does)}</p>']
+
+    def tag_row(label, tags, labels, empty):
+        if not tags:
+            return f'<div class="row"><dt>{label}</dt><dd>{empty}</dd></div>' if empty else ""
+        lis = "".join(f'<li>{esc(labels[t.tag])}' + (f' <span class="cond">{esc(t.cond)}</span>' if t.cond else "") + "</li>"
+                      for t in tags)
+        return f'<div class="row"><dt>{label}</dt><dd><ul class="tags">{lis}</ul></dd></div>'
+
+    rows = []
+    if it.branch == "compare":
+        rows.append(tag_row("It ignores", it.ignores, IGNORE_LABELS, "None of the listed properties"))
+    else:
+        rows.append(tag_row("It needs", it.needs, NEED_LABELS, ""))
+    for label, value in (("Python", it.python), ("R", it.r)):
+        if value:
+            rows.append(f'<div class="row"><dt>{label}</dt><dd><code>{esc(value)}</code></dd></div>')
+    if family.lesson:
+        e = published[family.lesson]
+        rows.append('<div class="row"><dt>Lesson</dt><dd>' + (f'<a href="{root}{e.id}/index.html">{esc(e.title)}</a>' if e.status == "published"
+                    else f'{esc(e.title)} <span class="coming">coming</span>') + "</dd></div>")
+    parts.append(f'<dl>{"".join(rows)}</dl>')
+    refs = "".join(ref_line(r, sources, root) for r in it.all_refs()) or "<li>source pending</li>"
+    parts.append(f'<div class="srcs"><p class="lbl">Sources</p><ul>{refs}</ul></div>')
+    return f'<div class="card">{"".join(parts)}</div>'
+
+
+def map_section(atlas, sources, published, root, preview):
+    """`published` maps every course lesson id to its entry (planned ones too)."""
+    banner = f'<div class="draft-banner" role="note">{draft_banner_text()}</div>' if preview else ""
+    ignore = "".join(f'<button type="button" data-tag="{t}" aria-pressed="false">{IGNORE_LABELS[t]}</button>' for t in IGNORE_LABELS)
+    groups = "".join(
+        f'<div class="fq-group"><span class="fq-name">{esc(s.name)}</span>'
+        + "".join(f'<button type="button" data-question="{q.id}" aria-pressed="false">{esc(q.text)}</button>' for q in s.questions)
+        + "</div>" for s in atlas.sectors if s.questions)
+    filters = (
+        '<div class="mfilters">'
+        f'<div class="mf-row"><span class="mf-lab">I want to ignore</span><div id="f-ignore" class="mf-chips">{ignore}</div></div>'
+        '<div class="mf-row"><span class="mf-lab">My data</span><div class="mf-chips">'
+        '<button type="button" id="f-matrix" aria-pressed="false">I only have a distance matrix</button></div></div>'
+        f'<div class="mf-row"><span class="mf-lab">My question</span><div id="f-question" class="mf-chips">{groups}</div></div>'
+        f'<p id="f-status" class="mf-status" aria-live="polite">Showing all {len(atlas.items())} items.</p></div>')
+    branches = []
+    by_id = {b.id: b for b in atlas.branches}
+    for bid in BRANCH_ORDER:
+        b = by_id.get(bid)
+        if not b:
+            continue
+        fams = []
+        for f in b.families:
+            link = ""
+            if f.lesson and published[f.lesson].status == "published":
+                link = f'<a class="fl" href="{root}{f.lesson}/index.html">Lesson</a>'
+            lis = "".join(
+                f'<li class="item" data-item="{it.id}"><details id="item-{it.id}"><summary class="chip">{esc(it.name)}'
+                + (f'<span class="cond">{esc(it.cond)}</span>' if it.cond else "") + (DRAFT if not it.reviewed else "")
+                + f"</summary>{item_card(it, f, sources, published, root)}</details></li>" for it in f.items)
+            fams.append(f'<div class="family"><h3>{esc(f.name)}{link}</h3><ul>{lis}</ul></div>')
+        branches.append(f'<div class="branch" data-branch="{b.id}"><div class="br-head"><b>{esc(b.name)}</b>'
+                        f'<span>{esc(b.sub)}</span></div>{"".join(fams)}</div>')
+    return (f'<section id="map"><h2 class="h-sec">Map of the field</h2>\n{banner}{filters}\n'
+            f'<div class="map"><div class="branches">{"".join(branches)}</div></div>\n{atlas_data(atlas)}</section>\n')
+
+
+def sparkline(curve, title):
+    w, h, pad = 200, 54, 4
+    lo, hi = min(curve), max(curve)
+    span = (hi - lo) or 1
+    pts = " ".join(f"{pad + (w - 2 * pad) * (i / max(len(curve) - 1, 1)):.1f},{pad + (h - 2 * pad) * (1 - (v - lo) / span):.1f}"
+                   for i, v in enumerate(curve))
+    return (f'<svg viewBox="0 0 {w} {h}" role="img"><title>{esc(title)}</title><polyline class="ln" points="{pts}"/></svg>')
+
+
+def sectors_section(atlas):
+    cards = []
+    for s in atlas.sectors:
+        draft = not s.recorded or any(not q.recorded or any(not f.reviewed for f in q.fits) for q in s.questions)
+        qs = "".join(
+            f'<a class="q" href="#map" data-question="{q.id}"><span class="qt">{esc(q.text)}</span>'
+            + (f'<span class="qs">Starts from {esc(", ".join(q.starts))}</span>' if q.starts else "") + "</a>" for q in s.questions)
+        cards.append(f'<div class="sector" data-sector="{s.id}">{sparkline(s.curve, f"{s.name} example curve")}'
+                     f'<b>{esc(s.name)}</b>{DRAFT if draft else ""}'
+                     + (f'<p>{esc(s.about)}</p>' if s.about else "") + f'<div class="qs-list">{qs}</div></div>')
+    return ('<section id="sectors"><h2 class="h-sec">Examples by sector</h2>\n'
+            '<p class="h-intro">Pick a sector question to see which measures it starts from.</p>\n'
+            f'<div class="sectors">{"".join(cards)}</div></section>\n')
+
+
+def lessons_section(course, finance_ids):
+    mods = []
+    for letter, title, entries in course.modules:
+        items = []
+        for e in entries:
+            tag = '<span class="fin">Finance</span>' if e.id in finance_ids else ""
+            if e.status == "published":
+                items.append(f'<li id="lesson-{e.id}"><span class="n">{e.number}</span><a href="{e.id}/index.html">{esc(e.title)}</a>{tag}</li>')
+            else:
+                items.append(f'<li class="planned" id="lesson-{e.id}"><span class="n">{e.number}</span><span>{esc(e.title)}</span>'
+                             '<span class="coming">coming</span></li>')
+        mods.append(f'<section class="module"><h3>{letter} · {esc(title)}</h3><ol>{"".join(items)}</ol></section>')
+    return f'<section id="lessons"><h2 class="h-sec">Lessons</h2>\n<div class="modules">{"".join(mods)}</div></section>\n'
+
+
+def sources_main(sources, cited, course, in_map):
+    """The sources page main: link policy, topic filter, one entry per registered source."""
+    titles = {e.id: e.title for e in course.entries}
+    buttons = '<button type="button" data-topic="all" aria-pressed="true">All</button>' + "".join(
+        f'<button type="button" data-topic="{t}" aria-pressed="false">{TOPIC_LABELS[t]}</button>' for t in TOPICS)
+    items = []
+    for key, s in sorted(sources.items(), key=lambda kv: (kv[1].authors[0].lower(), kv[1].year, kv[0])):
+        links = "".join(f'<a href="{esc(url)}">{esc(name)}</a>' for name, url in s.links)
+        where = [f'<a href="../{lid}/index.html">{esc(titles[lid])}</a>' for lid in cited.get(key, [])]
+        if key in in_map:
+            where.append('<a href="../index.html#map">the map of the field</a>')
+        cited_in = f'<p class="cited">Cited in {", ".join(where)}</p>' if where else '<p class="cited">Not cited yet</p>'
+        items.append(f'<li class="ref" id="src-{key}" data-topics="{" ".join(s.topics)}"><span class="au">{esc(s.full_authors)} ({s.year}).</span> '
+                     f'<cite class="ti">{esc(s.title)}</cite> <span class="ve">{esc(s.venue)}.</span>'
+                     + (f'<span class="ln">{links}</span>' if links else "") + f"{cited_in}</li>")
+    return (f'<div class="hero"><div class="mod">Reference</div><h1>Sources</h1>'
+            f'<p class="lede">Every work the course cites, and where it is cited.</p></div>\n'
+            f'<p class="policy">{LINK_POLICY}</p>\n<div id="f-topic" class="src-f">{buttons}</div>\n'
+            f'<ul class="refs" id="src-list">{"".join(items)}</ul>\n')
+
+
+def sources_page(course, template, sources, cited, in_map, finance_ids, build_mode, site_url, repo_url):
+    return fill(template, {
+        "meta": head_meta(f"Sources · {course.title}", "Every work the course cites, with links and where it is cited.",
+                          f"{site_url}sources/", "website", course.title),
+        "build": build_mode, "root": "../",
+        "top": top_bar("../", course.title, repo_url, progress=False),
+        "contents": contents_nav(course, "../", finance_ids, current="sources"),
+        "main": sources_main(sources, cited, course, in_map),
     })

@@ -145,6 +145,88 @@ async function smokeChecks(run, p, url) {
   expect(await count(p, '.modules') === 1, `${run}: logo link did not load the home`);
 }
 
+
+const BANNER = 'Draft map. Local preview only. What each item ignores or needs, its functions and its sector fits are not yet checked against sources. A release build refuses this map until every item is checked.';
+
+// Task 6 contract on the smoke home and sources page. Expected values are written by hand from
+// tests/fixtures/smoke (_map.toml, _sectors.toml, _sources.toml, the lessons), not read back from the build.
+async function homeChecks(run, p, url) {
+  await p.goto(url('index.html'));
+  expect(await count(p, 'main .hero a.start[href="alpha/index.html"]') === 1, `${run}: hero has no "Start with lesson 1" link to alpha`);
+  expect(await count(p, 'main section#map') === 1 && await count(p, 'main section#sectors') === 1 && await count(p, 'main section#lessons') === 1, `${run}: home sections missing`);
+  expect(await count(p, '#map div.branch[data-branch] div.family ul li.item') === 5, `${run}: map does not show 5 items`);
+  expect(await count(p, '#map div.branch') === 2 && await count(p, '#map div.family') === 3, `${run}: map does not show 2 branches and 3 families`);
+  expect(await count(p, 'li.item[data-item="agglomerative"] > details#item-agglomerative > summary.chip') === 1, `${run}: agglomerative chip missing`);
+  expect(await p.locator('#item-agglomerative summary.chip span.cond').innerText() === 'Ward: Euclidean', `${run}: chip condition label`);
+  expect(await count(p, '#item-euclidean summary.chip span.cond') === 0, `${run}: chip without condition has a cond label`);
+  // native disclosure: a click on the summary opens the card (also with JavaScript off, see noJsChecks)
+  expect(await p.locator('#item-agglomerative').evaluate(e => e.open) === false, `${run}: card starts open`);
+  await p.locator('#item-agglomerative summary').click();
+  expect(await p.locator('#item-agglomerative').evaluate(e => e.open) === true, `${run}: summary click did not open the card`);
+  expect((await p.locator('#item-agglomerative').innerText()).includes('single, complete, average linkage'), `${run}: matrix item card lacks its linkage condition`);
+  expect((await p.locator('#item-agglomerative').innerText()).includes('Merges the two closest groups, again and again.'), `${run}: card lacks the does text`);
+  expect(await count(p, '#item-agglomerative a[href="#"], #map button a, #map summary a') === 0, `${run}: bad anchor in the map`);
+  // filters
+  expect(await count(p, '#f-ignore button[data-tag][aria-pressed="false"]') === 6, `${run}: f-ignore does not have 6 pressed=false buttons`);
+  expect(JSON.stringify(await p.$$eval('#f-ignore button', bs => bs.map(b => [b.dataset.tag, b.textContent.trim()])))
+    === JSON.stringify([['level', 'level'], ['scale', 'scale'], ['shift', 'a global shift'], ['warp', 'local timing'], ['noise', 'noise'], ['length', 'different lengths']]),
+    `${run}: f-ignore tags or labels`);
+  expect(await p.locator('button#f-matrix').innerText() === 'I only have a distance matrix' && await p.locator('button#f-matrix').getAttribute('aria-pressed') === 'false', `${run}: f-matrix`);
+  expect(JSON.stringify(await p.$$eval('#f-question button[data-question]', bs => bs.map(b => b.dataset.question)))
+    === JSON.stringify(['energy/same-hours', 'finance/same-dates']), `${run}: f-question buttons`);
+  expect(await p.locator('#f-question').innerText().then(t => t.includes('Energy') && t.includes('Finance')), `${run}: f-question not grouped under sector names`);
+  expect(await p.locator('p#f-status').getAttribute('aria-live') === 'polite', `${run}: f-status aria-live`);
+  // data contract for map.js
+  const data = JSON.parse(await p.locator('script#atlas-data').evaluate(e => e.textContent));
+  expect(Object.keys(data.items).sort().join() === 'agglomerative,correlation,dtw,euclidean,k-medoids', `${run}: atlas-data items ${Object.keys(data.items)}`);
+  expect(JSON.stringify(data.items.correlation) === JSON.stringify({ name: 'Correlation', branch: 'compare', ignores: [{ tag: 'level', cond: '' }, { tag: 'scale', cond: '' }], needs: [], draft: false }), `${run}: atlas-data correlation ${JSON.stringify(data.items.correlation)}`);
+  expect(JSON.stringify(data.items.agglomerative.needs) === JSON.stringify([{ tag: 'matrix', cond: 'single, complete, average linkage' }]) && data.items.agglomerative.branch === 'group', `${run}: atlas-data agglomerative`);
+  expect(JSON.stringify(data.questions['finance/same-dates']) === JSON.stringify({ text: 'Which assets move together on the same dates?', fits: [
+    { item: 'correlation', mark: 'good', reason: 'Co-movement on the same dates is the classic question.', cond: '', draft: false },
+    { item: 'dtw', mark: 'avoid', reason: 'Warping pairs different dates.', cond: '', draft: false }] }), `${run}: atlas-data finance question`);
+  expect(Object.keys(data.questions).length === 2, `${run}: atlas-data question count`);
+  // sector cards
+  expect(await count(p, '#sectors div.sector[data-sector]') === 2 && await count(p, '#sectors div.sector a.q') === 2, `${run}: sector cards`);
+  expect(await count(p, '#sectors div.sector[data-sector="energy"] svg[role="img"][viewBox] polyline.ln') === 1
+    && await p.locator('#sectors div.sector[data-sector="energy"] svg > title').textContent() === 'Energy example curve', `${run}: energy sparkline`);
+  const q = p.locator('#sectors a.q[data-question="energy/same-hours"]');
+  expect(await q.getAttribute('href') === '#map', `${run}: a.q href`);
+  const qt = await q.innerText();
+  expect(qt.includes('Same hours, or same shape?') && qt.includes('Euclidean') && qt.includes('DTW'), `${run}: a.q text ${qt}`);
+  // lesson index
+  expect(await count(p, '#lessons li#lesson-beta') === 1 && await count(p, '#lessons li#lesson-alpha span.fin') === 1 && await count(p, '#lessons li#lesson-gamma span.fin') === 0, `${run}: lesson index and finance tags`);
+  // release build: nothing is draft
+  expect(await count(p, '.draft-banner') === 0 && await count(p, 'span.draft') === 0, `${run}: release home shows draft marks`);
+  // sources page
+  await p.goto(url('sources/index.html'));
+  expect(await p.locator('html').getAttribute('data-root') === '../' && await p.locator('head link[rel="canonical"]').getAttribute('href') === SITE_URL + 'sources/', `${run}: sources data-root or canonical`);
+  expect(await count(p, 'main p.policy') === 1 && await count(p, 'div#f-topic button[data-topic]') === 7, `${run}: sources policy or topic filter`);
+  expect(await p.locator('#f-topic button[data-topic="all"]').innerText() === 'All', `${run}: sources All button`);
+  const src = p.locator('li#src-sakoe78');
+  const st = await src.innerText();
+  expect(st.includes('Hiroaki Sakoe and Seibi Chiba') && st.includes('1978') && st.includes('Dynamic programming algorithm optimization'), `${run}: sakoe78 entry ${st}`);
+  expect(await src.getAttribute('data-topics') === 'compare', `${run}: sakoe78 data-topics`);
+  expect(await src.locator('a[href="https://doi.org/10.1109/TASSP.1978.1163055"]').count() === 1, `${run}: sakoe78 publisher link`);
+  expect(st.includes('Cited in') && await src.locator('a[href="../alpha/index.html"]').count() === 1 && await src.locator('a[href="../gamma/index.html"]').count() === 0, `${run}: sakoe78 cited in alpha only`);
+  expect(await count(p, 'header.top .progress') === 0 && await count(p, 'nav#contents a.pg[aria-current="page"]') === 1, `${run}: sources shell`);
+  // contents link reaches the sources page
+  await p.goto(url('index.html'));
+  await clickTo(p, 'nav#contents a.pg[href="sources/index.html"]', 'sources/index.html');
+  expect(await p.locator('h1').innerText() === 'Sources', `${run}: sources h1`);
+}
+
+// The real content in a preview build: the draft is visible outside the cards.
+async function previewChecks(run, p, url, contentDir) {
+  const items = (fs.readFileSync(path.join(contentDir, '_map.toml'), 'utf8').match(/^\[\[branch\.family\.item\]\]/gm) || []).length;
+  await p.goto(url('index.html'));
+  expect(await count(p, '#map li.item') === items, `${run}: map shows ${await count(p, '#map li.item')} items, _map.toml has ${items}`);
+  expect(await count(p, '#map .draft-banner') === 1 && (await p.locator('#map .draft-banner').innerText()).trim() === BANNER, `${run}: draft banner text`);
+  expect(await count(p, '#map summary.chip span.draft') > 0, `${run}: no draft mark on chips`);
+  expect(await count(p, '#sectors div.sector span.draft') > 0, `${run}: no draft mark on sector cards`);
+  const data = JSON.parse(await p.locator('script#atlas-data').evaluate(e => e.textContent));
+  expect(Object.keys(data.items).length === items && Object.values(data.items).some(i => i.draft), `${run}: atlas-data items or draft flags`);
+}
+
 // The lesson page contract of Task 5, checked on smoke lesson alpha (expected values written by hand
 // from tests/fixtures/smoke/01-alpha.md and _course.md, not read back from the build).
 async function lessonContract(run, p) {
@@ -242,6 +324,11 @@ async function noJsChecks(run, browserContext, url) {
   await p.setViewportSize({ width: 390, height: 800 });
   expect(!(await p.locator('button.menu').isVisible()) && await p.locator('nav#contents a[href$="gamma/index.html"]').isVisible()
     && await p.locator('nav#contents a[href$="index.html#map"]').isVisible(), `${run}: no JS at 390 px: contents links not visible`);
+  // the map cards are native disclosures: they open without JavaScript, the script-only filters are hidden
+  await p.goto(url('index.html'));
+  await p.locator('#item-agglomerative summary').click();
+  expect((await p.locator('#item-agglomerative').innerText()).includes('single, complete, average linkage'), `${run}: no JS: card did not open`);
+  expect(!(await p.locator('#f-ignore').isVisible()), `${run}: no JS: filters are shown but cannot work`);
   await p.close();
 }
 
@@ -303,6 +390,8 @@ async function suite(label, dist, contentDir, smoke) {
     let ctx = await context(run.name, { viewport: { width: 1280, height: 900 }, colorScheme: 'light' }, run.isLocal);
     let p = await ctx.newPage();
     if (smoke) await smokeChecks(run.name, p, run.url);
+    if (smoke) await homeChecks(run.name, p, run.url);
+    else await previewChecks(run.name, p, run.url, contentDir);
     if (smoke) await layoutChecks(run.name, p, run.url);
     await navigation(run.name, p, run.url, ids);
 
@@ -337,7 +426,7 @@ async function suite(label, dist, contentDir, smoke) {
     // dark system preference with no stored choice: pages start dark
     ctx = await context(run.name, { viewport: { width: 1280, height: 900 }, colorScheme: 'dark' }, run.isLocal);
     p = await ctx.newPage();
-    for (const rel of ['index.html', ...lessons]) {
+    for (const rel of ['index.html', 'sources/index.html', ...lessons]) {
       await p.goto(run.url(rel));
       expect(await stored(p) === null, `${run.name}: storage not empty in a fresh context`);
       expect(await theme(p) === null && await bodyBg(p) === DARK_BG, `${run.name}: ${rel} does not start dark with a dark system preference`);
@@ -347,7 +436,7 @@ async function suite(label, dist, contentDir, smoke) {
     // phone width: no horizontal overflow
     ctx = await context(run.name, { viewport: { width: 375, height: 812 }, colorScheme: 'light' }, run.isLocal);
     p = await ctx.newPage();
-    for (const rel of ['index.html', ...lessons]) {
+    for (const rel of ['index.html', 'sources/index.html', ...lessons]) {
       await p.goto(run.url(rel));
       const w = await p.evaluate(() => document.documentElement.scrollWidth);
       expect(w <= 375, `${run.name}: ${rel} is ${w} px wide at 375 px`);
