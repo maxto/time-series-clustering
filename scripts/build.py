@@ -8,7 +8,7 @@ reports every problem as one line "<file>: <message>", exit 1. When all is valid
   DIST/index.html            home: hero, map of the field, sector cards, lesson index (planned lessons "coming")
   DIST/<id>/index.html       one page per published lesson
   DIST/sources/index.html    every registered source with its links and where it is cited
-  DIST/assets/               theme.css, theme.js, Geist fonts, KaTeX css and fonts
+  DIST/assets/               theme.css, theme.js, course.js, map.js, Geist fonts, KaTeX css and fonts
   DIR/figures/<name>.preview.svg   light preview of each figure for GitHub (default content/
                              only, or with --previews)
 Two modes. The release build (default, DIST defaults to dist/) fails on every map item or sector fit
@@ -106,7 +106,7 @@ def copy_assets(dist):
     assets = dist / "assets"
     (assets / "fonts").mkdir(parents=True)
     (assets / "katex" / "fonts").mkdir(parents=True)
-    for name in ("theme.css", "theme.js", "favicon.svg"):
+    for name in ("theme.css", "theme.js", "course.js", "map.js", "favicon.svg"):
         shutil.copyfile(SITE / name, assets / name)
     geist = NODE / "geist" / "dist" / "fonts"
     shutil.copyfile(geist / "geist-sans" / "Geist-Variable.woff2", assets / "fonts" / "Geist-Variable.woff2")

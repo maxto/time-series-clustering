@@ -5,7 +5,7 @@ A concept-first, English-only mini-course on time series similarity (static site
 ## Layout
 
 - `content/`: `_map.toml` and `_sectors.toml` (map of the field and sector questions, draft until reviewed), lessons (`NN-id.md`), `_course.md` (course data), `figures/` (generated SVG, their `*.preview.svg`, and `numbers.json`).
-- `site/`: `theme.css` (tokens, light and dark, layout, the figure classes between the `figure-classes` markers), `theme.js` (theme button, `tsc:theme`), `page.html` (lesson), `home.html`, `favicon.svg`.
+- `site/`: `theme.css` (tokens, light and dark, layout, the figure classes between the `figure-classes` markers), `theme.js` (theme button, `tsc:theme`), `course.js` (every page: `window.TSC.layers` stack, contents drawer, scroll-spy, progress, code tabs and copy, citation popover, source topics), `map.js` (home: map filters), `page.html` (lesson), `home.html`, `favicon.svg`.
 - `scripts/`: `build.py` (content to `dist/`, holds `SITE_URL`), `buildlib/` (build helpers: `atlas.py` map and sector data with derived review state, `content.py` schema, sections, prose and links, `svg.py` figure rules and previews, `katex.py` math batch, `pages.py` shell and lesson page), `katex.mjs` (TeX to HTML and MathML, called once per build), `make_fixtures.py`, `parity_dtw.py`, `figures.py` (figures and `numbers.json` from the fixture).
 - `code/python/tsc/`: reference package (`distances.py`, `group.py`, `validity.py`). Tests in `code/python/tests/`.
 - `code/r/`: R reference code (`distances.R`, `check_dtw.R`).

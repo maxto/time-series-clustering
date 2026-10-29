@@ -306,11 +306,209 @@ async function layoutChecks(run, p, url) {
   expect(await w('.hero') === 800 && await w('section.finance') === 800, `${run}: 1100 px column is not 800 px`);
   await p.setViewportSize({ width: 390, height: 800 });
   await p.locator('button.menu').click();
-  await p.evaluate(() => document.querySelector('button.menu').setAttribute('aria-expanded', 'true')); // Task 7 will toggle this
   await p.waitForTimeout(400);
   expect(await w('nav#contents') === 390, `${run}: phone drawer is ${await w('nav#contents')} px, expected full width 390`);
-  await p.evaluate(() => document.querySelector('button.menu').setAttribute('aria-expanded', 'false'));
+  await p.keyboard.press('Escape');
   expect(await p.locator('.hero').evaluate(e => getComputedStyle(e.parentElement).paddingLeft) === '18px', `${run}: phone padding is not 18 px`);
+}
+
+// --- Task 7: behaviour (course.js, map.js). Expected values are written by hand from the design
+// (4.1, 5) and from tests/fixtures/smoke, not read back from the scripts. ---
+const jump = (p, y) => p.evaluate(top => window.scrollTo({ top, behavior: 'instant' }), y);
+
+// The contents panel below 1180 px: opens from the menu button, traps Tab, Escape closes and returns focus.
+async function drawerChecks(run, p, url) {
+  for (const width of [820, 375]) {
+    await p.setViewportSize({ width, height: 800 });
+    await p.goto(url('alpha/index.html'));
+    const menu = p.locator('header.top button.menu');
+    expect(await menu.getAttribute('aria-expanded') === 'false', `${run}: ${width} px: menu starts expanded`);
+    await menu.click();
+    await p.waitForTimeout(400);
+    expect(await menu.getAttribute('aria-expanded') === 'true' && await p.locator('nav#contents').isVisible(), `${run}: ${width} px: menu button did not open the contents`);
+    const n = await p.locator('nav#contents').evaluate(nav => nav.querySelectorAll('a[href], button').length);
+    let outside = 0;
+    for (let i = 0; i < n + 2; i++) {
+      await p.keyboard.press('Tab');
+      if (!await p.evaluate(() => !!document.activeElement.closest('nav#contents'))) outside++;
+    }
+    for (let i = 0; i < 3; i++) {
+      await p.keyboard.press('Shift+Tab');
+      if (!await p.evaluate(() => !!document.activeElement.closest('nav#contents'))) outside++;
+    }
+    expect(outside === 0, `${run}: ${width} px: Tab left the open contents ${outside} times`);
+    await p.keyboard.press('Escape');
+    await p.waitForTimeout(400);
+    expect(await menu.getAttribute('aria-expanded') === 'false' && !(await p.locator('nav#contents').isVisible()), `${run}: ${width} px: Escape did not close the contents`);
+    expect(await p.evaluate(() => document.activeElement === document.querySelector('header.top button.menu')), `${run}: ${width} px: focus did not return to the menu button`);
+    // the scrim closes it too
+    await menu.click();
+    await p.mouse.click(width - 5, 700);
+    await p.waitForTimeout(400);
+    expect(await menu.getAttribute('aria-expanded') === 'false', `${run}: ${width} px: a click outside did not close the contents`);
+  }
+  await p.setViewportSize({ width: 1440, height: 900 });
+  await p.goto(url('alpha/index.html'));
+  expect(await p.locator('nav#contents').isVisible() && !(await p.locator('button.menu').isVisible()), `${run}: 1440 px: contents not visible without the button`);
+}
+
+// Scroll-spy on the contents and the reading progress bar (lesson alpha, 1280 x 600).
+async function spyChecks(run, p, url) {
+  await p.setViewportSize({ width: 1280, height: 600 });
+  await p.goto(url('alpha/index.html'));
+  const frac = () => p.evaluate(() => { const i = document.querySelector('.progress > i'); return i.getBoundingClientRect().width / i.parentElement.getBoundingClientRect().width; });
+  expect(await frac() === 0, `${run}: progress at the top is ${await frac()}`);
+  await jump(p, await p.evaluate(() => document.getElementById('measure-card').getBoundingClientRect().top + scrollY - 80));
+  await p.waitForTimeout(250);
+  const cur = await p.$$eval('nav#contents ol.toc a[aria-current="true"]', as => as.map(a => a.getAttribute('href')));
+  expect(JSON.stringify(cur) === JSON.stringify(['#measure-card']), `${run}: scroll-spy marks ${JSON.stringify(cur)} at #measure-card`);
+  const mid = await frac();
+  expect(mid > 0.1 && mid < 0.95, `${run}: progress mid-lesson is ${mid}`);
+  await jump(p, await p.evaluate(() => document.documentElement.scrollHeight));
+  await p.waitForTimeout(250);
+  expect(await frac() >= 0.99, `${run}: progress at the bottom is ${await frac()}`);
+  await jump(p, 0);
+  await p.waitForTimeout(250);
+  expect(await frac() === 0 && await count(p, 'nav#contents ol.toc a[aria-current="true"]') === 0, `${run}: top of the page leaves a toc link marked or progress above 0`);
+}
+
+// Code tabs, copy, citation popover (lesson alpha). Fixture code: python "print(1)", R "cat(1)".
+async function codeChecks(run, p, url, http) {
+  await p.setViewportSize({ width: 1280, height: 900 });
+  await p.goto(url('alpha/index.html'));
+  const vis = lang => p.locator(`#code pre[data-lang="${lang}"]`).isVisible();
+  expect(await vis('python') && !(await vis('r')), `${run}: only the Python block should show at first`);
+  const tabs = await p.$$eval('#code [role="tab"]', ts => ts.map(t => [t.dataset.lang, t.getAttribute('aria-selected'), !!t.getAttribute('aria-controls')]));
+  expect(JSON.stringify(tabs) === JSON.stringify([['python', 'true', true], ['r', 'false', true]]), `${run}: tab states ${JSON.stringify(tabs)}`);
+  expect(await count(p, '#code pre[role="tabpanel"]') === 2, `${run}: code panels lack role=tabpanel`);
+  await p.locator('#code [role="tab"][data-lang="r"]').click();
+  expect(!(await vis('python')) && await vis('r'), `${run}: the R tab did not show only R`);
+  const after = await p.$$eval('#code [role="tab"]', ts => ts.map(t => t.getAttribute('aria-selected')));
+  expect(JSON.stringify(after) === JSON.stringify(['false', 'true']), `${run}: aria-selected after the R click ${JSON.stringify(after)}`);
+  const ctrl = await p.locator('#code [role="tab"][data-lang="r"]').getAttribute('aria-controls');
+  expect(!!ctrl && await p.locator(`[id="${ctrl}"]`).getAttribute('data-lang') === 'r', `${run}: R tab aria-controls does not point at the R block`);
+  await p.locator('#code button.copy').click();
+  await p.waitForTimeout(150);
+  if (http) {
+    const clip = await p.evaluate(() => navigator.clipboard.readText());
+    expect(clip.trim() === 'cat(1)' && !clip.includes('print'), `${run}: copy put ${JSON.stringify(clip)} on the clipboard, expected the R code`);
+    expect(await p.locator('#code button.copy').innerText() === 'Copied', `${run}: copy button label after copying`);
+    await p.locator('#code [role="tab"][data-lang="python"]').click();
+    await p.locator('#code button.copy').click();
+    await p.waitForTimeout(150);
+    expect((await p.evaluate(() => navigator.clipboard.readText())).trim() === 'print(1)', `${run}: copy after switching back to Python`);
+  }
+  // citation popover
+  const cite = p.locator('a.cite').first();
+  const hash = await p.evaluate(() => location.hash);
+  await cite.click();
+  const dlg = p.locator('[role="dialog"]');
+  expect(await dlg.count() === 1 && await dlg.isVisible(), `${run}: citation did not open a dialog`);
+  if (await dlg.count() === 1) {
+    const label = await dlg.evaluate(d => { const el = document.getElementById(d.getAttribute('aria-labelledby')); return el ? el.textContent : null; });
+    expect(label === 'Sakoe and Chiba (1978)', `${run}: dialog label ${label}`);
+    const t = await dlg.innerText();
+    expect(t.includes('Hiroaki Sakoe and Seibi Chiba') && t.includes('1978') && t.includes('Dynamic programming algorithm optimization for spoken word recognition')
+      && t.includes('IEEE Transactions on Acoustics, Speech, and Signal Processing 26(1), 43-49'), `${run}: dialog content ${t}`);
+    expect(await dlg.locator('a[href="https://doi.org/10.1109/TASSP.1978.1163055"]').count() === 1, `${run}: dialog lacks the publisher link`);
+  }
+  expect(await p.evaluate(() => location.hash) === hash, `${run}: the citation click navigated`);
+  await p.keyboard.press('Escape');
+  expect(await dlg.count() === 0, `${run}: Escape did not close the citation dialog`);
+  expect(await p.evaluate(() => document.activeElement === document.querySelector('a.cite')), `${run}: focus did not return to the citation link`);
+}
+
+// The map filters on the smoke home. Items: euclidean (no ignores), correlation (ignores level, scale),
+// dtw (ignores warp, "alignment within w permitted"), agglomerative and k-medoids (need matrix).
+async function mapChecks(run, p, url) {
+  await p.setViewportSize({ width: 1280, height: 900 });
+  await p.goto(url('index.html'));
+  const states = () => p.$$eval('li.item[data-item]', ls => Object.fromEntries(ls.map(l => [l.dataset.item, l.dataset.state || ''])));
+  const is = async (want, msg) => { const got = await states(); const w = { euclidean: '', correlation: '', dtw: '', agglomerative: '', 'k-medoids': '', ...want }; expect(JSON.stringify(Object.entries(got).sort()) === JSON.stringify(Object.entries(w).sort()), `${run}: ${msg}: ${JSON.stringify(got)}`); };
+  const status = () => p.locator('#f-status').innerText();
+  const tag = t => p.locator(`#f-ignore button[data-tag="${t}"]`);
+  const press = async sel => (await p.locator(sel).getAttribute('aria-pressed'));
+  const dim = { euclidean: 'dim', correlation: 'dim', dtw: 'dim', agglomerative: 'dim', 'k-medoids': 'dim' };
+  await is({}, 'initial state');
+  await tag('warp').click();
+  await is({ ...dim, dtw: 'hit' }, 'warp');
+  expect(await tag('warp').getAttribute('aria-pressed') === 'true', `${run}: warp button not pressed`);
+  expect((await p.locator('li.item[data-item="dtw"]').innerText()).includes('alignment within w permitted'), `${run}: the warp condition is not next to the DTW chip`);
+  expect((await status()).includes('1 of 5') && (await status()).includes('local timing'), `${run}: status for warp: ${await status()}`);
+  await tag('level').click();
+  await is(dim, 'warp and level (AND)');
+  expect((await status()).includes('0 of 5'), `${run}: status for no match: ${await status()}`);
+  await tag('warp').click();
+  await is({ ...dim, correlation: 'hit' }, 'level');
+  await tag('scale').click();
+  await is({ ...dim, correlation: 'hit' }, 'level and scale');
+  await tag('level').click(); await tag('scale').click();
+  await is({}, 'all tags off');
+  expect((await status()).includes('all 5 items'), `${run}: status with no filter: ${await status()}`);
+  await p.locator('#f-matrix').click();
+  await is({ ...dim, agglomerative: 'hit', 'k-medoids': 'hit' }, 'matrix');
+  expect((await p.locator('li.item[data-item="agglomerative"]').innerText()).includes('single, complete, average linkage'), `${run}: matrix condition missing next to agglomerative`);
+  const q = '#f-question button[data-question="finance/same-dates"]';
+  await p.locator(q).click();
+  await is({ ...dim, correlation: 'good', dtw: 'avoid' }, 'finance question');
+  expect(await press('#f-matrix') === 'false' && await press(q) === 'true', `${run}: a question did not reset the matrix button`);
+  const why = await p.locator('li.item[data-item="correlation"]').innerText();
+  const whyDtw = await p.locator('li.item[data-item="dtw"]').innerText();
+  expect(why.includes('Co-movement on the same dates is the classic question.') && whyDtw.includes('Warping pairs different dates.'), `${run}: fit reasons not shown`);
+  expect((await status()).includes('Which assets move together on the same dates?'), `${run}: status lacks the question text: ${await status()}`);
+  await tag('noise').click();
+  expect(await press(q) === 'false' && await press('#f-ignore button[data-tag="noise"]') === 'true', `${run}: an ignore tag did not reset the question`);
+  await tag('noise').click();
+  await p.locator(q).click(); await p.locator(q).click();
+  await is({}, 'question toggled off');
+  expect(await count(p, 'li.item .why') === 0 && await count(p, 'li.item .fcond') === 0, `${run}: labels left behind after reset`);
+  // a sector card question: scrolls to the map with that question pressed
+  await jump(p, await p.evaluate(() => document.getElementById('sectors').getBoundingClientRect().top + scrollY - 60));
+  await p.locator('#sectors a.q[data-question="energy/same-hours"]').click();
+  await p.waitForTimeout(1200);
+  const top = await p.locator('section#map').evaluate(e => e.getBoundingClientRect().top);
+  expect(await press('#f-question button[data-question="energy/same-hours"]') === 'true' && top > -10 && top < 160, `${run}: sector card question: pressed ${await press('#f-question button[data-question="energy/same-hours"]')}, map top ${top}`);
+  await is({ ...dim, euclidean: 'good' }, 'energy question');
+  // a link to an item opens its card
+  await p.goto(url('sources/index.html'));
+  await p.goto(url('index.html') + '#item-dtw');
+  expect(await p.locator('#item-dtw').evaluate(e => e.open), `${run}: #item-dtw did not open the card`);
+}
+
+// Sources page topic filter. Smoke sources: sakoe78 (compare), kaufman90 (group).
+async function sourcesChecks(run, p, url) {
+  await p.goto(url('sources/index.html'));
+  const shown = () => p.$$eval('#src-list li.ref', ls => ls.filter(l => l.getClientRects().length).map(l => l.id));
+  expect(JSON.stringify(await shown()) === JSON.stringify(['src-kaufman90', 'src-sakoe78']), `${run}: sources at first ${JSON.stringify(await shown())}`);
+  await p.locator('#f-topic button[data-topic="group"]').click();
+  expect(JSON.stringify(await shown()) === JSON.stringify(['src-kaufman90']), `${run}: group topic shows ${JSON.stringify(await shown())}`);
+  expect(await p.locator('#f-topic button[data-topic="group"]').getAttribute('aria-pressed') === 'true' && await p.locator('#f-topic button[data-topic="all"]').getAttribute('aria-pressed') === 'false', `${run}: topic aria-pressed`);
+  await p.locator('#f-topic button[data-topic="compare"]').click();
+  expect(JSON.stringify(await shown()) === JSON.stringify(['src-sakoe78']), `${run}: compare topic shows ${JSON.stringify(await shown())}`);
+  await p.locator('#f-topic button[data-topic="validate"]').click();
+  expect((await shown()).length === 0, `${run}: validate topic shows ${JSON.stringify(await shown())}`);
+  await p.locator('#f-topic button[data-topic="all"]').click();
+  expect((await shown()).length === 2, `${run}: All does not show every source`);
+}
+
+// The real content: generic checks only.
+async function contentBehaviour(run, p, url, lessons) {
+  await p.setViewportSize({ width: 1280, height: 900 });
+  await p.goto(url('index.html'));
+  await p.locator('#f-ignore button').first().click();
+  const hit = await count(p, 'li.item[data-state="hit"]');
+  const dim = await count(p, 'li.item[data-state="dim"]');
+  expect(hit > 0 && hit + dim === await count(p, 'li.item'), `${run}: first ignore tag marks ${hit} hits and ${dim} dimmed of ${await count(p, 'li.item')}`);
+  await p.locator('#f-question button').first().click();
+  expect(await count(p, 'li.item[data-state="good"]') > 0, `${run}: first question marks no good fit`);
+  for (const rel of lessons) {
+    await p.goto(url(rel));
+    if (await count(p, 'a.cite') === 0) continue;
+    await p.locator('a.cite').first().click();
+    expect(await count(p, '[role="dialog"]') === 1, `${run}: ${rel}: citation dialog`);
+    await p.keyboard.press('Escape');
+    break;
+  }
 }
 
 // No JavaScript: the page reads. Both code blocks visible, a citation reaches its source entry.
@@ -387,12 +585,19 @@ async function suite(label, dist, contentDir, smoke) {
 
   for (const run of runs) {
     // light system preference: navigation, smoke features, theme button and stored choice
-    let ctx = await context(run.name, { viewport: { width: 1280, height: 900 }, colorScheme: 'light' }, run.isLocal);
+    let ctx = await context(run.name, { viewport: { width: 1280, height: 900 }, colorScheme: 'light', ...(run.http ? { permissions: ['clipboard-read', 'clipboard-write'] } : {}) }, run.isLocal);
     let p = await ctx.newPage();
     if (smoke) await smokeChecks(run.name, p, run.url);
     if (smoke) await homeChecks(run.name, p, run.url);
     else await previewChecks(run.name, p, run.url, contentDir);
     if (smoke) await layoutChecks(run.name, p, run.url);
+    if (smoke) {
+      await drawerChecks(run.name, p, run.url);
+      await spyChecks(run.name, p, run.url);
+      await codeChecks(run.name, p, run.url, run.http);
+      await mapChecks(run.name, p, run.url);
+      await sourcesChecks(run.name, p, run.url);
+    } else await contentBehaviour(run.name, p, run.url, lessons);
     await navigation(run.name, p, run.url, ids);
 
     await p.goto(run.url('index.html'));
