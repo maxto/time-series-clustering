@@ -182,35 +182,41 @@
   var pop = null;
   function closePop(opts) { TSC.layers.close('cite', opts); }
   function buildPop(link, entry) {
-    var d = doc.createElement('div');
+    var d = doc.createElement('span');
     d.className = 'pop'; d.setAttribute('role', 'dialog'); d.id = 'cite-pop'; d.tabIndex = -1;
-    var title = doc.createElement('p');
+    var title = doc.createElement('span');
     title.className = 'pt'; title.id = 'cite-pop-title'; title.textContent = link.textContent;
     d.setAttribute('aria-labelledby', 'cite-pop-title');
     d.appendChild(title);
     ['au', 'ti', 've', 'ln'].forEach(function (cls) {
       var src = entry.querySelector('.' + cls);
       if (!src) return;
-      var p = doc.createElement('p');
+      var p = doc.createElement('span');
       p.className = 'pb ' + cls;
       Array.prototype.forEach.call(src.childNodes, function (n) { p.appendChild(n.cloneNode(true)); });
       if (cls === 'ti') { var c = doc.createElement('cite'); while (p.firstChild) c.appendChild(p.firstChild); p.appendChild(c); }
       d.appendChild(p);
     });
-    var more = doc.createElement('p');
+    var more = doc.createElement('span');
     more.className = 'pb pm';
     var a = doc.createElement('a');
     a.href = '#' + entry.id; a.textContent = 'Go to the entry in the sources list';
     more.appendChild(a); d.appendChild(more);
     return d;
   }
+  // the popover sits right after its link in the DOM, so Tab goes from the link into the popover and on in reading order
   function placePop(d, link) {
-    var r = link.getBoundingClientRect(), sx = window.pageXOffset, sy = window.pageYOffset;
-    var w = Math.min(380, doc.documentElement.clientWidth - 24);
+    var r = link.getBoundingClientRect();
+    var vw = doc.documentElement.clientWidth;
+    var w = Math.min(380, vw - 24);
     d.style.width = w + 'px';
-    var left = Math.max(12, Math.min(r.left, doc.documentElement.clientWidth - w - 12));
-    d.style.left = left + sx + 'px';
-    d.style.top = r.bottom + sy + 8 + 'px';
+    var op = d.offsetParent, base = { left: -window.pageXOffset, top: -window.pageYOffset };
+    if (op && op !== doc.body && op !== doc.documentElement) {
+      var o = op.getBoundingClientRect();
+      base = { left: o.left + op.clientLeft - op.scrollLeft, top: o.top + op.clientTop - op.scrollTop };
+    }
+    d.style.left = Math.max(12, Math.min(r.left, vw - w - 12)) - base.left + 'px';
+    d.style.top = r.bottom + 8 - base.top + 'px';
   }
   doc.addEventListener('click', function (e) {
     var link = e.target.closest && e.target.closest('a.cite[data-ref]');
@@ -220,7 +226,7 @@
       e.preventDefault();
       if (pop) { var same = pop.link === link; closePop({ restore: false }); if (same) { link.focus(); return; } }
       var d = buildPop(link, entry);
-      doc.body.appendChild(d);
+      link.parentNode.insertBefore(d, link.nextSibling);
       placePop(d, link);
       pop = { el: d, link: link };
       TSC.layers.open('cite', d, link, { onClose: function () { if (pop && pop.el.parentNode) pop.el.parentNode.removeChild(pop.el); pop = null; } });

@@ -77,7 +77,7 @@ def home_page(course, template, overview, atlas, sources, finance_ids, build_mod
     n = len(course.entries)
     atlas_html = ""
     if atlas:
-        atlas_html = (map_section(atlas, sources, by_id, "", build_mode == "preview") + sectors_section(atlas))
+        atlas_html = (map_section(atlas, sources, by_id, "", build_mode == "preview", course.title) + sectors_section(atlas))
     return fill(template, {
         "meta": head_meta(course.title, course.tagline, SITE_URL, "website", course.title),
         "build": build_mode, "root": "",

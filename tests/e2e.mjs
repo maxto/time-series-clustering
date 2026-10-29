@@ -314,6 +314,21 @@ async function layoutChecks(run, p, url) {
 
 // --- Task 7: behaviour (course.js, map.js). Expected values are written by hand from the design
 // (4.1, 5) and from tests/fixtures/smoke, not read back from the scripts. ---
+// WCAG 2.x contrast. Colours are "rgb(r, g, b)" or "rgba(r, g, b, a)" strings from getComputedStyle.
+const rgbOf = c => c.match(/[\d.]+/g).map(Number);
+const lum = ([r, g, b]) => { const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }; return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b); };
+const contrast = (a, b) => { const [x, y] = [lum(rgbOf(a)), lum(rgbOf(b))].sort((m, n) => n - m); return (x + 0.05) / (y + 0.05); };
+// published values: black on white 21, #767676 on white 4.54
+expect(Math.abs(contrast('rgb(0, 0, 0)', 'rgb(255, 255, 255)') - 21) < 0.01, 'contrast helper: black on white is not 21');
+expect(Math.abs(contrast('rgb(118, 118, 118)', 'rgb(255, 255, 255)') - 4.54) < 0.01, 'contrast helper: #767676 on white is not 4.54');
+// text colour of an element against the first opaque background found going up the tree (the page root is the last resort)
+const textContrast = (p, sel) => p.locator(sel).first().evaluate(e => {
+  const alpha = c => (c.match(/[\d.]+/g) || [0, 0, 0, 1])[3] === undefined ? 1 : Number(c.match(/[\d.]+/g)[3]);
+  let n = e, bg = null;
+  while (n && !bg) { const c = getComputedStyle(n).backgroundColor; if (alpha(c) > 0) bg = c; n = n.parentElement; }
+  return [getComputedStyle(e).color, bg || 'rgb(255, 255, 255)'];
+}).then(([fg, bg]) => contrast(fg, bg));
+
 const jump = (p, y) => p.evaluate(top => window.scrollTo({ top, behavior: 'instant' }), y);
 
 // The contents panel below 1180 px: opens from the menu button, traps Tab, Escape closes and returns focus.
@@ -410,6 +425,9 @@ async function codeChecks(run, p, url, http) {
     const t = await dlg.innerText();
     expect(t.includes('Hiroaki Sakoe and Seibi Chiba') && t.includes('1978') && t.includes('Dynamic programming algorithm optimization for spoken word recognition')
       && t.includes('IEEE Transactions on Acoustics, Speech, and Signal Processing 26(1), 43-49'), `${run}: dialog content ${t}`);
+    expect(await p.evaluate(() => document.querySelector('a.cite').nextElementSibling === document.querySelector('[role="dialog"]')), `${run}: the dialog is not right after its citation link`);
+    await p.keyboard.press('Tab');
+    expect(await p.evaluate(() => !!document.activeElement.closest('[role="dialog"]')), `${run}: Tab from the citation did not enter the popover`);
     expect(await dlg.locator('a[href="https://doi.org/10.1109/TASSP.1978.1163055"]').count() === 1, `${run}: dialog lacks the publisher link`);
   }
   expect(await p.evaluate(() => location.hash) === hash, `${run}: the citation click navigated`);
@@ -423,6 +441,14 @@ async function codeChecks(run, p, url, http) {
 async function mapChecks(run, p, url) {
   await p.setViewportSize({ width: 1280, height: 900 });
   await p.goto(url('index.html'));
+  expect(await count(p, '#map div.map-root') === 1 && (await p.locator('#map div.map-root').innerText()).includes('compare, group, validate'), `${run}: map root box`);
+  expect(await count(p, '#map svg.wires[aria-hidden="true"]') === 1 && await count(p, '#map svg.wires path') >= 1, `${run}: 1280 px: connector lines missing or not aria-hidden`);
+  await p.setViewportSize({ width: 390, height: 800 });
+  await p.waitForTimeout(150);
+  expect(await count(p, '#map svg.wires[aria-hidden="true"]') === 1 && await count(p, '#map svg.wires path') === 0, `${run}: 390 px: connector lines drawn while the branches stack`);
+  await p.setViewportSize({ width: 1440, height: 900 });
+  await p.waitForTimeout(150);
+  expect(await count(p, '#map svg.wires path') >= 1, `${run}: 1440 px: connector lines not redrawn after a resize`);
   const states = () => p.$$eval('li.item[data-item]', ls => Object.fromEntries(ls.map(l => [l.dataset.item, l.dataset.state || ''])));
   const is = async (want, msg) => { const got = await states(); const w = { euclidean: '', correlation: '', dtw: '', agglomerative: '', 'k-medoids': '', ...want }; expect(JSON.stringify(Object.entries(got).sort()) === JSON.stringify(Object.entries(w).sort()), `${run}: ${msg}: ${JSON.stringify(got)}`); };
   const status = () => p.locator('#f-status').innerText();
@@ -435,6 +461,12 @@ async function mapChecks(run, p, url) {
   expect(await tag('warp').getAttribute('aria-pressed') === 'true', `${run}: warp button not pressed`);
   expect((await p.locator('li.item[data-item="dtw"]').innerText()).includes('alignment within w permitted'), `${run}: the warp condition is not next to the DTW chip`);
   expect((await status()).includes('1 of 5') && (await status()).includes('local timing'), `${run}: status for warp: ${await status()}`);
+  for (const t of ['light', 'dark']) {
+    await p.evaluate(x => { document.documentElement.dataset.theme = x; }, t);
+    const c = await textContrast(p, 'li.item[data-item="euclidean"] summary.chip');
+    expect(c >= 4.5, `${run}: ${t} theme: dimmed chip text contrast ${c.toFixed(2)} is below 4.5`);
+  }
+  await p.evaluate(() => { delete document.documentElement.dataset.theme; });
   await tag('level').click();
   await is(dim, 'warp and level (AND)');
   expect((await status()).includes('0 of 5'), `${run}: status for no match: ${await status()}`);

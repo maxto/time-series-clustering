@@ -268,7 +268,7 @@ def item_card(it, family, sources, published, root):
     return f'<div class="card">{"".join(parts)}</div>'
 
 
-def map_section(atlas, sources, published, root, preview):
+def map_section(atlas, sources, published, root, preview, course_title):
     """`published` maps every course lesson id to its entry (planned ones too)."""
     banner = f'<div class="draft-banner" role="note">{draft_banner_text()}</div>' if preview else ""
     ignore = "".join(f'<button type="button" data-tag="{t}" aria-pressed="false">{IGNORE_LABELS[t]}</button>' for t in IGNORE_LABELS)
@@ -302,7 +302,8 @@ def map_section(atlas, sources, published, root, preview):
         branches.append(f'<div class="branch" data-branch="{b.id}"><div class="br-head"><b>{esc(b.name)}</b>'
                         f'<span>{esc(b.sub)}</span></div>{"".join(fams)}</div>')
     return (f'<section id="map"><h2 class="h-sec">Map of the field</h2>\n{banner}{filters}\n'
-            f'<div class="map"><div class="branches">{"".join(branches)}</div></div>\n{atlas_data(atlas)}</section>\n')
+            f'<div class="map"><div class="map-root"><b>{esc(course_title)}</b><span>compare, group, validate</span></div>'
+            f'<div class="branches">{"".join(branches)}</div></div>\n{atlas_data(atlas)}</section>\n')
 
 
 def sparkline(curve, title):

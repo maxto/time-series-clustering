@@ -111,6 +111,41 @@
     if (a) choose(a.dataset.question, false);
   });
 
+  // connector lines from the root box to the branch headings: decoration, aria-hidden. Drawn only to the
+  // headings on the top row, and only when the branches are not all stacked in one column, so a line never crosses a box.
+  var mapBox = doc.querySelector('#map .map');
+  var rootBox = doc.querySelector('#map .map-root');
+  var heads = Array.prototype.slice.call(doc.querySelectorAll('#map .br-head'));
+  var NS = 'http://www.w3.org/2000/svg';
+  var wires = null;
+  function drawWires() {
+    if (!mapBox || !rootBox || !heads.length) return;
+    if (!wires) {
+      wires = doc.createElementNS(NS, 'svg');
+      wires.setAttribute('class', 'wires');
+      wires.setAttribute('aria-hidden', 'true');
+      mapBox.insertBefore(wires, mapBox.firstChild);
+    }
+    while (wires.firstChild) wires.removeChild(wires.firstChild);
+    var B = mapBox.getBoundingClientRect();
+    var rect = function (n) { var q = n.getBoundingClientRect(); return { x: q.left - B.left, y: q.top - B.top, w: q.width, h: q.height }; };
+    var hr = heads.map(rect), r = rect(rootBox);
+    wires.setAttribute('viewBox', '0 0 ' + B.width + ' ' + B.height);
+    // stacked in one column: every heading is as wide as the map
+    if (hr.every(function (h) { return h.w > B.width * 0.9; })) return;
+    var topY = Math.min.apply(null, hr.map(function (h) { return h.y; }));
+    var x0 = r.x + r.w / 2, y0 = r.y + r.h;
+    hr.forEach(function (h) {
+      if (h.y - topY >= 10) return;
+      var x1 = h.x + h.w / 2, path = doc.createElementNS(NS, 'path');
+      path.setAttribute('d', 'M' + x0 + ',' + y0 + ' C' + x0 + ',' + (y0 + 22) + ' ' + x1 + ',' + (h.y - 22) + ' ' + x1 + ',' + h.y);
+      wires.appendChild(path);
+    });
+  }
+  window.addEventListener('resize', drawWires);
+  if (window.ResizeObserver && mapBox) new ResizeObserver(drawWires).observe(mapBox);
+  drawWires();
+
   // a link to #item-<id> opens that card
   function openFromHash() {
     var id = decodeURIComponent(location.hash.slice(1));

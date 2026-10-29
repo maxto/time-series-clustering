@@ -255,8 +255,13 @@ html:not(.js) .codebox pre::before { content: attr(data-lang); display: block; m
 .mf-status { margin: 0; font-size: 14px; color: var(--ink-2); border-top: 1px solid var(--rule); padding-top: 9px; }
 html:not(.js) .mfilters { display: none; }
 .map { position: relative; container-type: inline-size; padding-top: 4px; }
-.branches { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
-.branch:first-child { grid-column: 1 / -1; }
+.map-root { position: relative; margin: 0 auto 34px; width: max-content; max-width: 100%; text-align: center; background: var(--ink); color: var(--bg); border-radius: 14px; padding: 10px 22px; }
+.map-root b { display: block; font-size: 18px; }
+.map-root span { font-size: 13.5px; }
+.wires { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+.wires path { fill: none; stroke: var(--line); stroke-width: 1.4; }
+.branches { position: relative; display: grid; grid-template-columns: 1.25fr 1fr 1fr; gap: 16px; align-items: start; }
+@container (max-width: 900px) { .branches { grid-template-columns: 1fr 1fr; } .branch:first-child { grid-column: 1 / -1; } }
 .br-head { text-align: center; border: 2px solid var(--ink); border-radius: 12px; padding: 7px 10px; margin-bottom: 14px; background: var(--surface); }
 .br-head b { display: block; font-size: 17px; }
 .br-head span { font-size: 13.5px; color: var(--meta); }
@@ -285,14 +290,14 @@ summary.chip .cond { margin-left: 5px; }
 .card .srcs .sup { color: var(--meta); }
 .card .coming { font-size: 12px; color: var(--meta); border: 1px solid var(--rule); border-radius: 6px; padding: 0 6px; }
 /* filter states set by map.js on li.item: hit (candidate), good and avoid (sector fit), dim (the rest) */
-li.item[data-state="dim"] > details:not([open]) > summary.chip { opacity: .45; }
+li.item[data-state="dim"] > details > summary.chip { background: transparent; border-color: var(--rule); color: var(--ink-2); }
 li.item[data-state="hit"] > details > summary.chip, li.item[data-state="good"] > details > summary.chip { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
 li.item[data-state="avoid"] > details > summary.chip { border: 1px dashed var(--ink-2); }
 li.item[data-state="hit"] summary.chip .cond, li.item[data-state="good"] summary.chip .cond { color: var(--ink-2); }
 li.item:has(> .why) { flex-basis: 100%; }
 .why { margin: 4px 0 2px 2px; font-size: 14px; line-height: 1.45; color: var(--ink-2); }
 .why .cond { margin-left: 6px; }
-@container (max-width: 520px) { .branches { grid-template-columns: 1fr; } .card .row { grid-template-columns: 1fr; gap: 0; } }
+@container (max-width: 520px) { .branches { grid-template-columns: 1fr; } .map-root { margin-bottom: 18px; } .card .row { grid-template-columns: 1fr; gap: 0; } }
 @media (max-width: 600px) { .mf-lab, .fq-name { width: 100%; } }
 
 /* sector cards */
@@ -380,10 +385,10 @@ figure svg .end { text-anchor: end; }
 #src-list .ref cite { display: block; margin: 2px 0; }
 
 /* citation popover (course.js): a dialog under the citation link, built from the entry of the sources list */
-.pop { position: absolute; z-index: 60; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; box-shadow: 0 10px 34px rgba(15, 18, 24, .22); font-size: 14.5px; line-height: 1.45; }
+.pop { display: block; position: absolute; text-align: left; font-weight: 400; font-style: normal; letter-spacing: 0; z-index: 60; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; box-shadow: 0 10px 34px rgba(15, 18, 24, .22); font-size: 14.5px; line-height: 1.45; }
 .pop:focus { outline: none; }
-.pop .pt { margin: 0 0 6px; font-weight: 600; font-size: 15px; }
-.pop .pb { margin: 0 0 5px; color: var(--ink-2); }
+.pop .pt { display: block; margin: 0 0 6px; font-weight: 600; font-size: 15px; }
+.pop .pb { display: block; margin: 0 0 5px; color: var(--ink-2); }
 .pop .ti cite { font-style: italic; color: var(--ink); }
 .pop .ln { display: flex; flex-wrap: wrap; gap: 6px; }
 .pop .ln a { font: 500 12.5px var(--f-mono); text-decoration: none; border: 1px solid var(--rule); border-radius: 6px; padding: 2px 8px; color: var(--ink); }
