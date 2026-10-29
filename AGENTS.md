@@ -11,6 +11,7 @@ A concept-first, English-only mini-course on time series similarity (static site
 - `code/r/`: R reference code (`distances.R`, `check_dtw.R`).
 - `fixtures/`: saved numbers (`demand-12.csv`). Frozen once the fixture checks pass. The CSV is the source of truth, the generator only documents it.
 - `tests/`: `e2e.mjs` (headless Chrome via `playwright-core`, set `CHROME_PATH` if Chrome is not at `/usr/bin/google-chrome`), `test_build.py` (build validation), `fixtures/smoke/` (a tiny permanent course that exercises every engine feature), `shots.mjs` (full-page screenshots for review). `e2e.mjs` also holds the contrast matrix and the width checks (see Commands). `tests/output/` is git-ignored.
+- `.claude/skills/frontend-design/`: Anthropic's design skill (Apache-2.0, from `~/resources/anthropic-skills`), the lens for page design and critique. The approved tokens, fonts and themes below win over its advice.
 - `.github/workflows/pages.yml`: build and deploy to GitHub Pages on push to `master` (inactive until push and Pages are approved).
 - `dist/`, `preview/`, `node_modules/`, `.venv/`: git-ignored (`preview/` is the preview build output).
 - `README.md` and the PDF are the original material: leave them alone unless asked.
