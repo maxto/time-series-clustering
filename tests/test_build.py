@@ -19,7 +19,8 @@ import pytest
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from buildlib.cite import fingerprint  # noqa: E402
+from build import in_release_tree  # noqa: E402
+from buildlib.cite import fingerprint, fingerprint_data  # noqa: E402
 
 SMOKE = ROOT / "tests" / "fixtures" / "smoke"
 
@@ -243,8 +244,16 @@ def test_unknown_code_language_is_rejected(content):
     assert "julia" in build(content).stdout
 
 
-def test_fingerprint_of_a_literal_text():  # expected value from: printf 'a b c' | sha256sum | cut -c1-16
-    assert fingerprint("  a \n b\tc ") == "0e9f64031fcb2bc7"
+def test_fingerprint_of_a_literal_text():
+    # expected value from: printf 'tsc-fp-v2\n  a \n b\tc ' | sha256sum | cut -c1-16
+    # (version tag, newline, the text with whitespace kept; the \r\n below is normalised to \n)
+    assert fingerprint("  a \r\n b\tc ") == "c39cfac0db166b36"
+
+
+def test_fingerprint_of_structured_data():
+    # expected value from: printf 'tsc-fp-v2\n{"a":"\u00e9","b":[1,2]}' | sha256sum | cut -c1-16
+    # (sorted keys, no spaces, non-ASCII kept as is)
+    assert fingerprint_data({"b": [1, 2], "a": "\u00e9"}) == "10aa0164d9f6c8ea"
 
 
 def test_citation_renders_label_and_source_entry(content):
@@ -289,7 +298,63 @@ def test_citation_in_caption_needs_its_record(content):
 
 def test_changed_source_identity_reopens(content):
     edit_source(content, "sakoe78", year=1979)
-    assert "has no review" in build(content).stdout
+    out = build(content).stdout
+    assert "lesson 'alpha' has no review for its current text" in out
+    assert "citation [@sakoe78, sec. II] has no review record" in out
+
+
+@pytest.mark.parametrize("change", [{"authors": ["Sakoe, H.", "Chiba, S."]}, {"venue": "IEEE Trans. ASSP"}],
+                         ids=["authors", "venue"])
+def test_authors_and_venue_are_part_of_the_source_identity(content, change):
+    edit_source(content, "sakoe78", **change)
+    out = build(content).stdout
+    assert "lesson 'alpha' has no review for its current text" in out
+    assert "citation [@sakoe78, sec. II] has no review record" in out
+
+
+def test_whitespace_inside_a_code_fence_reopens_the_lesson(content):
+    mutate(content / "01-alpha.md", "print(1)", 'print("a  b")')
+    record_lesson(content, "alpha")
+    assert build(content).returncode == 0
+    mutate(content / "01-alpha.md", 'print("a  b")', 'print("a b")')
+    assert "lesson 'alpha' has no review for its current text" in build(content).stdout
+
+
+def test_caption_citation_text_is_shown_by_review_show(content):
+    add_to_lesson(content, "![Band of [@sakoe78, sec. II]](figures/overview.svg)")
+    shown = review(content, "show", "--lesson", "alpha").stdout
+    assert "  paragraph: ![Band of [@sakoe78, sec. II]](figures/overview.svg)" in shown
+
+
+@pytest.mark.parametrize("target", ["one-line", "common-mistake", "in-finance", "measure-card", "code"])
+def test_fragment_link_to_a_fixed_block_builds(content, target):
+    add_to_lesson(content, f"See [the block](#{target}).")
+    record_lesson(content, "alpha")
+    result = build(content)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert f'href="#{target}"' in page(content, "alpha")
+
+
+@pytest.mark.parametrize("target,removed", [("in-finance", "In finance"), ("measure-card", "Measure card"), ("code", "Code")])
+def test_fragment_link_to_an_absent_block_fails(content, target, removed):
+    remove_block(content / "01-alpha.md", removed)
+    add_to_lesson(content, f"See [the block](#{target}).")
+    out = build(content).stdout
+    assert f"link '#{target}'" in out
+
+
+def test_preview_isolation_follows_a_symlinked_release_directory(tmp_path):
+    root = tmp_path / "repo"
+    elsewhere = tmp_path / "elsewhere"
+    root.mkdir()
+    elsewhere.mkdir()
+    (root / "dist").symlink_to(elsewhere)
+    assert in_release_tree(root / "dist", root)  # by name
+    assert in_release_tree(root / "dist" / "sub", root)  # inside, by name
+    assert in_release_tree(elsewhere, root)  # the target dist points to
+    assert in_release_tree(elsewhere / "sub" / "deeper", root)  # inside the target
+    assert not in_release_tree(root / "preview", root)
+    assert not in_release_tree(tmp_path / "elsewhere-2", root)  # a name that only starts like the target
 
 
 def test_registry_rules(content):
@@ -360,6 +425,22 @@ def duplicate_item(content, name):
     path = content / "_map.toml"
     old = table_block(path, "branch.family.item", "name", name)
     mutate(path, old, old + old.rstrip("\n") + "\n\n")
+
+
+def add_ref(content, name, supports):
+    """Append a located source ref supporting `supports` to an item of the smoke map."""
+    path = content / "_map.toml"
+    old = table_block(path, "branch.family.item", "name", name)
+    new = re.sub(r"\}\]\n", lambda _: f'}}, {{key = "sakoe78", locator = "sec. II", supports = "{supports}"}}]\n', old, count=1)
+    mutate(path, old, new)
+
+
+def remove_ref(content, name, supports):
+    path = content / "_map.toml"
+    old = table_block(path, "branch.family.item", "name", name)
+    ref = f', {{key = "sakoe78", locator = "sec. II", supports = "{supports}"}}'
+    assert ref in old
+    mutate(path, old, old.replace(ref, "", 1))
 
 
 def drop_record(content, header, name_field, name):
@@ -487,7 +568,7 @@ REOPENING_EDITS = [
     ("item cond", lambda c: edit_item(c, "DTW", cond="within a wider w"), "item 'DTW' is draft"),
     ("item python", lambda c: edit_item(c, "Euclidean", python="scipy sqeuclidean"), "item 'Euclidean' is draft"),
     ("item r", lambda c: edit_item(c, "Euclidean", r="dist(x)"), "item 'Euclidean' is draft"),
-    ("tag cond", lambda c: edit_item(c, "DTW", ignores=[{"tag": "warp", "cond": "alignment within w, edited"}]),
+    ("tag cond", lambda c: mutate(c / "_map.toml", 'cond = "alignment within w permitted"', 'cond = "alignment within w, edited"'),
      "item 'DTW' is draft"),
     ("ref locator", lambda c: edit_ref(c, "Correlation", "ignores:level", "sec. IX"), "item 'Correlation' is draft"),
     ("fit mark", lambda c: edit_fit(c, "finance/same-dates", mark="avoid"), "fit finance/same-dates / 'Correlation' is draft"),
@@ -497,6 +578,12 @@ REOPENING_EDITS = [
      "question energy/same-hours is draft"),
     ("question starts", lambda c: edit_block(c, "_sectors.toml", "sector.question", "id", "same-hours", starts=["Euclidean"]),
      "question energy/same-hours is draft"),
+    ("branch subtitle", lambda c: edit_block(c, "_map.toml", "branch", "id", "compare", sub="other words"),
+     "branch 'compare' is draft"),
+    ("branch name", lambda c: mutate(c / "_map.toml", 'name = "Group"', 'name = "Cluster"'),
+     "branch 'group' is draft"),
+    ("family name", lambda c: mutate(c / "_map.toml", 'name = "Lock-step"', 'name = "Lockstep"'), "item 'Euclidean' is draft"),
+    ("family lesson", lambda c: mutate(c / "_map.toml", 'lesson = "alpha"', 'lesson = "gamma"'), "item 'Euclidean' is draft"),
     ("sector about", lambda c: edit_block(c, "_sectors.toml", "sector", "id", "energy", about="Another description."),
      "sector 'energy' is draft"),
     ("sector curve", lambda c: edit_block(c, "_sectors.toml", "sector", "id", "energy", curve=[0.0, 1.0]),
@@ -563,3 +650,56 @@ def test_search_index_of_the_smoke_course(content, tmp_path):
     assert "x = 1" not in everything and "not a section" not in everything
     assert "\\sqrt" not in everything and "hand-made figure" not in everything
     assert "cat(1)" not in everything
+
+
+# ---- final review of checkpoint 1: what a record covers ----
+
+@pytest.mark.parametrize("change", [{"year": 1979}, {"doi": "10.1109/TASSP.1978.0000000"}], ids=["year", "doi"])
+def test_a_changed_source_reopens_the_map_items_and_fits_citing_it(content, change):
+    edit_source(content, "sakoe78", **change)
+    out = build(content).stdout
+    assert "item 'Euclidean' is draft: no review record" in out
+    assert "fit energy/same-hours / 'Euclidean' is draft: no review record" in out
+
+
+def test_the_same_words_moved_across_a_field_boundary_reopen_the_item(content):
+    edit_item(content, "Euclidean", does="alpha beta", cond="gamma")
+    add_ref(content, "Euclidean", "cond")
+    rerecord_item(content, "Euclidean")
+    assert build(content).returncode == 0
+    edit_item(content, "Euclidean", does="alpha", cond="beta gamma")
+    assert "item 'Euclidean' is draft: no review record" in build(content).stdout
+
+
+def test_moving_a_reviewed_item_to_another_family_makes_it_draft(content):
+    path = content / "_map.toml"
+    moved = table_block(path, "branch.family.item", "name", "Euclidean")
+    mutate(path, moved, "")
+    mutate(path, '[[branch.family.item]]\nname = "DTW"', moved + '[[branch.family.item]]\nname = "DTW"')
+    out = build(content).stdout
+    assert "item 'Euclidean' is draft: no review record" in out
+    assert "item 'Correlation' is draft" not in out
+
+
+def test_changing_a_question_reopens_its_fits_too(content):
+    edit_block(content, "_sectors.toml", "sector.question", "id", "same-hours", text="Another question?")
+    out = build(content).stdout
+    assert "question energy/same-hours is draft" in out
+    assert "fit energy/same-hours / 'Euclidean' is draft: no review record" in out
+    assert "fit finance/same-dates" not in out
+
+
+def test_release_refuses_an_unreviewed_branch(content):
+    drop_record(content, "branch", "id", "compare")
+    out = build(content).stdout
+    assert "branch 'compare' is draft" in out
+    assert build(content, preview=True).returncode == 0
+
+
+def test_a_condition_without_condition_support_is_draft(content):
+    assert build(content).returncode == 0  # DTW has a cond and a cond ref
+    remove_ref(content, "DTW", "cond")
+    rerecord_item(content, "DTW")
+    out = build(content).stdout
+    assert "item 'DTW' is draft: no located confirmed source for cond" in out
+    assert build(content, preview=True).returncode == 0

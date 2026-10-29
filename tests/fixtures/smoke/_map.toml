@@ -34,7 +34,7 @@ ignores = [{tag = "warp", cond = "alignment within w permitted"}]
 cond = "within w"
 python = "aeon dtw_distance"
 r = "dtw::dtw"
-sources = [{key = "sakoe78", locator = "sec. II", supports = "does"}, {key = "sakoe78", locator = "sec. II", supports = "python"}, {key = "sakoe78", locator = "sec. II", supports = "r"}, {key = "sakoe78", locator = "sec. II", supports = "ignores:warp"}]
+sources = [{key = "sakoe78", locator = "sec. II", supports = "does"}, {key = "sakoe78", locator = "sec. II", supports = "python"}, {key = "sakoe78", locator = "sec. II", supports = "r"}, {key = "sakoe78", locator = "sec. II", supports = "ignores:warp"}, {key = "sakoe78", locator = "sec. II", supports = "cond"}]
 
 [[branch]]
 id = "group"
@@ -51,7 +51,7 @@ needs = [{tag = "matrix", cond = "single, complete, average linkage"}]
 cond = "Ward: Euclidean"
 python = "scipy linkage"
 r = "stats::hclust"
-sources = [{key = "sakoe78", locator = "sec. II", supports = "does"}, {key = "sakoe78", locator = "sec. II", supports = "python"}, {key = "sakoe78", locator = "sec. II", supports = "r"}, {key = "sakoe78", locator = "sec. II", supports = "needs:matrix"}]
+sources = [{key = "sakoe78", locator = "sec. II", supports = "does"}, {key = "sakoe78", locator = "sec. II", supports = "python"}, {key = "sakoe78", locator = "sec. II", supports = "r"}, {key = "sakoe78", locator = "sec. II", supports = "needs:matrix"}, {key = "sakoe78", locator = "sec. II", supports = "cond"}]
 
 [[branch.family.item]]
 name = "k-medoids"

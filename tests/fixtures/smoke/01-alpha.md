@@ -56,7 +56,11 @@ $$
 \mathrm{ED}(x, y) = \sqrt{\sum_{t=1}^{n} (x_t - y_t)^2}
 $$
 
+The formula above is the distance this card names.
+
 ## Code
+
+The two blocks below print the same value.
 
 ```python
 print(1)

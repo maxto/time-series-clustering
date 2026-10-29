@@ -2,109 +2,8 @@
 lesson = "alpha"
 key = "sakoe78"
 locator = "sec. II"
-paragraph = "6689d441bf755c19"
-identity = "58ffd6320ffdebec"
-by = "fixture author"
-date = 2026-10-29
-note = "smoke fixture, not a real review"
-
-[[lesson]]
-id = "gamma"
-fingerprint = "6797dd416e9e10d5"
-by = "fixture author"
-date = 2026-10-29
-note = "smoke fixture, not a real review"
-
-[[item]]
-name = "Euclidean"
-fingerprint = "b0409b9c3ced7a05"
-by = "fixture author"
-date = 2026-10-29
-note = "smoke fixture, not a real review"
-
-[[item]]
-name = "Correlation"
-fingerprint = "0d468948ab4bd15c"
-by = "fixture author"
-date = 2026-10-29
-note = "smoke fixture, not a real review"
-
-[[item]]
-name = "DTW"
-fingerprint = "4df8a0991c3c58ef"
-by = "fixture author"
-date = 2026-10-29
-note = "smoke fixture, not a real review"
-
-[[item]]
-name = "Agglomerative"
-fingerprint = "578a4056a2633639"
-by = "fixture author"
-date = 2026-10-29
-note = "smoke fixture, not a real review"
-
-[[item]]
-name = "k-medoids"
-fingerprint = "abf4e98192c82013"
-by = "fixture author"
-date = 2026-10-29
-note = "smoke fixture, not a real review"
-
-[[fit]]
-question = "energy/same-hours"
-item = "Euclidean"
-fingerprint = "4586f995a5514f2c"
-by = "fixture author"
-date = 2026-10-29
-note = "smoke fixture, not a real review"
-
-[[fit]]
-question = "finance/same-dates"
-item = "Correlation"
-fingerprint = "4300b74ea808b469"
-by = "fixture author"
-date = 2026-10-29
-note = "smoke fixture, not a real review"
-
-[[fit]]
-question = "finance/same-dates"
-item = "DTW"
-fingerprint = "32da1e4dd4b46600"
-by = "fixture author"
-date = 2026-10-29
-note = "smoke fixture, not a real review"
-
-[[sector]]
-id = "energy"
-fingerprint = "e101f64ae78c22fd"
-by = "fixture author"
-date = 2026-10-29
-note = "smoke fixture, not a real review"
-
-[[sector]]
-id = "finance"
-fingerprint = "e97a7e6ccade60d5"
-by = "fixture author"
-date = 2026-10-29
-note = "smoke fixture, not a real review"
-
-[[question]]
-id = "energy/same-hours"
-fingerprint = "b461287bcdff417c"
-by = "fixture author"
-date = 2026-10-29
-note = "smoke fixture, not a real review"
-
-[[question]]
-id = "finance/same-dates"
-fingerprint = "f5d45e0786c900a1"
-by = "fixture author"
-date = 2026-10-29
-note = "smoke fixture, not a real review"
-
-[[lesson]]
-id = "alpha"
-fingerprint = "7f1264b9f7c78359"
+paragraph = "90276ae98a576102"
+identity = "75fb82bf2349b2f0"
 by = "fixture author"
 date = 2026-10-29
 note = "smoke fixture, not a real review"
@@ -113,8 +12,123 @@ note = "smoke fixture, not a real review"
 lesson = "alpha"
 key = "sakoe78"
 locator = "sec. II"
-paragraph = "50d0617f0211f24e"
-identity = "58ffd6320ffdebec"
+paragraph = "aa58e580a7a44b90"
+identity = "75fb82bf2349b2f0"
+by = "fixture author"
+date = 2026-10-29
+note = "smoke fixture, not a real review"
+
+[[lesson]]
+id = "alpha"
+fingerprint = "a4915afd33c4c3ff"
+by = "fixture author"
+date = 2026-10-29
+note = "smoke fixture, not a real review"
+
+[[lesson]]
+id = "gamma"
+fingerprint = "175c7546c7c3be40"
+by = "fixture author"
+date = 2026-10-29
+note = "smoke fixture, not a real review"
+
+[[item]]
+name = "Euclidean"
+fingerprint = "5d71b3cb822bc6d4"
+by = "fixture author"
+date = 2026-10-29
+note = "smoke fixture, not a real review"
+
+[[item]]
+name = "Correlation"
+fingerprint = "3e51456f5c3cd9d1"
+by = "fixture author"
+date = 2026-10-29
+note = "smoke fixture, not a real review"
+
+[[item]]
+name = "DTW"
+fingerprint = "81efd7594ec3c659"
+by = "fixture author"
+date = 2026-10-29
+note = "smoke fixture, not a real review"
+
+[[item]]
+name = "Agglomerative"
+fingerprint = "cefe07ab770af990"
+by = "fixture author"
+date = 2026-10-29
+note = "smoke fixture, not a real review"
+
+[[item]]
+name = "k-medoids"
+fingerprint = "62f5974babf859b1"
+by = "fixture author"
+date = 2026-10-29
+note = "smoke fixture, not a real review"
+
+[[fit]]
+question = "energy/same-hours"
+item = "Euclidean"
+fingerprint = "1ff050438e4733be"
+by = "fixture author"
+date = 2026-10-29
+note = "smoke fixture, not a real review"
+
+[[fit]]
+question = "finance/same-dates"
+item = "Correlation"
+fingerprint = "14b52ef589d431d0"
+by = "fixture author"
+date = 2026-10-29
+note = "smoke fixture, not a real review"
+
+[[fit]]
+question = "finance/same-dates"
+item = "DTW"
+fingerprint = "f3d6f7289753752a"
+by = "fixture author"
+date = 2026-10-29
+note = "smoke fixture, not a real review"
+
+[[sector]]
+id = "energy"
+fingerprint = "2340b089a4897dff"
+by = "fixture author"
+date = 2026-10-29
+note = "smoke fixture, not a real review"
+
+[[sector]]
+id = "finance"
+fingerprint = "ad83fa0fdae25977"
+by = "fixture author"
+date = 2026-10-29
+note = "smoke fixture, not a real review"
+
+[[question]]
+id = "energy/same-hours"
+fingerprint = "ed7e1da35b3251e9"
+by = "fixture author"
+date = 2026-10-29
+note = "smoke fixture, not a real review"
+
+[[question]]
+id = "finance/same-dates"
+fingerprint = "9041e3129068440a"
+by = "fixture author"
+date = 2026-10-29
+note = "smoke fixture, not a real review"
+
+[[branch]]
+id = "compare"
+fingerprint = "85179cbed9332139"
+by = "fixture author"
+date = 2026-10-29
+note = "smoke fixture, not a real review"
+
+[[branch]]
+id = "group"
+fingerprint = "91e67523c956a50f"
 by = "fixture author"
 date = 2026-10-29
 note = "smoke fixture, not a real review"

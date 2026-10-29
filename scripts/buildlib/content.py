@@ -14,7 +14,7 @@ from markdown_it import MarkdownIt
 from markdown_it.token import Token
 from mdit_py_plugins.dollarmath import dollarmath_plugin
 
-from .cite import CITE, Citation, fingerprint
+from .cite import CITE, Citation, fingerprint, fingerprint_data
 
 LESSON_KEYS = ("id", "module", "title", "kicker", "sector", "lede", "ignores", "keeps", "python", "r")
 LIST_KEYS = ("ignores", "keeps", "python", "r")
@@ -110,7 +110,7 @@ class Lesson:
     blocks: list  # [Block] in document order
     code: dict = field(default_factory=dict)  # "python" / "r" -> code text, only those present
     citations: list = field(default_factory=list)  # [Citation] in document order
-    fingerprint: str = ""  # whole text after {{n:}} plus the identity of every cited source
+    fingerprint: str = ""  # whole text after {{n:}} (line endings only normalised) plus the identity of every cited source
     math: list = field(default_factory=list)  # math tokens, rendered in one batch later
     fragments: list = field(default_factory=list)  # "#id" link targets, checked against heading ids
 
@@ -294,12 +294,17 @@ def load_lesson(path, entry, md, numbers, published, content, sources, errors):
         if b.kind == "code":
             collect_code(b, lesson, errors)
     identities = sorted({sources[c.key].identity for c in lesson.citations if c.key in sources})
-    lesson.fingerprint = fingerprint("\n".join([text, *identities]))
+    lesson.fingerprint = fingerprint_data({"text": text, "sources": identities})
     ids = heading_ids(blocks, path, errors)
+    # a link may also point at a fixed block the page renders: One line and Common mistake always, the others when present
+    # ('code' only when a python or r block will render, as pages.lesson_main decides)
+    targets = ids | {b.id for b in blocks if b.kind in ("oneline", "mistake", "finance", "measure")}
+    if lesson.code:
+        targets.add("code")
     for frag in lesson.fragments:
-        if frag not in ids:
-            errors.add(path, f"link '#{frag}': no heading with that id in this lesson"
-                             f" (ids: {', '.join(sorted(ids)) or 'none'})")
+        if frag not in targets:
+            errors.add(path, f"link '#{frag}': no heading or block with that id in this lesson"
+                             f" (ids: {', '.join(sorted(targets)) or 'none'})")
     return lesson
 
 
@@ -443,7 +448,7 @@ def check_tokens(block, lesson, published, content, sources, errors):
             paragraph = fingerprint(tok.content)
             for c in walk_inline(tok.children):
                 if c.type == "tsc_cite":
-                    check_cite(c, paragraph, lesson, sources, errors)
+                    check_cite(c, paragraph, tok.content, lesson, sources, errors)
                 elif c.type == "text":
                     check_prose(c.content, path, errors, f"section {section}")
                 elif c.type in MATH:
@@ -455,7 +460,7 @@ def check_tokens(block, lesson, published, content, sources, errors):
         i += 1
 
 
-def check_cite(tok, paragraph, lesson, sources, errors):
+def check_cite(tok, paragraph, text, lesson, sources, errors):
     key, locator = tok.meta["key"], tok.meta["locator"]
     if key not in sources:
         errors.add(lesson.path, f"citation [@{key}]: unknown source '{key}' (not in _sources.toml)")
@@ -464,7 +469,7 @@ def check_cite(tok, paragraph, lesson, sources, errors):
         errors.add(lesson.path, f"citation [@{key}] needs a locator (page, section or theorem), as in [@{key}, p. 3]")
         return
     tok.meta["label"] = sources[key].label
-    lesson.citations.append(Citation(key, locator, paragraph))
+    lesson.citations.append(Citation(key, locator, paragraph, text))
 
 
 def check_link(tok, lesson, published, errors):

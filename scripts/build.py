@@ -91,6 +91,12 @@ def home_page(course, template, overview, atlas, sources, finance_ids, build_mod
     })
 
 
+def in_release_tree(path, root=ROOT):
+    """True when path is the release directory (root/dist) or inside it, by its name or by where it points."""
+    release = root / "dist"
+    return any(path.resolve().is_relative_to(r) for r in (release, release.resolve()))
+
+
 def prepare_dist(dist, errors):
     """Replace a previous build output. Refuse to touch a non-empty directory the build did not write."""
     if dist.exists():
@@ -132,7 +138,7 @@ def main():
     content = (args.content or ROOT / "content").resolve()
     dist = (args.dist or ROOT / ("preview" if args.preview else "dist")).resolve()
     mode = "preview" if args.preview else "release"
-    if args.preview and dist.is_relative_to(ROOT / "dist"):
+    if args.preview and in_release_tree(dist):
         print(f"{show(dist)}: a preview never writes into dist/ (the release tree)")
         return 1
     previews = args.previews or content == (ROOT / "content").resolve()
@@ -160,6 +166,8 @@ def main():
             errors.add(content / "_map.toml", line)
         for line in atlas.draft_fits() + atlas.draft_sectors():
             errors.add(content / "_sectors.toml", line)
+        for line in atlas.draft_branches():
+            errors.add(content / "_map.toml", line)
 
     theme_css = (SITE / "theme.css").read_text()
     classes = svg.allowed_classes(theme_css)

@@ -6,19 +6,18 @@ _reviews.toml holds a record for its current fingerprint, so editing it makes it
 A reviewed item also needs, for each factual field, a located source that is not a candidate.
 """
 
-import json
 import math
 import re
 from dataclasses import dataclass, field
 
-from .cite import fingerprint, read_toml
+from .cite import fingerprint_data, read_toml
 from .content import SECTORS, check_prose, slug
 
 IGNORE_TAGS = ("level", "scale", "shift", "warp", "noise", "length")
 NEED_TAGS = ("matrix", "similarity", "vectors", "series", "labels")
 MARKS = ("good", "avoid")
 BRANCHES = ("compare", "group", "validate")
-BASE_SUPPORTS = ("does", "python", "r")
+BASE_SUPPORTS = ("does", "cond", "python", "r")
 
 
 @dataclass
@@ -27,9 +26,11 @@ class Ref:
     locator: str
     supports: str
     candidate: bool = False
+    identity: str = ""  # Source.identity of the key at load time: a changed work reopens every record that cites it
 
-    def line(self):
-        return f"ref|{self.key}|{self.locator}|{self.supports}|{'candidate' if self.candidate else 'confirmed'}"
+    def data(self):
+        return {"key": self.key, "locator": self.locator, "supports": self.supports, "candidate": self.candidate,
+                "identity": self.identity}
 
 
 @dataclass
@@ -53,6 +54,7 @@ class Item:
     reviewed: bool = False
     branch: str = ""
     family: str = ""
+    lesson: str = ""  # lesson of the family: part of what the item's placement says
     recorded: bool = False
     gaps: list = field(default_factory=list)
 
@@ -61,16 +63,17 @@ class Item:
 
     @property
     def fingerprint(self):
-        lines = [self.name, self.does]
-        for kind, tags in (("ignores", self.ignores), ("needs", self.needs)):
-            for t in tags:
-                lines.append(f"{kind}|{t.tag}|{t.cond}")
-                lines += [r.line() for r in t.sources]
-        lines += [self.cond, self.python, self.r, *(r.line() for r in self.sources)]
-        return fingerprint("\n".join(lines))
+        def tags(items):
+            return [{"tag": t.tag, "cond": t.cond, "sources": [r.data() for r in t.sources]} for t in items]
+
+        return fingerprint_data({
+            "kind": "item", "name": self.name, "does": self.does, "ignores": tags(self.ignores), "needs": tags(self.needs),
+            "cond": self.cond, "python": self.python, "r": self.r, "sources": [r.data() for r in self.sources],
+            "branch": self.branch, "family": self.family, "lesson": self.lesson})
 
     def required_support(self):
         out = ["does"]
+        out += ["cond"] if self.cond.strip() else []
         out += [f for f in ("python", "r") if getattr(self, f)]
         out += [f"ignores:{t.tag}" for t in self.ignores] + [f"needs:{t.tag}" for t in self.needs]
         return out
@@ -89,6 +92,11 @@ class Branch:
     name: str
     sub: str
     families: list = field(default_factory=list)
+    recorded: bool = False
+
+    @property
+    def fingerprint(self):
+        return fingerprint_data({"kind": "branch", "id": self.id, "name": self.name, "sub": self.sub})
 
 
 @dataclass
@@ -100,13 +108,15 @@ class Fit:
     sources: list = field(default_factory=list)
     reviewed: bool = False
     question: str = ""
+    question_text: str = ""  # the question this fit answers: a changed question reopens its fits
     recorded: bool = False
     gaps: list = field(default_factory=list)
 
     @property
     def fingerprint(self):
-        lines = [self.question, self.item, self.mark, self.reason, self.cond, *(r.line() for r in self.sources)]
-        return fingerprint("\n".join(lines))
+        return fingerprint_data({
+            "kind": "fit", "question": self.question, "question_text": self.question_text, "item": self.item,
+            "mark": self.mark, "reason": self.reason, "cond": self.cond, "sources": [r.data() for r in self.sources]})
 
 
 @dataclass
@@ -119,7 +129,7 @@ class Question:
 
     @property
     def fingerprint(self):
-        return fingerprint("\n".join([self.id, self.text, *self.starts]))
+        return fingerprint_data({"kind": "question", "id": self.id, "text": self.text, "starts": self.starts})
 
 
 @dataclass
@@ -133,7 +143,7 @@ class Sector:
 
     @property
     def fingerprint(self):
-        return fingerprint("\n".join([self.id, self.name, self.about, json.dumps(self.curve)]))
+        return fingerprint_data({"kind": "sector", "id": self.id, "name": self.name, "about": self.about, "curve": self.curve})
 
 
 @dataclass
@@ -177,8 +187,12 @@ class Atlas:
                 " see scripts/review.py show-map)" for q in self.questions() if not q.recorded]
         return out
 
+    def draft_branches(self):
+        return [f"branch '{b.id}' is draft: no review record for its current name and subtitle (fingerprint {b.fingerprint},"
+                " see scripts/review.py show-map)" for b in self.branches if not b.recorded]
+
     def drafts(self):
-        return [*self.draft_items(), *self.draft_fits(), *self.draft_sectors()]
+        return [*self.draft_items(), *self.draft_fits(), *self.draft_sectors(), *self.draft_branches()]
 
 
 class Reader:
@@ -232,7 +246,8 @@ class Reader:
             if not isinstance(candidate, bool):
                 self.err(f"{w}: 'candidate' must be true or false")
                 candidate = False
-            out.append(Ref(str(key), self.text(r, "locator", w), str(supports), candidate))
+            identity = sources[key].identity if isinstance(key, str) and key in sources else ""
+            out.append(Ref(str(key), self.text(r, "locator", w), str(supports), candidate, identity))
         return out
 
 
@@ -301,7 +316,7 @@ def load_map(content, sources, course, errors):
                 valid = (*BASE_SUPPORTS, *(f"ignores:{t.tag}" for t in ignores), *(f"needs:{t.tag}" for t in needs))
                 item = Item(slug(name), rd.text(raw, "name", w, True), rd.text(raw, "does", w, True), ignores, needs,
                             rd.text(raw, "cond", w), rd.text(raw, "python", w), rd.text(raw, "r", w),
-                            rd.refs(raw, w, sources, valid), branch=branch.id, family=family.name)
+                            rd.refs(raw, w, sources, valid), branch=branch.id, family=family.name, lesson=lesson or "")
                 if item.name in names:
                     rd.err(f"item '{item.name}' appears twice")
                 elif item.id in ids:
@@ -365,7 +380,7 @@ def load_sectors(content, sources, items, errors):
                     rd.err(f"{w}: appears twice")
                 fit_keys.add((qid, f["item"]))
                 fit = Fit(str(f["item"]), str(f["mark"]), rd.text(f, "reason", w, True), rd.text(f, "cond", w),
-                          rd.refs(f, w, sources, ("fit",), "fit"), question=qid)
+                          rd.refs(f, w, sources, ("fit",), "fit"), question=qid, question_text=question.text)
                 question.fits.append(fit)
     return sectors
 
@@ -383,6 +398,8 @@ def load_atlas(content, sources, reviews, course, errors):
         it.recorded = it.fingerprint in reviews.items.get(it.name, set())
         it.gaps = [s for s in it.required_support() if not has_support(it.all_refs(), s)]
         it.reviewed = it.recorded and not it.gaps
+    for b in atlas.branches:
+        b.recorded = b.fingerprint in reviews.branches.get(b.id, set())
     for s in atlas.sectors:
         s.recorded = s.fingerprint in reviews.sectors.get(s.id, set())
     for q in atlas.questions():

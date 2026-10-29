@@ -6,6 +6,7 @@ A review record names the exact text it approved by fingerprint, so any edit reo
 
 import datetime
 import hashlib
+import json
 import re
 import tomllib
 from dataclasses import dataclass, field
@@ -15,12 +16,22 @@ KEY = r"[a-z0-9-]+"
 CITE = re.compile(rf"\[@({KEY})(?:,\s*([^\]]+))?\]")
 
 
+FP_VERSION = "tsc-fp-v2"
+
+
 def normalise(text):
-    return re.sub(r"\s+", " ", text).strip()
+    """Line endings only: every other character, whitespace included, is part of the approved text."""
+    return text.replace("\r\n", "\n").replace("\r", "\n")
 
 
 def fingerprint(text):
-    return hashlib.sha256(normalise(text).encode("utf-8")).hexdigest()[:16]
+    """sha256 of the version tag, a newline and the text. Changing the rule means a new tag, which reopens every record."""
+    return hashlib.sha256(f"{FP_VERSION}\n{normalise(text)}".encode("utf-8")).hexdigest()[:16]
+
+
+def fingerprint_data(obj):
+    """Fingerprint of a structured value: canonical JSON, so field boundaries cannot collide."""
+    return fingerprint(json.dumps(obj, sort_keys=True, ensure_ascii=False, separators=(",", ":")))
 
 
 @dataclass
@@ -72,7 +83,8 @@ class Source:
 
     @property
     def identity(self):
-        return fingerprint("|".join(str(v or "") for v in (self.doi, self.arxiv, self.ssrn, self.url, self.title, self.year)))
+        return fingerprint_data({"doi": self.doi, "arxiv": self.arxiv, "ssrn": self.ssrn, "url": self.url,
+                                 "title": self.title, "year": self.year, "authors": self.authors, "venue": self.venue})
 
 
 @dataclass
@@ -80,6 +92,7 @@ class Citation:
     key: str
     locator: str
     paragraph: str  # fingerprint of the paragraph text that holds the citation
+    text: str = ""  # that paragraph's source text, kept for review.py show (a caption paragraph is gone from the tokens)
 
 
 @dataclass
@@ -90,6 +103,7 @@ class Reviews:
     fits: dict = field(default_factory=dict)  # (question, item) -> {fingerprint}
     questions: dict = field(default_factory=dict)  # public question id -> {fingerprint}
     sectors: dict = field(default_factory=dict)  # sector id -> {fingerprint}
+    branches: dict = field(default_factory=dict)  # branch id -> {fingerprint}
 
 
 def read_toml(path, errors):
@@ -156,7 +170,7 @@ def load_reviews(content, errors):
     reviews = Reviews()
     shapes = {"lesson": ("id", "fingerprint"), "citation": ("lesson", "key", "locator", "paragraph", "identity"),
               "item": ("name", "fingerprint"), "fit": ("question", "item", "fingerprint"),
-              "question": ("id", "fingerprint"), "sector": ("id", "fingerprint")}
+              "question": ("id", "fingerprint"), "sector": ("id", "fingerprint"), "branch": ("id", "fingerprint")}
     for table in sorted(set(data) - set(shapes)):
         errors.add(path, f"unknown table [[{table}]]")
     for table, fields in shapes.items():
@@ -175,6 +189,8 @@ def load_reviews(content, errors):
                 reviews.questions.setdefault(rec["id"], set()).add(rec["fingerprint"])
             elif table == "sector":
                 reviews.sectors.setdefault(rec["id"], set()).add(rec["fingerprint"])
+            elif table == "branch":
+                reviews.branches.setdefault(rec["id"], set()).add(rec["fingerprint"])
             else:
                 reviews.fits.setdefault((rec["question"], rec["item"]), set()).add(rec["fingerprint"])
     return reviews

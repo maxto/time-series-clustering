@@ -8,6 +8,7 @@ Usage:
   uv run python scripts/review.py record-item --content DIR --name NAME --fingerprint F --by TEXT [--note TEXT]
   uv run python scripts/review.py record-question --content DIR --id SECTOR/QUESTION --fingerprint F --by TEXT [--note TEXT]
   uv run python scripts/review.py record-sector --content DIR --id SECTOR --fingerprint F --by TEXT [--note TEXT]
+  uv run python scripts/review.py record-branch --content DIR --id BRANCH --fingerprint F --by TEXT [--note TEXT]
   uv run python scripts/review.py record-fit  --content DIR --question Q --item NAME --fingerprint F --by TEXT [--note TEXT]
 
 `show` prints the fingerprint of the lesson text and, for each citation, its locator, its
@@ -16,7 +17,7 @@ paragraph and the paragraph fingerprint, with whether a record already matches.
 one, so the reviewer approves exactly what they read. It records a review done by a person or a
 model and verifies nothing else: the second-model review must be done before a record is written.
 `show-map` lists every map item and sector fit with its fingerprint and whether a record matches.
-`record-item`, `record-fit`, `record-question` and `record-sector` refuse a fingerprint that is not the current one, like `record`.
+`record-item`, `record-fit`, `record-question`, `record-sector` and `record-branch` refuse a fingerprint that is not the current one, like `record`.
 """
 
 import argparse
@@ -28,8 +29,8 @@ import sys
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 from buildlib.atlas import load_atlas  # noqa: E402
-from buildlib.cite import fingerprint, load_reviews, load_sources  # noqa: E402
-from buildlib.content import Errors, load_course, load_lessons, markdown, walk_inline  # noqa: E402
+from buildlib.cite import load_reviews, load_sources  # noqa: E402
+from buildlib.content import Errors, load_course, load_lessons, markdown  # noqa: E402
 
 
 def load(content, lid):
@@ -57,26 +58,15 @@ def load_map(content):
     return atlas
 
 
-def paragraph_texts(lesson):
-    """Paragraph fingerprint -> text, for the paragraphs holding a citation."""
-    out = {}
-    for b in lesson.blocks:
-        for tok in b.tokens:
-            if tok.type == "inline" and any(c.type == "tsc_cite" for c in walk_inline(tok.children)):
-                out[fingerprint(tok.content)] = tok.content
-    return out
-
-
 def show(args):
     lesson, sources, reviews = load(args.content, args.lesson)
     done = "recorded" if lesson.fingerprint in reviews.lessons.get(args.lesson, set()) else "not recorded"
     print(f"lesson {args.lesson}")
     print(f"fingerprint: {lesson.fingerprint} ({done})")
-    texts = paragraph_texts(lesson)
     for c in lesson.citations:
         have = (args.lesson, c.key, c.locator, c.paragraph, sources[c.key].identity) in reviews.citations
         print(f"citation {c.key} | {c.locator} | {c.paragraph} | {'recorded' if have else 'not recorded'}")
-        print(f"  paragraph: {texts.get(c.paragraph, '')}")
+        print(f"  paragraph: {c.text}")
 
 
 def show_map(args):
@@ -87,6 +77,8 @@ def show_map(args):
     for ft in atlas.fits():
         state = "reviewed" if ft.reviewed else ("recorded, source gaps" if ft.recorded else "draft")
         print(f"fit {ft.question} | {ft.item} | {ft.fingerprint} | {state}")
+    for b in atlas.branches:
+        print(f"branch {b.id} | {b.fingerprint} | {'reviewed' if b.recorded else 'draft'}")
     for s in atlas.sectors:
         print(f"sector {s.id} | {s.fingerprint} | {'reviewed' if s.recorded else 'draft'}")
     for q in atlas.questions():
@@ -133,6 +125,9 @@ def record_map(args):
     elif args.cmd == "record-question":
         found = next((q for q in atlas.questions() if q.id == args.id), None)
         what, fields = f"question {args.id!r}", {"id": args.id}
+    elif args.cmd == "record-branch":
+        found = next((b for b in atlas.branches if b.id == args.id), None)
+        what, fields = f"branch {args.id!r}", {"id": args.id}
     elif args.cmd == "record-sector":
         found = next((s for s in atlas.sectors if s.id == args.id), None)
         what, fields = f"sector {args.id!r}", {"id": args.id}
@@ -145,7 +140,7 @@ def record_map(args):
     if args.fingerprint != found.fingerprint:
         print(f"fingerprint {args.fingerprint} is not the current one ({found.fingerprint}): the text changed", file=sys.stderr)
         return 1
-    table = {"record-item": "item", "record-fit": "fit", "record-question": "question", "record-sector": "sector"}[args.cmd]
+    table = {"record-item": "item", "record-fit": "fit", "record-question": "question", "record-sector": "sector", "record-branch": "branch"}[args.cmd]
     append(args.content, table, {**fields, "fingerprint": found.fingerprint}, args)
     print("recorded")
     return 0
@@ -167,7 +162,7 @@ def main():
     rec.add_argument("--note")
     sm = sub.add_parser("show-map")
     sm.add_argument("--content", type=pathlib.Path, required=True)
-    for name in ("record-item", "record-fit", "record-question", "record-sector"):
+    for name in ("record-item", "record-fit", "record-question", "record-sector", "record-branch"):
         p = sub.add_parser(name)
         p.add_argument("--content", type=pathlib.Path, required=True)
         p.add_argument("--fingerprint", required=True)
@@ -176,6 +171,7 @@ def main():
     sub.choices["record-item"].add_argument("--name", required=True)
     sub.choices["record-question"].add_argument("--id", required=True)
     sub.choices["record-sector"].add_argument("--id", required=True)
+    sub.choices["record-branch"].add_argument("--id", required=True)
     sub.choices["record-fit"].add_argument("--question", required=True)
     sub.choices["record-fit"].add_argument("--item", required=True)
     args = ap.parse_args()
@@ -183,7 +179,7 @@ def main():
     if args.cmd == "show-map":
         show_map(args)
         return 0
-    if args.cmd in ("record-item", "record-fit", "record-question", "record-sector"):
+    if args.cmd in ("record-item", "record-fit", "record-question", "record-sector", "record-branch"):
         return record_map(args)
     if args.cmd == "show":
         show(args)

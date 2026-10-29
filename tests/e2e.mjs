@@ -357,11 +357,20 @@ async function drawerChecks(run, p, url) {
     await p.waitForTimeout(400);
     expect(await menu.getAttribute('aria-expanded') === 'false' && !(await p.locator('nav#contents').isVisible()), `${run}: ${width} px: Escape did not close the contents`);
     expect(await p.evaluate(() => document.activeElement === document.querySelector('header.top button.menu')), `${run}: ${width} px: focus did not return to the menu button`);
-    // the scrim closes it too
+    // the scrim closes it too, but only where the drawer leaves a strip of page to hit (not at 375 px, where it is full width)
     await menu.click();
-    await p.mouse.click(width - 5, 700);
     await p.waitForTimeout(400);
-    expect(await menu.getAttribute('aria-expanded') === 'false', `${run}: ${width} px: a click outside did not close the contents`);
+    if (width >= 820) {
+      const hit = await p.evaluate(([x, y]) => { const el = document.elementFromPoint(x, y); return el && (el.id || el.className || el.tagName); }, [width - 5, 700]);
+      expect(/scrim/.test(String(hit)), `${run}: ${width} px: the point outside the drawer hits ${hit}, not the scrim`);
+      await p.mouse.click(width - 5, 700);
+      await p.waitForTimeout(400);
+      expect(await menu.getAttribute('aria-expanded') === 'false', `${run}: ${width} px: a click on the scrim did not close the contents`);
+    } else {
+      await p.locator('nav#contents button.close, nav#contents .close').first().click();
+      await p.waitForTimeout(400);
+      expect(await menu.getAttribute('aria-expanded') === 'false', `${run}: ${width} px: the close button did not close the contents`);
+    }
   }
   await p.setViewportSize({ width: 1440, height: 900 });
   await p.goto(url('alpha/index.html'));
@@ -714,9 +723,12 @@ const PAGE_TEXT_COLOURS = String.raw`(() => {
     out.unshift(n.tagName.toLowerCase() + (n.id ? '#' + n.id : '') + [...n.classList].slice(0, 2).map(c => '.' + c).join('')); return out.join(' > '); };
   const visible = el => { const r = el.getBoundingClientRect(); const cs = getComputedStyle(el);
     return r.width > 1 && r.height > 1 && cs.visibility === 'visible' && cs.display !== 'none' && !el.closest('.katex-mathml, svg, script, style, [hidden]'); };
-  // body text: any text inside a paragraph or list item of the reading column (the wrappers .oneline and .mistake, or the p itself)
+  // body text: any text inside a paragraph or list item of the reading column (content sections, One line, Common mistake, In finance,
+  // Measure card and the introduction paragraphs of Code (not the .libs library line, a small label), or the p itself when it carries .oneline / .mistake)
   // whose computed colour equals that paragraph's own colour (strong, code, math included). Links, accent emphasis and popovers are other text.
-  const bodyScope = 'main :is(section.content, .oneline, .mistake) :is(p, li), main :is(p, li):is(.oneline, .mistake)';
+  const bodyScope = 'main :is(section.content, section.finance, section.measure, section.code, .oneline, .mistake) :is(p, li):not(.libs), main :is(p, li):is(.oneline, .mistake)';
+  const areaOf = b => b.closest('section.finance') ? 'finance' : b.closest('section.measure') ? 'measure' : b.closest('section.code') ? 'code'
+    : b.closest('.oneline') ? 'oneline' : b.closest('.mistake') ? 'mistake' : 'content';
   const rows = [];
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
   const seen = new Set();
@@ -729,7 +741,7 @@ const PAGE_TEXT_COLOURS = String.raw`(() => {
     const fg = parse(getComputedStyle(el).color); fg[3] *= opacityOf(el);
     const blk = el.closest('p, li');
     const own = !!blk && blk.matches(bodyScope) && !el.closest('a, .cite, .pop') && getComputedStyle(el).color === getComputedStyle(blk).color;
-    rows.push([name(el), css(over(fg, bg)), css(bg), own ? 10 : 4.5, own ? 'body' : 'text']);
+    rows.push([name(el), css(over(fg, bg)), css(bg), own ? 10 : 4.5, own ? 'body' : 'text', own ? areaOf(blk) : '']);
   }
   // figure text: its fill against the shapes under its centre, over the figure's own background
   for (const tx of document.querySelectorAll('main svg text')) {
@@ -749,17 +761,19 @@ const PAGE_TEXT_COLOURS = String.raw`(() => {
     }
     const cs = getComputedStyle(tx);
     const fg = parse(cs.fill); fg[3] *= Number(cs.fillOpacity) * Number(cs.opacity);
-    rows.push([name(tx) + ' "' + tx.textContent.trim().slice(0, 18) + '"', css(over(fg, bg)), css(bg), 4.5, 'figure']);
+    rows.push([name(tx) + ' "' + tx.textContent.trim().slice(0, 18) + '"', css(over(fg, bg)), css(bg), 4.5, 'figure', '']);
   }
   return rows;
 })()`;
 
-async function matrixState(run, p, page, theme, state, seenRows) {
+async function matrixState(run, p, page, theme, state, seenRows, areas) {
   const rows = await p.evaluate(PAGE_TEXT_COLOURS);
-  for (const [sel, fg, bg, need, role] of rows) {
-    const key = `${page}|${theme}|${sel}|${fg}|${bg}`;
+  for (const [sel, fg, bg, need, role, area] of rows) {
+    // threshold and role are part of the key: a weaker measurement of the same element must not hide a stronger one
+    const key = `${page}|${theme}|${sel}|${fg}|${bg}|${need}|${role}`;
     if (seenRows.has(key)) continue;
     seenRows.add(key);
+    if (role === 'body') areas.set(area, (areas.get(area) || 0) + 1);
     const c = contrast(fg, bg);
     expect(c >= need, `${run}: contrast: ${page}, ${theme}, [${state}] ${role} ${sel}: ${fg} on ${bg} = ${c.toFixed(2)}, needs ${need}`);
   }
@@ -767,15 +781,16 @@ async function matrixState(run, p, page, theme, state, seenRows) {
 }
 
 // Each page in both themes, with the states of the brief opened one at a time before measuring.
-async function contrastMatrix(run, p, url, pages) {
+async function contrastMatrix(run, p, url, pages, requiredAreas = []) {
   let measured = 0;
   const seen = new Set();
+  const areas = new Map(); // reading-column area -> body rows measured at 10:1
   for (const theme of ['light', 'dark']) {
     await p.emulateMedia({ colorScheme: theme });
     for (const page of pages) {
       const isHome = page === 'index.html', isSources = page.startsWith('sources');
       const open = async () => { await p.setViewportSize({ width: 1280, height: 900 }); await p.goto(url(page)); };
-      const m = state => matrixState(run, p, page, theme, state, seen);
+      const m = state => matrixState(run, p, page, theme, state, seen, areas);
       await open();
       measured += await m('initial');
       if (isHome) {
@@ -840,6 +855,8 @@ async function contrastMatrix(run, p, url, pages) {
   await p.emulateMedia({ colorScheme: null });
   console.log(`contrast: ${run}: ${measured} text rows measured`);
   expect(measured > 200, `${run}: contrast: only ${measured} text rows measured, the matrix is not reaching the pages`);
+  for (const area of requiredAreas) expect((areas.get(area) || 0) > 0, `${run}: contrast: no body row measured at 10:1 in the ${area} area`);
+  console.log(`contrast: ${run}: body rows at 10:1 by area: ${[...areas].map(([a, n]) => `${a} ${n}`).join(', ')}`);
 }
 
 // Widths 1440, 1280, 820, 375, both themes, every page: no page-level horizontal scroll, and no clipped
@@ -957,7 +974,7 @@ async function suite(label, dist, contentDir, smoke) {
     await navigation(run.name, p, run.url, ids);
     if (!run.http) {
       const pages = ['index.html', 'sources/index.html', ...lessons];
-      await contrastMatrix(run.name, p, run.url, pages);
+      await contrastMatrix(run.name, p, run.url, pages, smoke ? ['content', 'oneline', 'mistake', 'finance', 'measure', 'code'] : ['content', 'oneline', 'mistake']);
       await widthChecks(run.name, p, run.url, pages);
     }
 

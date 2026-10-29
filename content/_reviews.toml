@@ -1,23 +1,23 @@
 [[lesson]]
 id = "same-series-different-questions"
-fingerprint = "0359d27182399b8f"
+fingerprint = "75ada4972f87d974"
 by = "Codex, pilot final review"
 date = 2026-10-29
-note = "pilot baseline reviewed 2026-10-28 (docs/research/2026-10-28-codex-pilot-final-review.md and re-review), structure migrated 2026-10-29 without wording change"
+note = "pilot baseline reviewed 2026-10-28 (docs/research/2026-10-28-codex-pilot-final-review.md and re-review), structure migrated 2026-10-29 without wording change, re-recorded 2026-10-29 after fingerprint v2, text unchanged"
 
 [[lesson]]
 id = "dtw"
-fingerprint = "828751e5e3eaf883"
+fingerprint = "b735ccfe3635c684"
 by = "Claude subagent (passage read), Codex (review 2026-10-29)"
 date = 2026-10-29
-note = "pilot baseline reviewed 2026-10-28, structure migrated 2026-10-29 without wording change, Sakoe and Chiba sentence added and reviewed by Codex 2026-10-29 (docs/research/2026-10-29-codex-sakoe-citation-review.md)"
+note = "pilot baseline reviewed 2026-10-28, structure migrated 2026-10-29 without wording change, Sakoe and Chiba sentence added and reviewed by Codex 2026-10-29 (docs/research/2026-10-29-codex-sakoe-citation-review.md), re-recorded 2026-10-29 after fingerprint v2, text unchanged"
 
 [[citation]]
 lesson = "dtw"
 key = "sakoe78"
 locator = "Sec. II-B, condition 4 (Eq. 8), p. 44"
-paragraph = "b2cad7543e55e936"
-identity = "58ffd6320ffdebec"
+paragraph = "ef7c5143913b842e"
+identity = "75fb82bf2349b2f0"
 by = "Claude subagent (passage read), Codex (review 2026-10-29)"
 date = 2026-10-29
-note = "passage read in a scan of the paper (p. 44), reviewed by Codex 2026-10-29 (docs/research/2026-10-29-codex-sakoe-citation-review.md)"
+note = "passage read in a scan of the paper (p. 44), reviewed by Codex 2026-10-29 (docs/research/2026-10-29-codex-sakoe-citation-review.md), re-recorded 2026-10-29 after fingerprint v2, text unchanged"
