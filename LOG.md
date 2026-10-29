@@ -1,5 +1,76 @@
 # LOG — time-series-clustering
 
+## 2026-10-29 · Redesign design amended, re-checked and approved
+
+Continues HANDOFF item 1. Asked the owner the two open questions, amended
+`docs/superpowers/specs/2026-10-28-redesign-design.md` with every finding
+of the Codex review, ran a focused Codex re-check (request
+`docs/research/2026-10-29-codex-redesign-recheck-request.md`, answer
+`docs/research/2026-10-29-codex-redesign-recheck.md`), fixed its three
+new points, then applied the owner's content direction. Owner approved
+the design ("Ok, procedi"). Throwaway demo in `.mockups/course/` (lesson 5
+measure card, state line with reset, map draft banner and condition
+labels). No code changed.
+
+**Verified:** Codex re-check read in full. Its N1 counterexample checked
+by hand (x = (0, 0), y = (0, 1), w = 1 gives DTW 1, equal to Euclidean).
+Demo numbers from the reference code on the fixture: mon and wed, DTW
+3.51 at w = 4, 0.26 at w = 10, Euclidean 4.15. Demo checked in headless
+Chrome (slider, state line, reset, no page errors) and by screenshot at
+1280 and 390 px before the last small edits. After that, headless Chrome
+screenshots timed out even on a blank page (environment issue, not
+investigated), so the last demo version was not screenshotted.
+
+**Decisions**
+
+- Approved (owner): narrow exception to the AGENTS.md rule that an
+  unconfirmed claim stays out. The full draft map may appear in local
+  preview builds only, visibly marked as draft (banner, chips, fit marks,
+  sector cards, search). The default build is the release build and fails
+  on draft, missing or unknown status. Preview writes to a separate
+  directory, never `dist/`. Lessons are not covered. To be recorded in
+  AGENTS.md Rules by the implementation (design section 5.1).
+- Approved (owner): owner reviews after checkpoint 1 (look) and after
+  checkpoint 3 (all of step 1). A short owner ok on the finance and
+  weather fixtures before they are frozen, now in step 4. Rejects a full
+  review at every checkpoint and a single review at the end.
+- Approved (owner, content direction for the first phase = steps 1 to 3):
+  no exercises, transfer tasks or predict-then-reveal questions. Text,
+  static and live figures, and one or two correct references per topic
+  (each measure, method or index: the reference that defines it in its
+  standard form, plus a survey where useful). General topics in their
+  usual, historical form: niche published variants stay out. A claim gets
+  in by: written from Claude's knowledge, reference found, read at the
+  supporting point, confirmed by web search, then reviewed by another
+  model. Each lesson has one sector worked example in its text (energy on
+  the existing fixture unless the topic needs another) and the finance
+  block where relevant. Replaces, for the first phase, "three main
+  sectors in every lesson" (2026-10-28), which returns with the exercises
+  in step 4, together with the finance and weather fixtures. "First
+  phase = steps 1 to 3" is Claude's reading, stated to the owner, not
+  objected to.
+- Done: Codex findings resolved in the design. Sector coverage, map
+  claims with conditions (exact invariance versus conditional permission,
+  distance versus similarity input, linkage-dependent compatibility),
+  bibliographic check kept apart from editorial verification with a
+  support location, live-figure input contract and parity on
+  control-generated inputs, state contract with reset, lesson contract
+  replacing the AGENTS schema (Check becomes exercises, Measure card
+  kept), interaction behaviour. Re-check new points fixed: N1 (DTW window
+  is a path constraint, not a guarantee of small cost or noise
+  reduction), N2 (preview may hold pending review records for draft map
+  claims only), N3 (edge cases are candidates for the owner, not
+  mandatory tests).
+- Done: Claude's-call count corrected to four marked calls. The builder
+  check's seven questions cannot be mapped to the text, none invented.
+- Delivery order now: 1 shell and format on lessons 1 and 5 (three
+  checkpoints), 2 map content verified, 3 remaining lessons, 4 exercises,
+  5 code labs and real-data scripts, 6 README, licence, remote steps.
+
+**HANDOFF reconciliation:** item 1 (redesign design) done, design
+approved. New item 1: implementation plan (writing-plans), then step 1.
+Other items unchanged.
+
 ## 2026-10-29 · Redesign design written and reviewed by Codex
 
 Continues the redesign brainstorm (HANDOFF item 1). Wrote
