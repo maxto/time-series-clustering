@@ -689,6 +689,180 @@ async function previewSearchChecks(run, p, url) {
   await p.evaluate(() => { delete document.documentElement.dataset.theme; });
 }
 
+// --- Task 9: the contrast matrix and the layout widths. The ratio comes from the helper above. The page
+// function only reads computed styles and composes each colour over its ancestors' backgrounds (alpha
+// included) into an opaque rgb(), so the helper above is the only place that computes a ratio. ---
+// Rows: [selector, fg, bg, need, role]. A row is one distinct (element path, colours) pair on the page.
+const PAGE_TEXT_COLOURS = String.raw`(() => {
+  const parse = c => {
+    let m = c.match(/^rgba?\(([^)]+)\)$/);
+    if (m) { const v = m[1].split(/[ ,\/]+/).filter(Boolean).map(Number); return [v[0], v[1], v[2], v.length > 3 ? v[3] : 1]; }
+    m = c.match(/^color\(srgb ([^)]+)\)$/);
+    if (m) { const v = m[1].split(/[ \/]+/).filter(Boolean).map(Number); return [v[0] * 255, v[1] * 255, v[2] * 255, v.length > 3 ? v[3] : 1]; }
+    throw new Error('unparsed colour ' + c);
+  };
+  const over = (top, bot) => { const a = top[3]; return [0, 1, 2].map(i => top[i] * a + bot[i] * (1 - a)).concat([1]); };
+  const css = v => 'rgb(' + v.slice(0, 3).map(x => Math.round(x * 100) / 100).join(', ') + ')';
+  const pageBg = () => { const b = getComputedStyle(document.body).backgroundColor, h = getComputedStyle(document.documentElement).backgroundColor;
+    const pb = parse(b), ph = parse(h); return pb[3] > 0 ? over(pb, over(ph, [255, 255, 255, 1])) : over(ph, [255, 255, 255, 1]); };
+  // opaque background under an element: root first, then each ancestor's colour on top of it
+  const bgUnder = el => { const chain = []; for (let n = el; n; n = n.parentElement) chain.unshift(n);
+    let bg = [255, 255, 255, 1]; for (const n of chain) { const c = parse(getComputedStyle(n).backgroundColor); if (c[3] > 0) bg = over(c, bg); } return bg; };
+  const opacityOf = el => { let o = 1; for (let n = el; n; n = n.parentElement) o *= Number(getComputedStyle(n).opacity); return o; };
+  const name = el => { const out = []; for (let n = el, i = 0; n && n !== document.body && i < 3; n = n.parentElement, i++)
+    out.unshift(n.tagName.toLowerCase() + (n.id ? '#' + n.id : '') + [...n.classList].slice(0, 2).map(c => '.' + c).join('')); return out.join(' > '); };
+  const visible = el => { const r = el.getBoundingClientRect(); const cs = getComputedStyle(el);
+    return r.width > 1 && r.height > 1 && cs.visibility === 'visible' && cs.display !== 'none' && !el.closest('.katex-mathml, svg, script, style, [hidden]'); };
+  // body text: the paragraph or list item itself (its own colour). Links, emphasis, code and popovers inside it are other text.
+  const bodyScope = 'main :is(section.content, .oneline, .mistake) :is(p, li)';
+  const rows = [];
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  const seen = new Set();
+  for (let t = walker.nextNode(); t; t = walker.nextNode()) {
+    if (!t.nodeValue.trim()) continue;
+    const el = t.parentElement;
+    if (seen.has(el) || !visible(el)) continue;
+    seen.add(el);
+    const bg = bgUnder(el);
+    const fg = parse(getComputedStyle(el).color); fg[3] *= opacityOf(el);
+    const own = el.matches('p, li') && el.matches(bodyScope);
+    rows.push([name(el), css(over(fg, bg)), css(bg), own ? 10 : 4.5, own ? 'body' : 'text']);
+  }
+  // figure text: its fill against the shapes under its centre, over the figure's own background
+  for (const tx of document.querySelectorAll('main svg text')) {
+    const r = tx.getBoundingClientRect();
+    if (r.width < 1) continue;
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    const svg = tx.ownerSVGElement;
+    let bg = bgUnder(svg);
+    for (const sh of svg.querySelectorAll('rect, path, circle, ellipse, polygon')) {
+      if (!(sh.compareDocumentPosition(tx) & Node.DOCUMENT_POSITION_FOLLOWING) || sh.contains(tx)) continue;
+      const cs = getComputedStyle(sh);
+      if (cs.fill === 'none') continue;
+      const b = sh.getBoundingClientRect();
+      if (cx < b.left || cx > b.right || cy < b.top || cy > b.bottom) continue;
+      const f = parse(cs.fill); f[3] *= Number(cs.fillOpacity) * Number(cs.opacity);
+      bg = over(f, bg);
+    }
+    const cs = getComputedStyle(tx);
+    const fg = parse(cs.fill); fg[3] *= Number(cs.fillOpacity) * Number(cs.opacity);
+    rows.push([name(tx) + ' "' + tx.textContent.trim().slice(0, 18) + '"', css(over(fg, bg)), css(bg), 4.5, 'figure']);
+  }
+  return rows;
+})()`;
+
+async function matrixState(run, p, page, theme, state, seenRows) {
+  const rows = await p.evaluate(PAGE_TEXT_COLOURS);
+  for (const [sel, fg, bg, need, role] of rows) {
+    const key = `${page}|${theme}|${sel}|${fg}|${bg}`;
+    if (seenRows.has(key)) continue;
+    seenRows.add(key);
+    const c = contrast(fg, bg);
+    expect(c >= need, `${run}: contrast: ${page}, ${theme}, [${state}] ${role} ${sel}: ${fg} on ${bg} = ${c.toFixed(2)}, needs ${need}`);
+  }
+  return rows.length;
+}
+
+// Each page in both themes, with the states of the brief opened one at a time before measuring.
+async function contrastMatrix(run, p, url, pages) {
+  let measured = 0;
+  const seen = new Set();
+  for (const theme of ['light', 'dark']) {
+    await p.emulateMedia({ colorScheme: theme });
+    for (const page of pages) {
+      const isHome = page === 'index.html', isSources = page.startsWith('sources');
+      const open = async () => { await p.setViewportSize({ width: 1280, height: 900 }); await p.goto(url(page)); };
+      const m = state => matrixState(run, p, page, theme, state, seen);
+      await open();
+      measured += await m('initial');
+      if (isHome) {
+        await p.locator('#map details.chip, #map details').evaluateAll(ds => ds.forEach(d => { d.open = true; }));
+        measured += await m('every map card open');
+        await open();
+        await p.locator('#f-ignore button').first().click();
+        measured += await m('ignore filter');
+        await p.locator('#f-matrix').click();
+        measured += await m('matrix filter');
+        await p.locator('#f-question button').first().click();
+        await p.locator('#map details').evaluateAll(ds => ds.forEach(d => { d.open = true; }));
+        measured += await m('question filter, cards open');
+      } else if (isSources) {
+        await p.locator('#f-topic button[data-topic]:not([data-topic="all"])').first().click();
+        measured += await m('topic filter');
+      } else {
+        const r = p.locator('#code [role="tab"][data-lang="r"]');
+        if (await r.count()) { await r.click(); measured += await m('R tab'); await p.locator('#code [role="tab"][data-lang="python"]').click(); }
+        for (const sel of ['main a.cite', 'section.finance a.cite']) {
+          if (!await p.locator(sel).count()) continue;
+          await p.locator(sel).first().scrollIntoViewIfNeeded();
+          await p.locator(sel).first().click();
+          await p.keyboard.press('Tab');
+          measured += await m(`citation popover (${sel})`);
+          await p.keyboard.press('Escape');
+        }
+        if (await p.locator('section.finance').count()) {
+          // keyboard focus on a link inside the finance block: the ring against the block surface
+          const info = await p.evaluate(() => {
+            const a = document.querySelector('section.finance a[href]:not(.cite)') || document.querySelector('section.finance a.cite');
+            if (!a) return null;
+            a.scrollIntoView({ block: 'center' });
+            return true;
+          });
+          if (info) {
+            await p.keyboard.press('Shift');
+            const ring = await p.evaluate(() => {
+              const a = document.querySelector('section.finance a[href]:not(.cite)') || document.querySelector('section.finance a.cite');
+              a.focus({ focusVisible: true });
+              const f = document.querySelector('section.finance');
+              return [getComputedStyle(a).outlineColor, getComputedStyle(a).outlineStyle, getComputedStyle(f).backgroundColor];
+            });
+            if (ring[1] !== 'none') {
+              const c = contrast(ring[0], ring[2]);
+              expect(c >= 4.5, `${run}: contrast: ${page}, ${theme}, [finance focus ring] ${ring[0]} on ${ring[2]} = ${c.toFixed(2)}, needs 4.5`);
+            } else expect(false, `${run}: contrast: ${page}, ${theme}: finance link shows no focus ring`);
+          }
+        }
+      }
+      await open();
+      await p.locator('#q').fill('e');
+      await p.waitForTimeout(250);
+      measured += await m('search results');
+      await p.keyboard.press('Escape');
+      await p.setViewportSize({ width: 820, height: 900 });
+      await p.goto(url(page));
+      await p.locator('header.top button.menu').click();
+      await p.waitForTimeout(400);
+      measured += await m('drawer open');
+    }
+  }
+  await p.emulateMedia({ colorScheme: null });
+  console.log(`contrast: ${run}: ${measured} text rows measured`);
+  expect(measured > 200, `${run}: contrast: only ${measured} text rows measured, the matrix is not reaching the pages`);
+}
+
+// Widths 1440, 1280, 820, 375, both themes, every page: no page-level horizontal scroll, and no clipped
+// chip, sector card or sector question link.
+async function widthChecks(run, p, url, pages) {
+  for (const theme of ['light', 'dark']) {
+    await p.emulateMedia({ colorScheme: theme });
+    for (const width of [1440, 1280, 820, 375]) {
+      await p.setViewportSize({ width, height: 900 });
+      for (const page of pages) {
+        await p.goto(url(page));
+        if (page === 'index.html') await p.locator('#map details').evaluateAll(ds => ds.forEach(d => { d.open = true; }));
+        const r = await p.evaluate(() => ({
+          doc: document.documentElement.scrollWidth, view: document.documentElement.clientWidth,
+          clipped: [...document.querySelectorAll('summary.chip, .sector, a.q')].filter(e => e.scrollWidth > e.clientWidth)
+            .map(e => `${e.tagName.toLowerCase()}.${e.className} "${e.textContent.trim().slice(0, 24)}" ${e.scrollWidth}>${e.clientWidth}`),
+        }));
+        expect(r.doc <= width, `${run}: widths: ${page}, ${theme}, ${width} px: scrollWidth ${r.doc} exceeds the viewport`);
+        expect(r.clipped.length === 0, `${run}: widths: ${page}, ${theme}, ${width} px: clipped ${r.clipped.join('; ')}`);
+      }
+    }
+  }
+  await p.emulateMedia({ colorScheme: null });
+}
+
 // No JavaScript: the page reads. Both code blocks visible, a citation reaches its source entry.
 async function noJsChecks(run, browserContext, url) {
   const p = await browserContext.newPage();
@@ -778,6 +952,11 @@ async function suite(label, dist, contentDir, smoke) {
       await searchChecks(run.name, p, run.url);
     } else { await contentBehaviour(run.name, p, run.url, lessons); await previewSearchChecks(run.name, p, run.url); }
     await navigation(run.name, p, run.url, ids);
+    if (!run.http) {
+      const pages = ['index.html', 'sources/index.html', ...lessons];
+      await contrastMatrix(run.name, p, run.url, pages);
+      await widthChecks(run.name, p, run.url, pages);
+    }
 
     await p.goto(run.url('index.html'));
     expect(await theme(p) === null && await bodyBg(p) !== DARK_BG, `${run.name}: home does not start light`);
