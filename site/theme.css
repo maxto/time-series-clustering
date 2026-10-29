@@ -190,7 +190,9 @@ pre { margin: 24px 0; padding: 14px 18px; overflow-x: auto; background: var(--su
 
 /* figures: drawn on the figure panel, classes below */
 figure { margin: 40px 0; background: var(--fig-bg); border: 1px solid var(--rule); border-radius: 14px; padding: 18px; }
-figure svg { display: block; width: 100%; height: auto; }
+/* static figures are drawn 360 units wide with 14-unit labels: shown at most at their drawn size,
+   centred on the panel, never enlarged (live figures redraw at the real width instead, design 6) */
+figure svg { display: block; width: 100%; max-width: 360px; margin: 0 auto; height: auto; }
 figcaption { font: 12px/1.5 var(--f-mono); color: var(--fig-label); margin-top: 10px; }
 
 /* finance block: its own dark surface in both themes. --fin-bg is set on :root and never re-pointed, so the

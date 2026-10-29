@@ -1,9 +1,9 @@
 # HANDOFF — time-series-clustering
 
-Closed: 2026-10-29 12:17 CET (HEAD verified before this update: 976c502)
-Last operation: the two SDD workspaces deleted with the owner's go-ahead,
-ledgers kept in `docs/research/`. Before that: checkpoint 1 built and
-verified (LOG entry "Checkpoint 1 built (shell, format, draft map)").
+Closed: 2026-10-29 12:47 CET (HEAD verified before this update: 728584e)
+Last operation: static figures no longer enlarged (owner report), e2e
+regression check added. Before that: SDD workspaces deleted, ledgers kept in
+`docs/research/`, Codex and bash panes cleared.
 
 ## Goal
 
@@ -43,9 +43,10 @@ Plan executed:
 
 ## Open items
 
-1. **Owner review of checkpoint 1** (owner). Points to look at: static
-   figures scale to the 760 px column (labels larger on desktop), one
-   connector line only (root to Compare) in the 760 px column, need-tag
+1. **Owner review of checkpoint 1** (owner). Static figures were shown
+   2x enlarged: fixed 2026-10-29 (shown at their drawn 360 px, LOG entry
+   "Static figures no longer enlarged"), owner to recheck. Other points:
+   one connector line only (root to Compare) in the 760 px column, need-tag
    label wording on map cards. Status: demo ready, waiting.
 2. **Checkpoint 2 plan** (lesson 5 end to end: live DTW figures, lesson text
    to the first-phase source rule). Status: after item 1.

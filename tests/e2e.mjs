@@ -874,9 +874,17 @@ async function widthChecks(run, p, url, pages) {
           // inline boxes report clientWidth 0, so only boxes that lay out their content are compared
           clipped: [...document.querySelectorAll('summary.chip, .sector, a.q')].filter(e => getComputedStyle(e).display !== 'inline' && e.scrollWidth > e.clientWidth)
             .map(e => `${e.tagName.toLowerCase()}.${e.className} "${e.textContent.trim().slice(0, 24)}" ${e.scrollWidth}>${e.clientWidth}`),
+          // static figures are drawn in viewBox units: a label must not be blown up past 16 px on screen
+          // (the mockup's figure labels are 12.5 to 13 px, design 6: labels keep their size)
+          bigText: [...document.querySelectorAll('figure svg[viewBox]')].flatMap(s => {
+            const k = s.getBoundingClientRect().width / s.viewBox.baseVal.width;
+            return [...s.querySelectorAll('text')].map(t => parseFloat(getComputedStyle(t).fontSize) * k)
+              .filter(px => px > 16).map(px => `${s.querySelector('title')?.textContent.slice(0, 24)} ${px.toFixed(1)} px`).slice(0, 1);
+          }),
         }));
         expect(r.doc <= width, `${run}: widths: ${page}, ${theme}, ${width} px: scrollWidth ${r.doc} exceeds the viewport`);
         expect(r.clipped.length === 0, `${run}: widths: ${page}, ${theme}, ${width} px: clipped ${r.clipped.join('; ')}`);
+        expect(r.bigText.length === 0, `${run}: widths: ${page}, ${theme}, ${width} px: figure text too large: ${r.bigText.join('; ')}`);
       }
     }
   }

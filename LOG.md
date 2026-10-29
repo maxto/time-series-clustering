@@ -1,5 +1,23 @@
 # LOG — time-series-clustering
 
+## 2026-10-29 · Static figures no longer enlarged
+
+Owner report: figures and the home image looked giant and zoomed. Root
+cause (measured at 1440 px): the static SVGs are drawn 360 units wide with
+14-unit labels, and checkpoint 1 stretched them to the full 760 px column
+(Task 5 ruling "figures full column, as the design asks"), so everything
+was drawn at 2.01x: labels about 28 px, the home overview 722 by 947 px.
+The mockup drew its figures in JavaScript at the real width, with 12.5 to
+13 px labels, which is what design 6 means for live figures. Fix (done):
+`figure svg` gets `max-width: 360px` and is centred on the full-width panel,
+so a static figure is shown at most at its drawn size and never enlarged.
+The Task 5 ruling is replaced by this one for static figures. Regression
+test in the e2e width checks: no figure label renders above 16 px at 1440,
+1280, 820 or 375 px (failed before the fix with 28.1 px, passes after).
+Text sizes (18 px body, 56 px title, 800/760 px column) match the approved
+mockup and were left unchanged. Verified: `npm test` e2e ok, pytest 113
+passed, `npm run preview` ok, figures measured at 360 px wide, scale 1.00.
+
 ## 2026-10-29 · SDD workspaces deleted, ledgers kept in docs/research
 
 Owner's go-ahead ("ok", 2026-10-29) to delete the two git-ignored SDD
