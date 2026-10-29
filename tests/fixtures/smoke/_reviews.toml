@@ -139,3 +139,20 @@ fingerprint = "ee5459c81fa9e23f"
 by = "fixture author"
 date = 2026-10-29
 note = "smoke fixture, not a real review"
+
+[[lesson]]
+id = "alpha"
+fingerprint = "baebd49321c116ed"
+by = "fixture author"
+date = 2026-10-29
+note = "smoke fixture, not a real review"
+
+[[citation]]
+lesson = "alpha"
+key = "sakoe78"
+locator = "p. 44"
+paragraph = "8ffbd0ef127f2f31"
+identity = "75fb82bf2349b2f0"
+by = "fixture author"
+date = 2026-10-29
+note = "smoke fixture, not a real review"

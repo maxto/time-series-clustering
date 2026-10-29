@@ -133,6 +133,19 @@ async function smokeChecks(run, p, url) {
   await lessonContract(run, p);
   expect(await count(p, 'main figure svg[role="img"] > title') === 1, `${run}: alpha inline svg figure missing`);
   expect(await count(p, 'main figure figcaption') === 1, `${run}: alpha figcaption missing`);
+  // deep-dive: closed by default, opens with a click and with Enter on its summary, no heading or toc entry
+  const dd = p.locator('main details.deep');
+  expect(await dd.count() === 1 && await dd.evaluate(e => !e.open && !e.id), `${run}: alpha deep-dive missing, open or with an id`);
+  expect((await dd.locator('summary').innerText()) === 'Library conventions differ', `${run}: deep-dive summary text`);
+  await dd.locator('summary').click();
+  expect(await dd.evaluate(e => e.open), `${run}: deep-dive did not open on click`);
+  await dd.locator('summary').click();
+  expect(await dd.evaluate(e => !e.open), `${run}: deep-dive did not close on a second click`);
+  await dd.locator('summary').focus();
+  await p.keyboard.press('Enter');
+  expect(await dd.evaluate(e => e.open) && await dd.locator('.katex').count() === 1 && await dd.locator('a.cite').count() === 1 && await dd.locator('li').count() === 2, `${run}: deep-dive did not open on Enter or lacks math, citation or list`);
+  expect(await count(p, 'main details.deep h2, main details.deep h3, nav#contents a[href*="library"]') === 0, `${run}: deep-dive has a heading or a contents entry`);
+  await dd.locator('summary').click();
   expect(await count(p, 'main .katex math') >= 2, `${run}: alpha has no KaTeX MathML`);
   expect(await count(p, 'main .katex-display') >= 2, `${run}: alpha display math missing`);
   expect(await count(p, 'section.measure .katex') === 1, `${run}: alpha measure card math missing`);
@@ -626,6 +639,15 @@ async function searchChecks(run, p, url) {
   await q.fill('second');
   await Promise.all([p.waitForURL(u => u.href.endsWith('alpha/index.html#a-second-section')), q.press('Enter')]);
   expect(!(await resultsOpen(p)), `${run}: search: results still open after Enter`);
+  // a word found only inside the deep-dive lands on its section
+  await q.fill('wavefront');
+  await p.waitForTimeout(200);
+  expect(await p.locator('#results ul a').count() === 1 && (await p.locator('#results ul a').first().getAttribute('href')) === '../alpha/index.html#a-second-section',
+    `${run}: search: a word inside the deep-dive must find its section`);
+  await q.fill('conventions differ');
+  await p.waitForTimeout(200);
+  expect((await p.locator('#results ul a').first().getAttribute('href')) === '../alpha/index.html#a-second-section', `${run}: search: the deep-dive title must find its section`);
+  await p.keyboard.press('Escape');
   // a planned lesson is listed as coming
   await q.fill('beta');
   expect((await results(p).innerText()).toLowerCase().includes('coming'), `${run}: search: planned lesson not shown as coming`);
@@ -810,6 +832,11 @@ async function contrastMatrix(run, p, url, pages, requiredAreas = []) {
       const m = state => matrixState(run, p, page, theme, state, seen, areas);
       await open();
       measured += await m('initial');
+      if (await p.locator('details.deep').count()) {
+        await p.locator('details.deep').evaluateAll(ds => ds.forEach(d => { d.open = true; }));
+        measured += await m('deep-dive open');
+        await open();
+      }
       if (isHome) {
         await p.locator('#map details.chip, #map details').evaluateAll(ds => ds.forEach(d => { d.open = true; }));
         measured += await m('every map card open');
@@ -914,6 +941,9 @@ async function noJsChecks(run, browserContext, url) {
   await p.goto(url('alpha/index.html'));
   expect(await p.locator('#code pre[data-lang="python"]').isVisible() && await p.locator('#code pre[data-lang="r"]').isVisible(), `${run}: no JS: both code blocks must be visible`);
   expect(await p.locator('section.finance').isVisible() && await p.locator('section.measure').isVisible(), `${run}: no JS: finance and measure card visible`);
+  expect((await p.locator('main details.deep').textContent()).includes('wavefront order'), `${run}: no JS: deep-dive text not in the page`);
+  await p.locator('main details.deep summary').click();
+  expect(await p.locator('main details.deep').evaluate(e => e.open), `${run}: no JS: deep-dive summary did not open it`);
   await Promise.all([p.waitForURL(u => u.hash === '#src-sakoe78'), p.locator('a.cite').first().click()]);
   expect(await p.locator('section.lsrc li#src-sakoe78').isVisible(), `${run}: no JS: source entry not visible after the citation click`);
   await p.setViewportSize({ width: 390, height: 800 });

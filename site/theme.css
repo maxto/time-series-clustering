@@ -180,6 +180,15 @@ section.content, section.finance, section.measure, section.code, section.mistake
 /* reading measure: running text stops near 75 characters (Geist is narrow, so the 680 px column holds
    about 88), while figures, the finance and measure boxes and code keep the full column */
 section.content > p, section.content > ul, section.content > ol, .oneline, .mistake, .lede { max-width: 34em; }
+/* deep-dive: a quiet disclosure inside a content section, closed by default, in the reading measure */
+details.deep { max-width: 34em; margin: 22px 0; border-left: 1px solid var(--line); padding-left: 16px; }
+details.deep > summary { list-style: none; cursor: pointer; font: 500 15.5px/1.5 var(--f-text); color: var(--ink-2); padding: 2px 0; }
+details.deep > summary::-webkit-details-marker { display: none; }
+details.deep > summary::before { content: "+"; display: inline-block; width: 1.3em; font-family: var(--f-mono); color: var(--ink-2); }
+details.deep[open] > summary::before { content: "\2212"; }
+details.deep > summary:hover { color: var(--ink); }
+details.deep[open] > summary { margin-bottom: 6px; }
+details.deep > :last-child { margin-bottom: 4px; }
 .oneline { font-size: 19px; line-height: 1.5; border-left: 3px solid var(--accent); padding-left: 18px; margin: 30px 0; }
 .oneline p { margin: 0; }
 .oneline em { font-style: normal; font-weight: 600; color: var(--accent); }

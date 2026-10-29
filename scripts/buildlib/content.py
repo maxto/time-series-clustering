@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 
 from markdown_it import MarkdownIt
 from markdown_it.token import Token
+from mdit_py_plugins.container import container_plugin
 from mdit_py_plugins.dollarmath import dollarmath_plugin
 
 from .cite import CITE, Citation, fingerprint, fingerprint_data
@@ -70,7 +71,88 @@ def markdown():
     md = MarkdownIt("commonmark", {"html": False})
     md.inline.ruler.before("link", "tsc_cite", cite_rule)
     md.use(dollarmath_plugin, allow_labels=False, double_inline=True)
+    md.use(container_plugin, "deep", render=render_deep)
     return md
+
+
+def deep_title(tok):
+    """The plain-text title of a '::: deep <title>' opener token."""
+    return tok.info.strip()[len("deep"):].strip()
+
+
+def render_deep(self, tokens, idx, options, env):
+    """A deep-dive is a native disclosure: closed by default, readable without JavaScript, no id."""
+    if tokens[idx].nesting == 1:
+        return f'<details class="deep"><summary>{html.escape(deep_title(tokens[idx]), quote=True)}</summary>\n'
+    return "</details>\n"
+
+
+DEEP_OPEN = re.compile(r" {0,3}:{3,}[ \t]*deep(?=[ \t]|$)[ \t]*(.*?)[ \t]*$")
+DEEP_CLOSE = re.compile(r" {0,3}:{3,}[ \t]*$")
+DEEP_OTHER = re.compile(r" {0,3}:{3,}[ \t]*\S")
+FENCE_OPEN = re.compile(r" {0,3}(`{3,}|~{3,})")
+H2_LINE = re.compile(r"## +(.*?) *#*$")
+ANY_HEADING = re.compile(r" {0,3}#{1,6}(?:[ \t]|$)")
+TITLE_MARKUP = re.compile(r"\$|\[@|\]\(|\[[^\]]*\]")
+
+
+def check_deep_blocks(body, offset, path, errors):
+    """Source-aware pass over '::: deep' blocks, before the parser (which closes an open block silently).
+
+    Fenced code is skipped. Line numbers are those of the file (offset = lines before the body)."""
+    fixed = {n.lower() for n in FIXED}
+    fence = None  # (char, length) while inside a fenced code block
+    section = None  # None before the first '## ', else True for a content section
+    opened = None  # line number of the open block
+    for n, line in enumerate(body.split("\n"), start=offset + 1):
+        if fence:
+            m = re.fullmatch(r" {0,3}(" + re.escape(fence[0]) + r"{" + str(fence[1]) + r",})[ \t]*", line)
+            if m:
+                fence = None
+            continue
+        m = FENCE_OPEN.match(line)
+        if m and not (m.group(1)[0] == "`" and "`" in line[m.end():]):
+            fence = (m.group(1)[0], len(m.group(1)))
+            continue
+        h2 = H2_LINE.fullmatch(line)
+        if h2:
+            if opened:
+                errors.add(path, f"line {opened}: deep-dive is not closed before the next '## ' heading (line {n})")
+                opened = None
+            section = h2.group(1).strip().lower() not in fixed and h2.group(1).strip() not in ("Lesson", "Check")
+            continue
+        op = DEEP_OPEN.fullmatch(line)
+        if op:
+            title = op.group(1)
+            if opened:
+                errors.add(path, f"line {n}: nested deep-dive (the one opened at line {opened} is still open)")
+                continue
+            if not title:
+                errors.add(path, f"line {n}: opener '::: deep' without a title (write '::: deep <title>')")
+            else:
+                check_prose(title, path, errors, f"deep-dive title, line {n}")
+                if TITLE_MARKUP.search(title):
+                    errors.add(path, f"line {n}: deep-dive title '{title}' may not hold a citation, math, a link or markup in brackets: plain text only")
+            if not section:
+                errors.add(path, f"line {n}: deep-dive outside a content section (it belongs in a '## <title>' content section)")
+            opened = n
+            continue
+        if DEEP_CLOSE.fullmatch(line):
+            if opened:
+                opened = None
+            else:
+                errors.add(path, f"line {n}: closer ':::' with no open deep-dive")
+            continue
+        if DEEP_OTHER.match(line):
+            errors.add(path, f"line {n}: unknown ':::' block (only '::: deep <title>' exists)")
+            continue
+        if opened:
+            if ANY_HEADING.match(line):
+                errors.add(path, f"line {n}: heading inside a deep-dive (opened at line {opened})")
+            elif "![" in line:
+                errors.add(path, f"line {n}: figure inside a deep-dive (opened at line {opened})")
+    if opened:
+        errors.add(path, f"line {opened}: deep-dive is not closed before the end of the file")
 
 
 @dataclass
@@ -283,6 +365,7 @@ def load_lesson(path, entry, md, numbers, published, content, sources, errors):
         value = meta.get(key, "")
         check_prose(", ".join(value) if isinstance(value, list) else value, path, errors, key)
 
+    check_deep_blocks(body, text[:len(text) - len(body)].count("\n"), path, errors)
     tokens = md.parse(body)
     blocks = split_blocks(tokens, path, errors)
     lesson = Lesson(entry, path, meta, blocks)

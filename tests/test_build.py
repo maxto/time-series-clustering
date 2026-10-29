@@ -264,6 +264,90 @@ def test_citation_renders_label_and_source_entry(content):
     assert 'id="src-sakoe78"' in out and "Hiroaki Sakoe and Seibi Chiba" in out
 
 
+def deep(title="Extra detail", body="A deep paragraph.", opener=None):
+    return f"{opener or '::: deep ' + title}\n{body}\n:::"
+
+
+def test_deep_dive_renders(content):
+    result = build(content)
+    assert result.returncode == 0, result.stdout + result.stderr
+    out = page(content, "alpha")
+    assert out.count('<details class="deep">') == 1
+    assert "<summary>Library conventions differ</summary>" in out
+    inner = out.split('<details class="deep">')[1].split("</details>")[0]
+    assert 'class="katex"' in inner and "<li>" in inner
+    assert 'class="cite" href="#src-sakoe78"' in inner
+    assert 'id="src-sakoe78"' in out.split("</details>")[1]  # the sources list at the end of the lesson
+    assert "<details class=\"deep\" open" not in out
+
+
+def test_deep_dive_fence_is_code(content):
+    add_to_lesson(content, "```markdown\n::: deep Shown as code\nBody.\n:::\n```")
+    record_lesson(content, "alpha")
+    result = build(content)
+    assert result.returncode == 0, result.stdout + result.stderr
+    out = page(content, "alpha")
+    assert out.count('<details class="deep">') == 1 and "Shown as code" in out
+
+
+def deep_errors(content, text, where="add"):
+    if where == "add":
+        add_to_lesson(content, text)
+    else:
+        append_to_block(content / "01-alpha.md", where, text)
+    result = build(content)
+    assert result.returncode == 1
+    return result.stdout + result.stderr
+
+
+@pytest.mark.parametrize("text,message", [
+    ("::: deep\nBody.\n:::", "without a title"),
+    ("::: deep   \nBody.\n:::", "without a title"),
+    ("::: deep Outer\n::: deep Inner\nBody.\n:::\n:::", "nested"),
+    ("Text.\n\n:::", "closer ':::' with no open"),
+    ("::: deep Never closed\nBody.", "not closed before the next '## ' heading"),
+    ("::: deep With heading\n### Inner\nBody.\n:::", "heading inside"),
+    ("::: deep With figure\n![cap](figures/overview.svg)\n:::", "figure inside"),
+    ("::: deep Bad; title\nBody.\n:::", "semicolon"),
+    ("::: deep Math $x$ title\nBody.\n:::", "title"),
+    ("::: deep Cite [@sakoe78, p. 1] title\nBody.\n:::", "title"),
+    ("::: deep A [link](https://katex.org/) title\nBody.\n:::", "title"),
+])
+def test_deep_dive_errors(content, text, message):
+    out = deep_errors(content, text)
+    assert "01-alpha.md" in out and message in out
+    assert re.search(r"line \d+", out)
+
+
+def test_deep_dive_body_semicolon_is_rejected(content):
+    out = deep_errors(content, "::: deep Good title\nBody; with a semicolon.\n:::")
+    assert "semicolon in prose" in out
+
+
+def test_deep_dive_error_names_the_line(content):
+    out = deep_errors(content, "Text.\n\n:::")
+    assert re.search(r"line \d+", out)
+
+
+def test_deep_dive_unclosed_at_end_of_file(content):
+    path = content / "01-alpha.md"
+    path.write_text(path.read_text().rstrip("\n") + "\n\n::: deep Open\nBody.\n")
+    result = build(content)
+    assert result.returncode == 1 and "not closed before the end of the file" in result.stdout + result.stderr
+
+
+@pytest.mark.parametrize("where", ["One line", "In finance", "Measure card", "Code", "Common mistake"])
+def test_deep_dive_outside_a_content_section_is_rejected(content, where):
+    out = deep_errors(content, "::: deep Misplaced\nBody.\n:::", where)
+    assert "content section" in out
+
+
+def test_link_to_a_deep_dive_title_is_a_missing_target(content):
+    add_to_lesson(content, "See [the box](#library-conventions-differ).")
+    out = build(content).stdout
+    assert "library-conventions-differ" in out and "no heading or block" in out
+
+
 def test_unknown_citation_key_fails(content):
     add_to_lesson(content, "As shown by [@nobody99, p. 1].")
     assert "unknown source 'nobody99'" in build(content).stdout

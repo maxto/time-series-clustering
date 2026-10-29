@@ -7,7 +7,7 @@ A plain script (not fetched JSON) so it loads from file://.
 
 import json
 
-from .content import MATH
+from .content import MATH, deep_title
 
 SKIP_INLINE = ("code_inline", "image", "tsc_cite", *MATH)
 BLOCK_TITLES = {"oneline": "One line", "finance": "In finance", "measure": "Measure card", "mistake": "Common mistake"}
@@ -28,7 +28,9 @@ def block_text(tokens):
     """The prose of a block's tokens: inline text only, no code blocks, math, figures or citations."""
     parts = []
     for tok in tokens:
-        if tok.type == "inline":
+        if tok.type == "container_deep_open":
+            parts.append(" ".join(deep_title(tok).split()))
+        elif tok.type == "inline":
             words = []
             inline_words(tok.children, words)
             parts.append(" ".join("".join(words).split()))

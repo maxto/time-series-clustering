@@ -46,6 +46,13 @@ More text with `inline code; with a semicolon` that the prose check skips.
 
 A second content section, so the order of sections is visible.
 
+::: deep Library conventions differ
+Packages disagree on the wavefront order of the recursion, so a result can shift by one cell, and the squared cost $c(a, b) = (a - b)^2$ is the one this course uses [@sakoe78, p. 44].
+
+- the first convention keeps the root outside
+- the other convention keeps the root inside
+:::
+
 ## In finance
 
 A finance note sits in the margin, next to the reading column. It cites a source too [@sakoe78, sec. II].
