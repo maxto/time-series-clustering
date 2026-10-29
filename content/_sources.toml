@@ -1,0 +1,31 @@
+[sakoe78]
+authors = ["Sakoe, Hiroaki", "Chiba, Seibi"]
+year = 1978
+title = "Dynamic programming algorithm optimization for spoken word recognition"
+venue = "IEEE Transactions on Acoustics, Speech, and Signal Processing 26(1), 43-49"
+doi = "10.1109/TASSP.1978.1163055"
+topics = ["compare"]
+
+[paparrizos24]
+authors = ["Paparrizos, John", "Li, Haojun", "Yang, Fan", "Wu, Kaize", "d'Hondt, Jens E.", "Papapetrou, Odysseas"]
+year = 2024
+title = "A Survey on Time-Series Distance Measures"
+venue = "arXiv preprint"
+arxiv = "2412.20574"
+topics = ["survey", "compare"]
+
+[aghabozorgi15]
+authors = ["Aghabozorgi, Saeed", "Seyed Shirkhorshidi, Ali", "Wah, Teh Ying"]
+year = 2015
+title = "Time-series clustering – A decade review"
+venue = "Information Systems 53, 16-38"
+doi = "10.1016/j.is.2015.04.007"
+topics = ["survey", "group"]
+
+[arbelaitz13]
+authors = ["Arbelaitz, Olatz", "Gurrutxaga, Ibai", "Muguerza, Javier", "Pérez, Jesús M.", "Perona, Iñigo"]
+year = 2013
+title = "An extensive comparative study of cluster validity indices"
+venue = "Pattern Recognition 46(1), 243-256"
+doi = "10.1016/j.patcog.2012.07.021"
+topics = ["validate"]

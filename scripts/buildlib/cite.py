@@ -106,7 +106,7 @@ def load_sources(content, errors):
         if not re.fullmatch(KEY, key) or not isinstance(raw, dict):
             errors.add(path, f"bad source key {key!r} (lowercase letters, digits, hyphens, one table per source)")
             continue
-        known = {"authors", "year", "title", "venue", "topics", "doi", "arxiv", "ssrn", "url"}
+        known = {"authors", "year", "title", "venue", "topics", "doi", "arxiv", "ssrn", "url", "manual"}
         for name in sorted(set(raw) - known):
             errors.add(path, f"source {key!r}: unknown field {name!r}")
         ok = True

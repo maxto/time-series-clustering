@@ -1,0 +1,17 @@
+{
+  "run": "2026-10-29",
+  "sources": {
+    "sakoe78": {
+      "doi": "matched"
+    },
+    "paparrizos24": {
+      "arxiv": "matched"
+    },
+    "aghabozorgi15": {
+      "doi": "matched"
+    },
+    "arbelaitz13": {
+      "doi": "matched"
+    }
+  }
+}

@@ -50,7 +50,7 @@ Libraries do not share one convention. On this pair, `aeon.distances.dtw_distanc
 
 ## The window is a decision
 
-The window says how much local timing you are willing to ignore. It is not a speed trick to tune away at the end.
+The window says how much local timing you are willing to ignore. It is not a speed trick to tune away at the end. The band $|i - j| \le w$ used here is the adjustment window condition of [@sakoe78, Sec. II-B, condition 4 (Eq. 8), p. 44], which restricts the warping path to a band around the diagonal.
 
 A window too narrow forbids alignments you want. For equal-length series, with $w = 0$ the only allowed path is the diagonal, and DTW is the Euclidean distance again. With a window smaller than the three-sample shift of `sat`, the peaks cannot be fully matched.
 
