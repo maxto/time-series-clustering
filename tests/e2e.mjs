@@ -210,11 +210,24 @@ async function layoutChecks(run, p, url) {
   expect(await p.locator('nav#contents').isVisible() && !(await p.locator('button.menu').isVisible()), `${run}: 1280 px: contents fixed, no menu button`);
   expect(await w('nav#contents') === 290, `${run}: contents column is ${await w('nav#contents')} px, expected 290`);
   expect(await w('.hero') === 760 && await w('section.finance') === 760 && await w('#code .codebox') === 760, `${run}: 1280 px column is not 760 px for hero/finance/code`);
+  // finance block surface: --fin-bg of each theme (light --ink #161a23, dark --fig-bg #171a21), with a border
+  const fin = () => p.locator('section.finance').evaluate(e => { const c = getComputedStyle(e); return [c.backgroundColor, c.borderTopWidth]; });
+  const [lightBg, lightBorder] = await fin();
+  expect(lightBg === 'rgb(22, 26, 35)' && parseFloat(lightBorder) > 0, `${run}: light finance background ${lightBg}, border ${lightBorder}`);
+  await p.evaluate(() => { document.documentElement.dataset.theme = 'dark'; });
+  const [darkBg, darkBorder] = await fin();
+  expect(darkBg === 'rgb(23, 26, 33)' && parseFloat(darkBorder) > 0, `${run}: dark finance background ${darkBg}, border ${darkBorder}`);
+  await p.evaluate(() => { delete document.documentElement.dataset.theme; });
   await p.setViewportSize({ width: 1100, height: 900 });
   await p.waitForTimeout(400); // the drawer hides after its slide-out transition
   expect(!(await p.locator('nav#contents').isVisible()) && await p.locator('button.menu').isVisible(), `${run}: 1100 px: contents drawer closed, menu button shown`);
   expect(await w('.hero') === 800 && await w('section.finance') === 800, `${run}: 1100 px column is not 800 px`);
   await p.setViewportSize({ width: 390, height: 800 });
+  await p.locator('button.menu').click();
+  await p.evaluate(() => document.querySelector('button.menu').setAttribute('aria-expanded', 'true')); // Task 7 will toggle this
+  await p.waitForTimeout(400);
+  expect(await w('nav#contents') === 390, `${run}: phone drawer is ${await w('nav#contents')} px, expected full width 390`);
+  await p.evaluate(() => document.querySelector('button.menu').setAttribute('aria-expanded', 'false'));
   expect(await p.locator('.hero').evaluate(e => getComputedStyle(e.parentElement).paddingLeft) === '18px', `${run}: phone padding is not 18 px`);
 }
 
@@ -226,6 +239,9 @@ async function noJsChecks(run, browserContext, url) {
   expect(await p.locator('section.finance').isVisible() && await p.locator('section.measure').isVisible(), `${run}: no JS: finance and measure card visible`);
   await Promise.all([p.waitForURL(u => u.hash === '#src-sakoe78'), p.locator('a.cite').first().click()]);
   expect(await p.locator('section.lsrc li#src-sakoe78').isVisible(), `${run}: no JS: source entry not visible after the citation click`);
+  await p.setViewportSize({ width: 390, height: 800 });
+  expect(!(await p.locator('button.menu').isVisible()) && await p.locator('nav#contents a[href$="gamma/index.html"]').isVisible()
+    && await p.locator('nav#contents a[href$="index.html#map"]').isVisible(), `${run}: no JS at 390 px: contents links not visible`);
   await p.close();
 }
 

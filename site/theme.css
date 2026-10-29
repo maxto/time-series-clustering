@@ -122,6 +122,15 @@ body:has(.menu[aria-expanded="true"]) #contents { visibility: visible; transform
   main { --col: 760px; }
 }
 
+/* without scripts the drawer cannot open: show the contents as a static block after the page, no menu button */
+@media (max-width: 1179.98px) {
+  html:not(.js) .menu, html:not(.js) .scrim { display: none; }
+  html:not(.js) .shell { display: flex; flex-direction: column; }
+  html:not(.js) #contents { order: 2; position: static; width: auto; visibility: visible; transform: none; box-shadow: none; transition: none;
+    border-top: 1px solid var(--rule); padding: 24px 18px 40px; background: var(--page); }
+  html:not(.js) #contents .dh { display: none; }
+}
+
 /* lesson page */
 .hero { padding: 54px 0 6px; }
 .mod { color: var(--accent); font-weight: 550; font-size: 15px; }
@@ -155,7 +164,7 @@ pre { margin: 24px 0; padding: 14px 18px; overflow-x: auto; background: var(--su
 .cite { font-size: .94em; }
 
 /* figures: drawn on the figure panel, classes below */
-figure { max-width: 520px; margin: 40px auto; background: var(--fig-bg); border: 1px solid var(--rule); border-radius: 14px; padding: 18px; }
+figure { margin: 40px 0; background: var(--fig-bg); border: 1px solid var(--rule); border-radius: 14px; padding: 18px; }
 figure svg { display: block; width: 100%; height: auto; }
 figcaption { font: 12px/1.5 var(--f-mono); color: var(--fig-label); margin-top: 10px; }
 
@@ -249,6 +258,7 @@ html:not(.js) .codebox pre::before { content: attr(data-lang); display: block; m
   .oneline { font-size: 18.5px; }
   .mistake { font-size: 17px; }
   .search input { font-size: 14px; }
+  #contents { width: 100%; }
   .progress { width: 48px; }
   figure { padding: 12px; }
   .finance { padding: 20px 18px 8px; }

@@ -517,3 +517,15 @@ def test_release_refuses_an_unreviewed_question_and_sector(content):
     drop_record(content, "sector", "id", "finance")
     out = build(content).stdout
     assert "question energy/same-hours is draft" in out and "sector 'finance' is draft" in out
+
+
+def test_section_title_renders_inline_math_and_code_with_slug_id(content):
+    mutate(content / "01-alpha.md", "## Engine features\n", "## Window $w$ and `dtw`\n")
+    record_lesson(content, "alpha")
+    result = build(content)
+    assert result.returncode == 0, result.stdout + result.stderr
+    out = page(content, "alpha")
+    # literal expected id: the text tokens "Window ", " and ", "dtw" without the math, as ### headings compute it
+    m = re.search(r'<section class="content" id="window-and-dtw"><h2>(.*?)</h2>', out, re.S)
+    assert m, "section id is not 'window-and-dtw'"
+    assert 'class="katex"' in m.group(1) and "<code>dtw</code>" in m.group(1) and "$" not in m.group(1)
