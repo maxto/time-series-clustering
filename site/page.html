@@ -10,21 +10,13 @@
 <script src="{{root}}assets/theme.js"></script>
 </head>
 <body>
-<header class="bar"><div class="in"><a class="brand" href="{{root}}index.html"><span class="dot"></span>{{site}}</a><nav><span class="where">{{module}}</span><span>{{position}}</span><button class="theme" type="button" aria-label="Switch colour theme">◐</button></nav></div><div class="prog"><i style="width:{{progress}}%"></i></div></header>
-<div class="wrap"><main>
-<p class="kicker">{{kicker}}</p>
-<h1>{{title}}</h1>
-<p class="lede">{{lede}}</p>
-<div class="oneline">{{oneline}}</div>
-<div class="lesson-body">
-{{body}}
-</div>
-{{specimens}}
-<div class="mistake">{{mistake}}</div>
+{{top}}
+<div class="shell">
+<div class="scrim"></div>
+{{contents}}
+<main id="main">
+{{main}}
 </main>
-<aside>
-{{notes}}
-</aside>
-<nav class="pager" aria-label="Lessons">{{pager}}</nav></div>
+</div>
 </body>
 </html>

@@ -9,17 +9,20 @@
 <script src="assets/theme.js"></script>
 </head>
 <body class="home">
-<header class="bar"><div class="in"><a class="brand" href="index.html"><span class="dot"></span>{{site}}</a><nav><span class="where">{{count}}</span><button class="theme" type="button" aria-label="Switch colour theme">◐</button></nav></div></header>
-<div class="wrap"><main>
+{{top}}
+<div class="shell">
+<div class="scrim"></div>
+{{contents}}
+<main id="main">
 {{banner}}
-<p class="kicker">Mini-course</p>
+<div class="hero"><div class="mod">{{count}}</div>
 <h1>{{title}}</h1>
-<p class="lede">{{tagline}}</p>
+<p class="lede">{{tagline}}</p></div>
 {{overview}}
 <div class="modules">
 {{modules}}
 </div>
 </main>
-<aside></aside></div>
+</div>
 </body>
 </html>

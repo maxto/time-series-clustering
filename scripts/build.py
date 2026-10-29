@@ -28,28 +28,17 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from buildlib import svg  # noqa: E402
 from buildlib.atlas import load_atlas  # noqa: E402
 from buildlib.cite import check_reviews, load_reviews, load_sources  # noqa: E402
-from buildlib.content import CODE_LANGUAGES, Errors, esc, load_course, load_lessons, markdown, show  # noqa: E402
+from buildlib.content import Errors, esc, load_course, load_lessons, markdown, show  # noqa: E402
 from buildlib.katex import render_math  # noqa: E402
+from buildlib.pages import contents_nav, fill, head_meta, lesson_page, top_bar  # noqa: E402
 
 SITE_URL = "https://maxto.github.io/time-series-clustering/"
+REPO_URL = "https://github.com/maxto/Time-Series-Clustering"  # the repo is not renamed yet
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SITE = ROOT / "site"
 NODE = ROOT / "node_modules"
 MARKER = ".tsc-build"
-
-
-def fill(template, values):
-    """Replace {{key}} in one pass, so inserted content is never re-scanned."""
-    return re.sub(r"\{\{(\w+)\}\}", lambda m: values[m.group(1)], template)
-
-
-def head_meta(title, description, url, og_type, site):
-    tags = [("name", "description", description), ("property", "og:type", og_type), ("property", "og:site_name", site),
-            ("property", "og:title", title), ("property", "og:description", description), ("property", "og:url", url),
-            ("property", "og:locale", "en_US"), ("name", "twitter:card", "summary")]
-    return "\n".join([f"<title>{esc(title)}</title>", f'<link rel="canonical" href="{esc(url)}">',
-                      *(f'<meta {k}="{v}" content="{esc(c)}">' for k, v, c in tags)])
 
 
 def setup_markdown(figures):
@@ -79,71 +68,6 @@ def setup_markdown(figures):
     return md
 
 
-def render(md, tokens):
-    return md.renderer.render(tokens, md.options, {})
-
-
-def notes(lesson, md):
-    meta, out = lesson.meta, []
-    if meta["ignores"] or meta["keeps"]:
-        chips = "".join(f'<span class="y">{esc(v)}</span>' for v in meta["ignores"])
-        chips += "".join(f"<span>{esc(v)}</span>" for v in meta["keeps"])
-        out.append(f'<div class="note ignores"><b>What it ignores</b><div class="chips">{chips}</div>'
-                   '<div class="legend">Highlighted: ignored. Grey: kept.</div></div>')
-    for b in lesson.blocks:
-        if b.kind == "finance":
-            out.append(f'<div class="note finance"><b>In finance</b>{render(md, b.tokens)}</div>')
-    code = [f"{lang} · {esc(', '.join(meta[key]))}" for lang, key in (("Python", "python"), ("R", "r")) if meta[key]]
-    if code:
-        out.append(f'<div class="note code"><b>Code</b><span class="mono">{"<br>".join(code)}</span></div>')
-    return "\n".join(out)
-
-
-def pager(prev, nxt):
-    out = []
-    for cls, label, e in (("prev", "← Previous", prev), ("next", "Next →", nxt)):
-        if e:
-            out.append(f'<a class="{cls}" href="../{e.id}/index.html"><span>{label}</span>{e.number} · {esc(e.title)}</a>')
-    return "".join(out)
-
-
-def lesson_sources(lesson, sources):
-    """Minimal list of the sources the lesson cites, in order of first citation (Task 5 styles it)."""
-    keys = list(dict.fromkeys(c.key for c in lesson.citations))
-    if not keys:
-        return ""
-    items = []
-    for k in keys:
-        s = sources[k]
-        links = " ".join(f'<a href="{esc(url)}">{esc(name)}</a>' for name, url in s.links)
-        items.append(f'<li id="src-{k}">{esc(s.full_authors)} ({s.year}). <cite>{esc(s.title)}</cite>. {esc(s.venue)}. {links}</li>')
-    return f'<section class="lsrc"><h2>Sources cited in this lesson</h2>\n<ol>{"".join(items)}</ol></section>\n'
-
-
-def lesson_page(lesson, course, md, template, prev, nxt, position, sources, build_mode="release"):
-    e, meta = lesson.entry, lesson.meta
-    by_kind = {b.kind: b for b in lesson.blocks if b.kind != "section"}
-    body = "\n".join(f'<section id="{b.id}"><h2>{esc(b.title)}</h2>\n{render(md, b.tokens)}</section>'
-                     for b in lesson.blocks if b.kind == "section")
-    body += "\n" + lesson_sources(lesson, sources)
-    # Temporary rendering, replaced with the new templates in Task 5.
-    specimens = ""
-    if "measure" in by_kind:
-        specimens = f'<div class="card measure"><b class="lbl">Measure card</b>{render(md, by_kind["measure"].tokens)}</div>\n'
-    specimens += "".join(f'<pre class="code {lang}"><code>{esc(lesson.code[lang])}</code></pre>\n'
-                         for lang in CODE_LANGUAGES if lang in lesson.code)
-    mistake = render(md, by_kind["mistake"].tokens).replace("<p>", "<p><b>Common mistake.</b> ", 1)
-    total = len(course.published())
-    return fill(template, {
-        "meta": head_meta(f"{meta['title']} · {course.title}", meta["lede"], f"{SITE_URL}{e.id}/", "article", course.title),
-        "build": build_mode, "root": "../", "site": esc(course.title.lower()), "module": esc(f"{e.module} · {e.module_title}"),
-        "position": f"{position} / {total}", "progress": f"{round(100 * position / total)}",
-        "kicker": esc(f"Lesson {e.number} · {meta['kicker']}"), "title": esc(meta["title"]), "lede": esc(meta["lede"]),
-        "oneline": render(md, by_kind["oneline"].tokens), "body": body, "specimens": specimens,
-        "mistake": mistake, "pager": pager(prev, nxt), "notes": notes(lesson, md),
-    })
-
-
 def draft_banner(atlas):
     drafts = (atlas.draft_items(), atlas.draft_fits()) if atlas else ([], [])
     if not any(drafts):
@@ -152,22 +76,24 @@ def draft_banner(atlas):
             " are drafts, not verified. Do not publish this output.</div>")
 
 
-def home_page(course, template, overview, build_mode="release", banner=""):
+def home_page(course, template, overview, finance_ids, build_mode="release", banner=""):
     mods = []
     for letter, title, entries in course.modules:
         items = []
         for e in entries:
             if e.status == "published":
-                items.append(f'<li><span class="n">{e.number}</span><a href="{e.id}/index.html">{esc(e.title)}</a></li>')
+                items.append(f'<li id="lesson-{e.id}"><span class="n">{e.number}</span><a href="{e.id}/index.html">{esc(e.title)}</a></li>')
             else:
-                items.append(f'<li class="planned"><span class="n">{e.number}</span><span>{esc(e.title)}</span>'
+                items.append(f'<li class="planned" id="lesson-{e.id}"><span class="n">{e.number}</span><span>{esc(e.title)}</span>'
                              '<span class="coming">coming</span></li>')
         mods.append(f'<section class="module"><h2>{letter} · {esc(title)}</h2><ol>{"".join(items)}</ol></section>')
     n, p = len(course.entries), len(course.published())
     return fill(template, {
         "meta": head_meta(course.title, course.tagline, SITE_URL, "website", course.title),
         "build": build_mode, "root": "", "banner": banner,
-        "site": esc(course.title.lower()), "count": f"{n} lessons · {p} published", "title": esc(course.title),
+        "top": top_bar("", course.title, REPO_URL, progress=False),
+        "contents": contents_nav(course, "", finance_ids, current="home"),
+        "count": f"{n} lessons · {p} published", "title": esc(course.title),
         "tagline": esc(course.tagline), "overview": f'<figure class="overview">{overview}</figure>' if overview else "",
         "modules": "\n".join(mods),
     })
@@ -263,14 +189,15 @@ def main():
     lessons.sort(key=lambda lesson: order[lesson.entry.id])
     published = course.published()
     template = (SITE / "page.html").read_text()
+    finance_ids = {lesson.entry.id for lesson in lessons if any(b.kind == "finance" for b in lesson.blocks)}
     for i, lesson in enumerate(lessons):
         prev = published[i - 1] if i > 0 else None
         nxt = published[i + 1] if i + 1 < len(published) else None
         (dist / lesson.entry.id).mkdir()
-        page = lesson_page(lesson, course, md, template, prev, nxt, i + 1, sources, mode)
+        page = lesson_page(lesson, course, md, template, prev, nxt, sources, finance_ids, mode, SITE_URL, REPO_URL)
         (dist / lesson.entry.id / "index.html").write_text(page)
     (dist / "index.html").write_text(home_page(
-        course, (SITE / "home.html").read_text(), figures.get("overview"), mode, draft_banner(atlas) if args.preview else ""))
+        course, (SITE / "home.html").read_text(), figures.get("overview"), finance_ids, mode, draft_banner(atlas) if args.preview else ""))
 
     written = []
     if previews and figures:

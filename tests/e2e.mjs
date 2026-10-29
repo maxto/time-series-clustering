@@ -3,7 +3,7 @@
 // 1. Builds the smoke fixture (tests/fixtures/smoke) into tests/output/smoke-dist and checks it
 //    twice: from file:// and from a local HTTP server that serves it under /time-series-clustering/,
 //    the GitHub Pages subpath. The smoke checks pin every engine feature (sections, math, figures,
-//    margin notes, links, planned lessons skipped by previous/next).
+//    the shell, the lesson page contract, links, planned lessons skipped by previous/next).
 // 2. Builds the real content/ fresh into tests/output/content-preview (preview mode, the map is a draft) (never reading an old dist/) and runs the
 //    general checks on it, when content/_course.md exists.
 //
@@ -23,6 +23,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const out = path.join(root, 'tests', 'output');
 const PREFIX = '/time-series-clustering/';
 const SITE_URL = 'https://maxto.github.io/time-series-clustering/';
+const REPO_URL = 'https://github.com/maxto/Time-Series-Clustering';
 const DARK_BG = 'rgb(28, 32, 41)';
 const THEME_KEY = 'tsc:theme';
 const failures = [];
@@ -108,18 +109,18 @@ async function smokeChecks(run, p, url) {
   expect(await p.locator('head link[rel="canonical"]').getAttribute('href') === SITE_URL, `${run}: home canonical link`);
   expect(await p.locator('head meta[property="og:url"]').getAttribute('content') === SITE_URL, `${run}: home og:url`);
 
+  expect(await p.locator('html').getAttribute('data-root') === '' && await count(p, 'header.top .progress') === 0, `${run}: home data-root or progress bar`);
   // home -> lesson
   await clickTo(p, '.modules a[href="alpha/index.html"]', 'alpha/index.html');
   expect(await p.locator('h1').innerText() === 'Alpha lesson', `${run}: alpha h1 missing`);
   expect(await p.locator('head link[rel="canonical"]').getAttribute('href') === SITE_URL + 'alpha/', `${run}: alpha canonical link`);
   expect(await p.locator('head meta[property="og:title"]').count() === 1, `${run}: alpha has no og:title`);
-  expect(await count(p, 'aside .note') >= 3 && await p.locator('aside .note').first().isVisible(), `${run}: alpha margin notes missing`);
-  expect(await count(p, 'aside .note.finance') === 1, `${run}: alpha In finance note missing`);
+  await lessonContract(run, p);
   expect(await count(p, 'main figure svg[role="img"] > title') === 1, `${run}: alpha inline svg figure missing`);
   expect(await count(p, 'main figure figcaption') === 1, `${run}: alpha figcaption missing`);
   expect(await count(p, 'main .katex math') >= 2, `${run}: alpha has no KaTeX MathML`);
   expect(await count(p, 'main .katex-display') >= 2, `${run}: alpha display math missing`);
-  expect(await count(p, '.card.measure .katex') === 1, `${run}: alpha measure card math missing`);
+  expect(await count(p, 'section.measure .katex') === 1, `${run}: alpha measure card math missing`);
   expect(await p.locator('pre code', { hasText: '## not a section' }).count() === 1, `${run}: fenced "## not a section" not shown as code`);
   expect(await p.locator('h2', { hasText: 'not a section' }).count() === 0, `${run}: fenced "## not a section" became a heading`);
   expect(await count(p, 'h3#a-subheading') === 1 && await count(p, 'main section a[href="#a-subheading"]') === 1,
@@ -133,13 +134,99 @@ async function smokeChecks(run, p, url) {
   expect(await p.locator('h1').innerText() === 'Gamma lesson', `${run}: body link to gamma did not load gamma`);
   expect(await count(p, 'main section#validity-example') === 1, `${run}: gamma content section "Validity example" missing`);
   expect(await count(p, '.pager a.next') === 0, `${run}: gamma has a next link`);
+  expect(await count(p, 'section.finance') === 0 && await count(p, 'section.code') === 0 && await count(p, 'section.measure') === 0, `${run}: gamma has blocks it does not define`);
+  expect(await count(p, 'nav#contents li:has(> a[aria-current="page"]) > ol.toc') === 1 && await count(p, 'nav#contents li:has(> a[aria-current="page"]) span.fin') === 0, `${run}: gamma contents entry`);
   expect(await count(p, 'a[href*="beta"]') === 0, `${run}: gamma links to the planned lesson beta`);
 
   // previous / next on every lesson: navigation() below, against the manifest
 
   // lesson -> home
-  await clickTo(p, '.bar a.brand', 'index.html');
-  expect(await count(p, '.modules') === 1, `${run}: brand link did not load the home`);
+  await clickTo(p, 'header.top a.logo', 'index.html');
+  expect(await count(p, '.modules') === 1, `${run}: logo link did not load the home`);
+}
+
+// The lesson page contract of Task 5, checked on smoke lesson alpha (expected values written by hand
+// from tests/fixtures/smoke/01-alpha.md and _course.md, not read back from the build).
+async function lessonContract(run, p) {
+  const attr = (sel, name) => p.locator(sel).first().getAttribute(name);
+  expect(await attr('html', 'data-root') === '../' && await attr('html', 'data-build') === 'release', `${run}: alpha html data-root/data-build`);
+  // top bar
+  expect(await count(p, 'header.top') === 1, `${run}: header.top missing`);
+  expect(await p.locator('header.top a.logo').innerText() === 'TS', `${run}: logo mark is not TS`);
+  expect((await attr('header.top a.logo', 'href')) === '../index.html', `${run}: logo href is not ../index.html`);
+  expect(await count(p, 'header.top form.search input#q[type="search"][aria-label="Search the course"]') === 1, `${run}: search input missing`);
+  expect(await count(p, 'header.top .progress > i') === 1, `${run}: reading progress missing on a lesson`);
+  expect(await count(p, 'header.top button.theme') === 1, `${run}: theme button missing`);
+  expect(await attr('header.top a.gh', 'href') === REPO_URL && await attr('header.top a.gh', 'aria-label') === 'GitHub repository', `${run}: GitHub link`);
+  expect(await attr('header.top button.menu', 'aria-controls') === 'contents' && await attr('header.top button.menu', 'aria-expanded') === 'false', `${run}: menu button attributes`);
+  expect(await count(p, 'aside') === 0, `${run}: the pilot margin aside is still there`);
+  // contents
+  const nav = p.locator('nav#contents');
+  expect(await nav.count() === 1, `${run}: nav#contents missing`);
+  const top = await nav.locator(':scope > a').evaluateAll(as => as.map(a => a.getAttribute('href')));
+  expect(JSON.stringify(top) === JSON.stringify(['../index.html', '../index.html#map', '../index.html#sectors', '../sources/index.html']),
+    `${run}: contents top links ${JSON.stringify(top)}`);
+  const lessonLinksIn = await nav.locator('ol:not(.toc) > li > a').evaluateAll(as => as.map(a => a.getAttribute('href')));
+  expect(JSON.stringify(lessonLinksIn) === JSON.stringify(['../alpha/index.html', '../gamma/index.html']),
+    `${run}: contents lesson links ${JSON.stringify(lessonLinksIn)}`);
+  expect(await count(p, 'nav#contents li.coming') === 1 && (await nav.locator('li.coming').innerText()).includes('Beta')
+    && await count(p, 'nav#contents li.coming a') === 0, `${run}: contents does not list beta as coming without a link`);
+  expect(await count(p, 'nav#contents span.fin') === 1 && (await nav.locator('li:has(span.fin)').innerText()).includes('Alpha'), `${run}: Finance tag only on alpha`);
+  expect(await count(p, 'nav#contents ol.toc') === 1 && await count(p, 'nav#contents li:has(> a[aria-current="page"]) > ol.toc') === 1, `${run}: ol.toc not under the current lesson`);
+  const toc = await nav.locator('ol.toc a').evaluateAll(as => as.map(a => a.getAttribute('href')));
+  expect(JSON.stringify(toc) === JSON.stringify(['#engine-features', '#a-second-section', '#in-finance', '#measure-card', '#code', '#common-mistake']),
+    `${run}: toc links ${JSON.stringify(toc)}`);
+  // every jump and toc link resolves to an id on the page
+  const targets = await p.$$eval('nav.jump a, ol.toc a', as => as.map(a => [a.getAttribute('href'), !!document.getElementById(a.getAttribute('href').slice(1))]));
+  expect(targets.length === 11 && targets.every(([, ok]) => ok), `${run}: jump/toc links without a target: ${JSON.stringify(targets.filter(([, ok]) => !ok))} of ${targets.length}`);
+  // main
+  expect(await count(p, 'main#main') === 1, `${run}: main#main missing`);
+  const order = await p.$$eval('main#main > *', els => els.map(e => e.classList[0] || e.tagName.toLowerCase()));
+  expect(JSON.stringify(order) === JSON.stringify(['hero', 'trade', 'jump', 'oneline', 'content', 'content', 'finance', 'measure', 'code', 'mistake', 'lsrc', 'pager']),
+    `${run}: main children ${JSON.stringify(order)}`);
+  expect((await p.locator('.hero').innerText()).includes('Alpha lesson') && await count(p, '.hero .lede') === 1, `${run}: hero`);
+  const trade = await p.locator('.trade').innerText();
+  expect(trade.includes('It ignores') && trade.includes('local timing, small shifts') && trade.includes('It keeps') && trade.includes('level, scale'), `${run}: trade boxes: ${trade}`);
+  expect(await count(p, 'section.content#engine-features') === 1 && await count(p, 'section.finance#in-finance') === 1
+    && await count(p, 'section.measure#measure-card') === 1 && await count(p, 'section.code#code') === 1, `${run}: section ids`);
+  // code
+  expect(JSON.stringify(await p.$$eval('#code [role="tablist"] button[role="tab"]', bs => bs.map(b => b.dataset.lang))) === JSON.stringify(['python', 'r']), `${run}: code tabs`);
+  expect(JSON.stringify(await p.$$eval('#code pre[data-lang]', ps => ps.map(x => [x.dataset.lang, x.textContent.trim()]))) === JSON.stringify([['python', 'print(1)'], ['r', 'cat(1)']]), `${run}: both code languages in the HTML`);
+  expect(await count(p, '#code button.copy') === 1, `${run}: copy button`);
+  const libs = await p.locator('#code p.libs').innerText();
+  expect(libs.startsWith('Related library functions:') && libs.includes('tsc.distances') && libs.includes('distances.R'), `${run}: libs line: ${libs}`);
+  // sources
+  expect(await count(p, 'section.lsrc li#src-sakoe78') === 1, `${run}: #src-sakoe78 not in section.lsrc`);
+  expect(await attr('a.cite', 'href') === '#src-sakoe78', `${run}: citation does not point to #src-sakoe78`);
+  // measures: one width for everything, 18 px text
+  expect(await p.locator('section.content p').first().evaluate(e => getComputedStyle(e).fontSize) === '18px', `${run}: body text is not 18 px`);
+}
+
+// Layout at the widths of design 4.1: fixed contents at 1180 px and above, a drawer below.
+async function layoutChecks(run, p, url) {
+  const w = sel => p.locator(sel).first().evaluate(e => Math.round(e.getBoundingClientRect().width));
+  await p.setViewportSize({ width: 1280, height: 900 });
+  await p.goto(url('alpha/index.html'));
+  expect(await p.locator('nav#contents').isVisible() && !(await p.locator('button.menu').isVisible()), `${run}: 1280 px: contents fixed, no menu button`);
+  expect(await w('nav#contents') === 290, `${run}: contents column is ${await w('nav#contents')} px, expected 290`);
+  expect(await w('.hero') === 760 && await w('section.finance') === 760 && await w('#code .codebox') === 760, `${run}: 1280 px column is not 760 px for hero/finance/code`);
+  await p.setViewportSize({ width: 1100, height: 900 });
+  await p.waitForTimeout(400); // the drawer hides after its slide-out transition
+  expect(!(await p.locator('nav#contents').isVisible()) && await p.locator('button.menu').isVisible(), `${run}: 1100 px: contents drawer closed, menu button shown`);
+  expect(await w('.hero') === 800 && await w('section.finance') === 800, `${run}: 1100 px column is not 800 px`);
+  await p.setViewportSize({ width: 390, height: 800 });
+  expect(await p.locator('.hero').evaluate(e => getComputedStyle(e.parentElement).paddingLeft) === '18px', `${run}: phone padding is not 18 px`);
+}
+
+// No JavaScript: the page reads. Both code blocks visible, a citation reaches its source entry.
+async function noJsChecks(run, browserContext, url) {
+  const p = await browserContext.newPage();
+  await p.goto(url('alpha/index.html'));
+  expect(await p.locator('#code pre[data-lang="python"]').isVisible() && await p.locator('#code pre[data-lang="r"]').isVisible(), `${run}: no JS: both code blocks must be visible`);
+  expect(await p.locator('section.finance').isVisible() && await p.locator('section.measure').isVisible(), `${run}: no JS: finance and measure card visible`);
+  await Promise.all([p.waitForURL(u => u.hash === '#src-sakoe78'), p.locator('a.cite').first().click()]);
+  expect(await p.locator('section.lsrc li#src-sakoe78').isVisible(), `${run}: no JS: source entry not visible after the citation click`);
+  await p.close();
 }
 
 // Published lesson ids in course order, read from the source _course.md (not from the built pages).
@@ -182,8 +269,8 @@ async function navigation(run, p, url, ids) {
     await clickTo(p, '.pager a.prev', expected[i]);
     await pager(i);
   }
-  await clickTo(p, '.bar a.brand', 'index.html');
-  expect(await count(p, '.modules') === 1, `${run}: brand link did not load the home`);
+  await clickTo(p, 'header.top a.logo', 'index.html');
+  expect(await count(p, '.modules') === 1, `${run}: logo link did not load the home`);
 }
 
 async function suite(label, dist, contentDir, smoke) {
@@ -200,11 +287,12 @@ async function suite(label, dist, contentDir, smoke) {
     let ctx = await context(run.name, { viewport: { width: 1280, height: 900 }, colorScheme: 'light' }, run.isLocal);
     let p = await ctx.newPage();
     if (smoke) await smokeChecks(run.name, p, run.url);
+    if (smoke) await layoutChecks(run.name, p, run.url);
     await navigation(run.name, p, run.url, ids);
 
     await p.goto(run.url('index.html'));
     expect(await theme(p) === null && await bodyBg(p) !== DARK_BG, `${run.name}: home does not start light`);
-    const button = p.locator('.bar button.theme');
+    const button = p.locator('header.top button.theme');
     expect(await button.count() === 1 && !!(await button.getAttribute('aria-label')), `${run.name}: theme button missing or has no aria-label`);
     await button.click();
     expect(await theme(p) === 'dark', `${run.name}: theme button did not set data-theme="dark"`);
@@ -216,13 +304,19 @@ async function suite(label, dist, contentDir, smoke) {
       if (smoke && run.http) {
         await p.screenshot({ path: path.join(out, 'smoke-lesson-dark.png'), fullPage: true });
       }
-      await p.locator('.bar button.theme').click();
+      await p.locator('header.top button.theme').click();
       expect(await theme(p) === 'light' && await stored(p) === 'light', `${run.name}: theme button did not switch back to light`);
       if (smoke && run.http) {
         await p.screenshot({ path: path.join(out, 'smoke-lesson-light.png'), fullPage: true });
       }
     }
     await ctx.close();
+
+    if (smoke) {
+      ctx = await context(run.name, { viewport: { width: 1280, height: 900 }, javaScriptEnabled: false }, run.isLocal);
+      await noJsChecks(run.name, ctx, run.url);
+      await ctx.close();
+    }
 
     // dark system preference with no stored choice: pages start dark
     ctx = await context(run.name, { viewport: { width: 1280, height: 900 }, colorScheme: 'dark' }, run.isLocal);

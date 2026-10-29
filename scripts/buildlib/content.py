@@ -99,6 +99,7 @@ class Block:
     title: str
     id: str  # fixed blocks: one-line, in-finance, measure-card, code, common-mistake. Sections: heading slug
     tokens: list
+    title_tok: object = None  # sections: the inline token of the '##' heading (rendered by the page, so math and links work)
 
 
 @dataclass
@@ -285,7 +286,10 @@ def load_lesson(path, entry, md, numbers, published, content, sources, errors):
     blocks = split_blocks(tokens, path, errors)
     lesson = Lesson(entry, path, meta, blocks)
     for b in blocks:
-        check_prose(b.title, path, errors, f"heading {b.title}")
+        if b.title_tok is None:
+            check_prose(b.title, path, errors, f"heading {b.title}")
+        else:
+            check_title(b, lesson, published, errors)
         check_tokens(b, lesson, published, content, sources, errors)
         if b.kind == "code":
             collect_code(b, lesson, errors)
@@ -303,8 +307,26 @@ def slug(text):
     return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-") or "section"
 
 
+def inline_text(tok):
+    """The plain text of an inline token (text and code, no math): what a heading id is made from."""
+    return "".join(c.content for c in walk_inline(tok.children) if c.type in ("text", "code_inline"))
+
+
 def heading_text(toks, i):
-    return "".join(c.content for c in walk_inline(toks[i + 1].children) if c.type in ("text", "code_inline"))
+    return inline_text(toks[i + 1])
+
+
+def check_title(block, lesson, published, errors):
+    """A '## ' section title is inline Markdown: prose rules on its text, math collected, links checked."""
+    for c in walk_inline(block.title_tok.children):
+        if c.type == "text":
+            check_prose(c.content, lesson.path, errors, f"heading {block.title}")
+        elif c.type in MATH:
+            lesson.math.append(c)
+        elif c.type == "link_open":
+            check_link(c, lesson, published, errors)
+        elif c.type == "tsc_cite":
+            errors.add(lesson.path, f"heading {block.title!r}: a citation does not belong in a heading")
 
 
 def heading_ids(blocks, path, errors):
@@ -326,7 +348,7 @@ def heading_ids(blocks, path, errors):
 
     for b in blocks:
         if b.kind == "section":
-            b.id = unique(b.title)
+            b.id = unique(inline_text(b.title_tok))
         for i, tok in enumerate(b.tokens):
             if tok.type == "heading_open":
                 tok.attrSet("id", unique(heading_text(b.tokens, i)))
@@ -341,6 +363,7 @@ def split_blocks(tokens, path, errors):
         tok = tokens[i]
         if tok.type == "heading_open" and tok.tag == "h2" and tok.level == 0:
             name = tokens[i + 1].content.strip()
+            title_tok = tokens[i + 1]
             i += 3
             if name in FIXED:
                 kind, bid = FIXED[name]
@@ -360,7 +383,7 @@ def split_blocks(tokens, path, errors):
                                  "a validity example is a content section with its own title")
                 blocks.append(Block("_skip", name, "", []))
             else:
-                blocks.append(Block("section", name, "", []))
+                blocks.append(Block("section", name, "", [], title_tok))
             continue
         if tok.type == "heading_open" and tok.tag == "h1":
             errors.add(path, "'# ' headings are not allowed in a lesson (the title comes from the front matter)")

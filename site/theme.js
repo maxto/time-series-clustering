@@ -4,6 +4,7 @@
 (function () {
   var KEY = 'tsc:theme';
   var root = document.documentElement;
+  root.classList.add('js'); // lets the CSS tell a page with scripts from one without
   var system = window.matchMedia('(prefers-color-scheme: dark)');
   try {
     var saved = localStorage.getItem(KEY);
