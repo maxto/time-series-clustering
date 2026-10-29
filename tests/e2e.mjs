@@ -556,6 +556,139 @@ async function contentBehaviour(run, p, url, lessons) {
   }
 }
 
+// --- Task 8: search. Expected values come from the design (4.1) and tests/fixtures/smoke. ---
+const results = p => p.locator('#results');
+const resultsOpen = p => results(p).isVisible();
+async function searchChecks(run, p, url) {
+  await p.setViewportSize({ width: 1280, height: 900 });
+  await p.goto(url('alpha/index.html'));
+  const q = p.locator('#q');
+  const focusedQ = () => p.evaluate(() => document.activeElement === document.getElementById('q'));
+  await p.keyboard.press('/');
+  expect(await focusedQ(), `${run}: search: "/" did not focus #q`);
+  expect(await q.inputValue() === '', `${run}: search: the "/" shortcut left a character in #q`);
+  await p.keyboard.press('/');
+  expect(await q.inputValue() === '/', `${run}: search: "/" typed inside #q must stay as text`);
+  await q.fill('');
+  await p.evaluate(() => document.activeElement.blur());
+  // "/" does not steal from another field either: a textarea added by the test
+  await p.evaluate(() => { const t = document.createElement('textarea'); t.id = 'tmp-ta'; document.body.appendChild(t); t.focus(); });
+  await p.keyboard.press('/');
+  expect(await p.evaluate(() => document.activeElement.id === 'tmp-ta') && await p.locator('#tmp-ta').inputValue() === '/', `${run}: search: "/" in a textarea must stay in the textarea`);
+  await p.evaluate(() => document.getElementById('tmp-ta').remove());
+
+  // type, results replace the page, the match is marked, the count is a polite live region
+  await jump(p, 300);
+  const y0 = await p.evaluate(() => window.pageYOffset);
+  await q.click();
+  await q.fill('second');
+  await p.waitForTimeout(200);
+  expect(await resultsOpen(p) && !(await p.locator('main').isVisible()), `${run}: search: results did not replace the page`);
+  expect(await p.locator('#results [aria-live="polite"]').count() === 1, `${run}: search: no polite live region for the count`);
+  const first = p.locator('#results ul a').first();
+  expect((await first.getAttribute('href')) === '../alpha/index.html#a-second-section', `${run}: search: first result href ${await first.getAttribute('href')}`);
+  expect(((await first.locator('mark').first().textContent()) || '').toLowerCase() === 'second', `${run}: search: the match is not marked`);
+  expect((await first.innerText()).includes('A second section') && (await first.innerText()).includes('Alpha lesson'), `${run}: search: first result lacks lesson and section`);
+  // Escape: results gone, field cleared and focused, the page at its previous scroll position
+  await p.keyboard.press('Escape');
+  await p.waitForTimeout(100);
+  expect(!(await resultsOpen(p)) && await p.locator('main').isVisible(), `${run}: search: Escape did not close the results`);
+  expect(await focusedQ() && await q.inputValue() === '', `${run}: search: after Escape the field must be empty and focused`);
+  expect(Math.abs(await p.evaluate(() => window.pageYOffset) - y0) <= 2, `${run}: search: scroll position not restored`);
+  // Enter goes to the first result
+  await q.fill('second');
+  await Promise.all([p.waitForURL(u => u.href.endsWith('alpha/index.html#a-second-section')), q.press('Enter')]);
+  expect(!(await resultsOpen(p)), `${run}: search: results still open after Enter`);
+  // a planned lesson is listed as coming
+  await q.fill('beta');
+  expect((await results(p).innerText()).toLowerCase().includes('coming'), `${run}: search: planned lesson not shown as coming`);
+  expect(await p.locator('#results ul a').first().getAttribute('href') === '../index.html#lesson-beta', `${run}: search: planned lesson href`);
+  await q.fill('');
+  expect(!(await resultsOpen(p)), `${run}: search: emptying the field must close the results`);
+  // no match
+  await q.fill('zzzqqq');
+  expect((await results(p).innerText()).includes('No results'), `${run}: search: no "No results" message`);
+  await q.fill('x = 1');
+  expect(await p.locator('#results ul a').count() === 0, `${run}: search: code block text must not be indexed`);
+  await q.fill('');
+  // a map result goes to the home and opens its card
+  await q.fill('dtw');
+  const map = p.locator('#results ul a[href$="index.html#item-dtw"]');
+  expect(await map.count() === 1, `${run}: search: no map result for DTW`);
+  await Promise.all([p.waitForURL(u => u.href.endsWith('index.html#item-dtw')), map.click()]);
+  await p.waitForTimeout(200);
+  expect(await p.locator('details#item-dtw').evaluate(d => d.open), `${run}: search: the map result did not open its card`);
+  expect(!(await resultsOpen(p)), `${run}: search: results still open on the home`);
+  // on the home too: a map result opens a card that was closed
+  await p.locator('details#item-dtw summary').click();
+  await q.fill('euclid');
+  await p.locator('#results ul a[href$="#item-euclidean"]').click();
+  await p.waitForTimeout(200);
+  expect(await p.locator('details#item-euclidean').evaluate(d => d.open), `${run}: search: on the home the map result did not open its card`);
+  // loading the home with the hash opens the card (first load, no click)
+  await p.goto(url('index.html') + '#item-correlation');
+  await p.waitForTimeout(200);
+  expect(await p.locator('details#item-correlation').evaluate(d => d.open), `${run}: search: the hash did not open the card on load`);
+
+  // contrast of the result rows, both themes
+  for (const mode of ['light', 'dark']) {
+    await p.goto(url('alpha/index.html'));
+    await p.evaluate(m => { document.documentElement.dataset.theme = m; }, mode);
+    await q.fill('second');
+    for (const sel of ['#results ul a .t', '#results ul a .sec', '#results ul a .snip', '#results ul a mark', '#results .count']) {
+      const c = await textContrast(p, sel);
+      expect(c >= 4.5, `${run}: search: ${mode}: ${sel} contrast ${c.toFixed(2)} below 4.5`);
+    }
+    await q.fill('beta');
+    const c = await textContrast(p, '#results ul a .kind');
+    expect(c >= 4.5, `${run}: search: ${mode}: coming label contrast ${c.toFixed(2)}`);
+    await q.fill('');
+  }
+  await p.evaluate(() => { delete document.documentElement.dataset.theme; });
+
+  // phone: the drawer is open, "/" moves to the field, Escape closes only the results, then the drawer
+  await p.setViewportSize({ width: 375, height: 800 });
+  await p.goto(url('alpha/index.html'));
+  const menu = p.locator('header.top button.menu');
+  await menu.click();
+  await p.waitForTimeout(400);
+  await p.keyboard.press('/');
+  expect(await focusedQ(), `${run}: search: 375 px: "/" with the drawer open did not focus #q`);
+  await q.fill('second');
+  await p.waitForTimeout(200);
+  expect(await resultsOpen(p) && await results(p).evaluate(r => { const b = r.getBoundingClientRect(); const e = document.elementFromPoint(b.left + b.width / 2, b.top + 80); return r.contains(e); }),
+    `${run}: search: 375 px: results hidden under the drawer`);
+  await p.keyboard.press('Escape');
+  await p.waitForTimeout(400);
+  expect(!(await resultsOpen(p)) && await menu.getAttribute('aria-expanded') === 'true' && await p.locator('nav#contents').isVisible(), `${run}: search: 375 px: first Escape must close only the results`);
+  await p.keyboard.press('Escape');
+  await p.waitForTimeout(400);
+  expect(await menu.getAttribute('aria-expanded') === 'false', `${run}: search: 375 px: second Escape did not close the drawer`);
+  expect(await p.evaluate(() => document.activeElement === document.querySelector('header.top button.menu')), `${run}: search: 375 px: focus did not return to the menu button`);
+  await p.setViewportSize({ width: 1280, height: 900 });
+}
+
+// Preview build: a draft map item carries a visible "draft" label in the results, readable in both themes.
+async function previewSearchChecks(run, p, url) {
+  await p.setViewportSize({ width: 1280, height: 900 });
+  await p.goto(url('index.html'));
+  const draftTitle = await p.evaluate(() => (window.TSC_SEARCH.filter(e => e.kind === 'map' && e.draft)[0] || {}).title || '');
+  expect(draftTitle !== '', `${run}: search: the preview index has no draft map item`);
+  if (!draftTitle) return;
+  for (const mode of ['light', 'dark']) {
+    await p.evaluate(m => { document.documentElement.dataset.theme = m; }, mode);
+    await p.locator('#q').fill(draftTitle);
+    const row = p.locator('#results ul a', { hasText: draftTitle }).first();
+    expect((await row.locator('.draft').count()) >= 1 && await row.locator('.draft').first().isVisible(), `${run}: search: ${mode}: no visible draft label on "${draftTitle}"`);
+    if (await row.locator('.draft').count()) {
+      const c = await textContrast(p, '#results ul a .draft');
+      expect(c >= 4.5, `${run}: search: ${mode}: draft label contrast ${c.toFixed(2)}`);
+    }
+    await p.locator('#q').fill('');
+  }
+  await p.evaluate(() => { delete document.documentElement.dataset.theme; });
+}
+
 // No JavaScript: the page reads. Both code blocks visible, a citation reaches its source entry.
 async function noJsChecks(run, browserContext, url) {
   const p = await browserContext.newPage();
@@ -642,7 +775,8 @@ async function suite(label, dist, contentDir, smoke) {
       await codeChecks(run.name, p, run.url, run.http);
       await mapChecks(run.name, p, run.url);
       await sourcesChecks(run.name, p, run.url);
-    } else await contentBehaviour(run.name, p, run.url, lessons);
+      await searchChecks(run.name, p, run.url);
+    } else { await contentBehaviour(run.name, p, run.url, lessons); await previewSearchChecks(run.name, p, run.url); }
     await navigation(run.name, p, run.url, ids);
 
     await p.goto(run.url('index.html'));

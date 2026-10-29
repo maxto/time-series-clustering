@@ -529,3 +529,37 @@ def test_section_title_renders_inline_math_and_code_with_slug_id(content):
     m = re.search(r'<section class="content" id="window-and-dtw"><h2>(.*?)</h2>', out, re.S)
     assert m, "section id is not 'window-and-dtw'"
     assert 'class="katex"' in m.group(1) and "<code>dtw</code>" in m.group(1) and "$" not in m.group(1)
+
+
+# ---- Task 8: the search index ----
+
+def search_index(dist):
+    text = (dist / "assets" / "search-index.js").read_text()
+    prefix = "window.TSC_SEARCH="
+    assert text.startswith(prefix) and text.rstrip().endswith(";")
+    return json.loads(text[len(prefix):].rstrip().rstrip(";"))
+
+
+def test_search_index_of_the_smoke_course(content, tmp_path):
+    r = build(content)
+    assert r.returncode == 0, r.stdout
+    index = search_index(tmp_path / "dist")
+    by_href = {e["href"]: e for e in index}
+    # a lesson section, href relative to the site root
+    second = by_href["alpha/index.html#a-second-section"]
+    assert (second["kind"], second["title"], second["section"]) == ("lesson", "Alpha lesson", "A second section")
+    assert "A second content section" in second["text"]
+    # a planned lesson
+    beta = by_href["index.html#lesson-beta"]
+    assert (beta["kind"], beta["title"]) == ("planned", "Beta, not written yet")
+    # every smoke map item (Euclidean, Correlation, DTW and the others in _map.toml)
+    item_names = set(re.findall(r'\[\[branch\.family\.item\]\]\nname = "([^"]+)"', (SMOKE / "_map.toml").read_text()))
+    assert len(item_names) >= 5
+    mapped = {e["title"] for e in index if e["kind"] == "map"}
+    assert item_names <= mapped and {"Euclidean", "Correlation", "DTW"} <= mapped
+    assert all(e["href"].startswith("index.html#item-") for e in index if e["kind"] == "map")
+    # nothing from code fences, math source or figure captions
+    everything = " ".join(e["text"] + " " + e["section"] for e in index)
+    assert "x = 1" not in everything and "not a section" not in everything
+    assert "\\sqrt" not in everything and "hand-made figure" not in everything
+    assert "cat(1)" not in everything

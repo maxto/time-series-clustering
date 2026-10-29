@@ -8,7 +8,7 @@ reports every problem as one line "<file>: <message>", exit 1. When all is valid
   DIST/index.html            home: hero, map of the field, sector cards, lesson index (planned lessons "coming")
   DIST/<id>/index.html       one page per published lesson
   DIST/sources/index.html    every registered source with its links and where it is cited
-  DIST/assets/               theme.css, theme.js, course.js, map.js, Geist fonts, KaTeX css and fonts
+  DIST/assets/               theme.css, theme.js, course.js, map.js, search-index.js (generated), Geist fonts, KaTeX css and fonts
   DIR/figures/<name>.preview.svg   light preview of each figure for GitHub (default content/
                              only, or with --previews)
 Two modes. The release build (default, DIST defaults to dist/) fails on every map item or sector fit
@@ -31,6 +31,7 @@ from buildlib.atlas import load_atlas  # noqa: E402
 from buildlib.cite import check_reviews, cited_sources, load_reviews, load_sources  # noqa: E402
 from buildlib.content import Errors, esc, load_course, load_lessons, markdown, show  # noqa: E402
 from buildlib.katex import render_math  # noqa: E402
+from buildlib.search import build_index, index_script  # noqa: E402
 from buildlib.pages import (contents_nav, fill, head_meta, lessons_section, lesson_page, map_section, sectors_section,  # noqa: E402
                             sources_page, top_bar)
 
@@ -189,6 +190,7 @@ def main():
         (dist / lesson.entry.id / "index.html").write_text(page)
     (dist / "index.html").write_text(home_page(
         course, (SITE / "home.html").read_text(), figures.get("overview"), atlas, sources, finance_ids, mode))
+    (dist / "assets" / "search-index.js").write_text(index_script(build_index(course, lessons, atlas)))
     (dist / "sources").mkdir()
     in_map = {r.key for it in atlas.items() for r in it.all_refs()} | {r.key for ft in atlas.fits() for r in ft.sources} if atlas else set()
     (dist / "sources" / "index.html").write_text(sources_page(

@@ -83,6 +83,129 @@
     });
   }
 
+  // ---- search: results replace the page, as the 'search' layer. Index: window.TSC_SEARCH (assets/search-index.js) ----
+  var q = doc.getElementById('q');
+  var resultsEl = doc.getElementById('results');
+  var index = window.TSC_SEARCH;
+  if (q && resultsEl && index) {
+    var root = doc.documentElement.dataset.root || '';
+    var countEl = resultsEl.querySelector('.count');
+    var listEl = resultsEl.querySelector('ul');
+    var savedY = 0;
+    var MAX = 50, SNIP = 150;
+    var KIND = { map: 'Map', planned: 'Coming', lesson: '' };
+    var at = function (hay, needle) { return hay.toLowerCase().indexOf(needle); };
+    var span = function (cls, parent) { var n = doc.createElement('span'); n.className = cls; if (parent) parent.appendChild(n); return n; };
+    // text with the match around [i, i + len) marked
+    function marked(parent, text, i, len) {
+      if (i < 0) { parent.appendChild(doc.createTextNode(text)); return; }
+      parent.appendChild(doc.createTextNode(text.slice(0, i)));
+      var m = doc.createElement('mark'); m.textContent = text.slice(i, i + len); parent.appendChild(m);
+      parent.appendChild(doc.createTextNode(text.slice(i + len)));
+    }
+    // about SNIP characters of the text around the match, cut at word boundaries
+    function snippet(parent, text, i, len) {
+      if (!text) return;
+      var from = 0, to = Math.min(text.length, SNIP);
+      if (i > SNIP - len - 20) { from = Math.max(0, i - 50); to = Math.min(text.length, from + SNIP); }
+      if (from > 0) { var sp = text.indexOf(' ', from); if (sp >= 0 && sp < i) from = sp + 1; }
+      if (to < text.length) { var sb = text.lastIndexOf(' ', to); if (sb > i + len) to = sb; }
+      if (from > 0) parent.appendChild(doc.createTextNode('\u2026 '));
+      marked(parent, text.slice(from, to), i >= from && i + len <= to ? i - from : -1, len);
+      if (to < text.length) parent.appendChild(doc.createTextNode(' \u2026'));
+    }
+    // title first, then section, then text; ties keep the course order of the index
+    function find(query) {
+      var needle = query.toLowerCase(), hits = [];
+      index.forEach(function (e, n) {
+        // a section of a lesson is not found by the lesson title alone: the lesson entry itself covers that
+        var byTitle = at(e.title, needle) >= 0 && !(e.kind === 'lesson' && e.section);
+        var rank = byTitle ? 0 : at(e.section, needle) >= 0 ? 1 : at(e.text, needle) >= 0 ? 2 : -1;
+        if (rank >= 0) hits.push({ e: e, rank: rank, n: n });
+      });
+      hits.sort(function (a, b) { return a.rank - b.rank || a.n - b.n; });
+      return hits;
+    }
+    function row(hit, query) {
+      var e = hit.e, li = doc.createElement('li'), a = doc.createElement('a');
+      a.href = root + e.href;
+      var t = span('t', a);
+      marked(t, e.title, at(e.title, query.toLowerCase()), query.length);
+      if (e.draft) { var d = span('draft', a); d.textContent = 'draft'; }
+      if (KIND[e.kind]) { var k = span('kind', a); k.textContent = KIND[e.kind]; }
+      if (e.section && e.kind !== 'planned') { var sec = span('sec', a); marked(sec, e.section, at(e.section, query.toLowerCase()), query.length); }
+      if (e.text) { var sn = span('snip', a); snippet(sn, e.text, at(e.text, query.toLowerCase()), query.length); }
+      li.appendChild(a);
+      return li;
+    }
+    function show(query) {
+      var hits = find(query);
+      while (listEl.firstChild) listEl.removeChild(listEl.firstChild);
+      hits.slice(0, MAX).forEach(function (h) { listEl.appendChild(row(h, query)); });
+      var n = hits.length;
+      countEl.textContent = n === 0 ? 'No results for “' + query + '”' : n + (n === 1 ? ' result' : ' results') + (n > MAX ? ', first ' + MAX + ' shown' : '');
+    }
+    function closeResults(opts) { TSC.layers.close('search', opts); }
+    function openResults() {
+      if (TSC.layers.has('search')) return;
+      savedY = window.pageYOffset;
+      doc.body.classList.add('searching');
+      resultsEl.hidden = false;
+      TSC.layers.open('search', resultsEl, q, { onClose: function () {
+        doc.body.classList.remove('searching');
+        resultsEl.hidden = true;
+        q.value = '';
+        window.scrollTo({ top: savedY, behavior: 'instant' });
+      } });
+    }
+    q.addEventListener('input', function () {
+      var query = q.value.trim();
+      if (!query) { closeResults({ restore: false }); return; }
+      openResults();
+      show(query);
+    });
+    // a result was chosen: leave the results (and the drawer under them) without moving focus, then the link works
+    function leave() {
+      closeResults({ restore: false });
+      TSC.layers.close('contents', { restore: false });
+    }
+    resultsEl.addEventListener('click', function (e) {
+      if (e.target.closest && e.target.closest('a[href]')) leave();
+    });
+    q.form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var first = listEl.querySelector('a');
+      if (!first) return;
+      var href = first.href;
+      leave();
+      window.location.href = href;
+    });
+    q.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowDown' && TSC.layers.has('search')) {
+        var a = listEl.querySelector('a');
+        if (a) { e.preventDefault(); a.focus(); }
+      }
+    });
+    listEl.addEventListener('keydown', function (e) {
+      if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+      var links = Array.prototype.slice.call(listEl.querySelectorAll('a'));
+      var i = links.indexOf(doc.activeElement);
+      if (i < 0) return;
+      e.preventDefault();
+      if (e.key === 'ArrowDown') { if (links[i + 1]) links[i + 1].focus(); }
+      else if (i > 0) links[i - 1].focus(); else q.focus();
+    });
+    // "/" focuses the box unless the reader is typing somewhere
+    doc.addEventListener('keydown', function (e) {
+      if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return;
+      var a = doc.activeElement, tag = a && a.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (a && a.isContentEditable)) return;
+      e.preventDefault();
+      q.focus();
+      q.select();
+    });
+  }
+
   // ---- scroll-spy on the contents, reading progress ----
   var tocLinks = Array.prototype.slice.call(doc.querySelectorAll('#contents ol.toc a[href^="#"]'));
   var bar = doc.querySelector('header.top .progress > i');

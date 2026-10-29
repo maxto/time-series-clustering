@@ -125,6 +125,28 @@ body:has(.menu[aria-expanded="true"]) #contents { visibility: visible; transform
   main { --col: 760px; }
 }
 
+/* search results: replace the page (main is hidden while they are open) */
+#results { display: none; min-width: 0; }
+body.searching #results { display: block; }
+body.searching main { display: none; }
+.rin { --col: 800px; --pad: 28px; max-width: calc(var(--col) + 2 * var(--pad)); margin: 0 auto; padding: 24px var(--pad) 60px; }
+#results .count { margin: 0 0 14px; font-size: 15px; color: var(--ink-2); }
+#results ul { list-style: none; margin: 0; padding: 0; }
+#results li { border-top: 1px solid var(--rule); }
+#results li:last-child { border-bottom: 1px solid var(--rule); }
+#results a { display: block; padding: 12px 10px; border-radius: 8px; color: var(--ink); text-decoration: none; line-height: 1.4; }
+#results a:hover { background: var(--chip); }
+#results .t { font-weight: 600; font-size: 17px; }
+#results .sec, #results .kind { margin-left: 8px; font-size: 14px; color: var(--ink-2); }
+#results .kind { border: 1px solid var(--rule); border-radius: 6px; padding: 0 6px; font-size: 13px; }
+#results .snip { display: block; margin-top: 3px; font-size: 15px; color: var(--ink-2); line-height: 1.45; }
+#results mark { background: var(--accent-soft); color: var(--ink); border-radius: 3px; padding: 0 1px; }
+@media (min-width: 1180px) { .rin { --col: 760px; } }
+@media (max-width: 1179.98px) {
+  #results { position: fixed; inset: 57px 0 0 0; z-index: 60; overflow-y: auto; background: var(--page); }
+}
+@media (max-width: 600px) { .rin { --pad: 18px; } }
+
 /* without scripts the drawer cannot open: show the contents as a static block after the page, no menu button */
 @media (max-width: 1179.98px) {
   html:not(.js) .menu, html:not(.js) .scrim { display: none; }
