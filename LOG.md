@@ -1,5 +1,71 @@
 # LOG — time-series-clustering
 
+## 2026-10-30 10:55 CET: first pass of all 15 lessons
+
+Thirteen lesson files written by four subagents against the design doc, with `dtw` as the
+sample. All 15 are `published` and drafts in the preview. Verified: pytest 163 passed, `npm test`
+e2e ok, `npm run preview` 15 of 15. Lessons were not read through by Claude yet, beyond scans for
+the format rules. The DTW two-group cut equals `hour_group` (computed with the reference code).
+
+Done by Claude: Epps (1979) removed from the limits of `preprocessing` and `lock-step`, because
+the rule asks for a source read and it was not. Two bugs surfaced with the full content: inline code
+in the finance block at 9.55:1 under the 10:1 rule (background changed to `--surface`), and draft
+lessons not marked in the search results (now marked, the e2e draft check covers it).
+
+Approved by the owner: commit now, move the research into `docs/research/`, then the owner checks a
+couple of lessons and Codex reviews. New, more varied graphics to come after the review. The report
+stayed in Italian: to translate or keep out of the public history (open, in the follow-ups file).
+
+## 2026-10-30 10:32 CET: pipeline course, card format, first pass started
+
+Done, uncommitted on top of c0e23f6. Verified: pytest 163 passed, `npm test` e2e ok,
+before the first pass. Screenshots of the home and of `dtw` checked by eye.
+
+Decisions, all by the owner unless marked:
+
+- Approved. The course is a simple, operational mini-course, not a treatise, for data
+  scientists and technical practitioners, with technical and academic language. Rejects
+  the concept-first narrative lessons of the redesign. Replaces the pilot and redesign
+  lesson plans from Task 5 of checkpoint 2 on: that plan is superseded, its Tasks 5 and 6
+  will not run as written.
+- Approved. Agile passes: a base version of everything, then back through the lessons one
+  at a time. Rejects building each lesson to a finished level before the next.
+- Approved. Lessons may be drafts in a preview build, with a banner, and the release build
+  refuses them. Rejects the previous rule "Lessons are not covered by the exception". The
+  second-model review and the records move to a later pass, before any release.
+- Approved. No code in the lessons until the last pass, and no placeholder: `## Code` and
+  the pointers to reference code are gone, the code labs left the course list. A first
+  "Coming soon" note was built and then removed on the owner's word.
+- Approved. All 13 content lessons stay, the owner rejected Claude's proposal to cut to 6.
+- Approved. References are light: `Author (year)`, an exact link when there is one, the
+  name otherwise. Only whoever developed the method or ran the study. Rejects the
+  `[@key, locator]` citations in lessons, surveys cited for a general claim, and any
+  download around a paywall or a bot check. (Claude tried a spoofed user agent on
+  ScienceDirect, the harness denied it, and it was not retried.)
+- Approved. Finance blocks use academic terms and list `Empirical applications` (an abstract
+  is enough) and `Limitations in financial time series` (each limit stated by a source read,
+  no inference). They never list what was not found. Where a method does not fit a question
+  they name several alternatives, not one. Rejects the "possible use, stated as hypothesis"
+  example on stock reactions to earnings, which no study supported.
+- Approved. Pipeline Define, Measure, Group, Validate plus Recipes as the structure of the home
+  and of `_course.md`, with a fixed card per measure. Rejects keeping the 13 lessons narrative
+  and reordered, and a single decision page.
+- Approved. Recommended validity indices out for now, to decide later.
+- Approved. The `Finance` tag in the contents and the home lesson list is removed: every lesson
+  has a finance block, so it distinguishes nothing.
+- Done (bug). On load the dark `In finance` chip looked selected and nothing was marked. The
+  first block is now marked in the contents and the chips, and the mark follows the scroll,
+  with a regression test that failed before the fix.
+- Done (Claude's call). The home no longer shows `overview.svg`, the connector lines and root box
+  are gone, the per-chip `draft` tags are hidden (the banner stays). The home's map section is now
+  "The pipeline", and `compare` is shown as `Measure`.
+
+Research: four strands on DTW in finance, report in `reports/Applicazioni DTW in finanza.md`.
+Reading level is stated per source, many are abstract only.
+
+Items moved: Task 5 and 6 of checkpoint 2, cancelled by the decisions above. "Sources" open item
+replaced by the references decision above. Connector line point closed.
+
 ## 2026-10-29 · Checkpoint 2 plan, Codex review, Tasks 1 to 4 built
 
 Owner decisions for checkpoint 2 (approved by the owner, recorded in the
