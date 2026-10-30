@@ -87,7 +87,7 @@ def home_page(course, template, overview, atlas, sources, build_mode="release", 
         atlas_html = (map_section(atlas, sources, by_id, "", build_mode == "preview", course.title, sectors)
                       + (sectors_section(atlas) if sectors else ""))
     return fill(template, {
-        "meta": head_meta(course.title, course.tagline, SITE_URL, "website", course.title),
+        "meta": head_meta(course.title, course.tagline, SITE_URL, "website", course.title, SITE_URL + "og.png"),
         "build": build_mode, "root": "",
         "top": top_bar("", course.title, REPO_URL, progress=False),
         "contents": contents_nav(course, "", current="home"),
@@ -118,6 +118,7 @@ def prepare_dist(dist, errors):
 
 def copy_assets(dist):
     assets = dist / "assets"
+    shutil.copyfile(SITE / "og.png", dist / "og.png")
     (assets / "fonts").mkdir(parents=True)
     (assets / "katex" / "fonts").mkdir(parents=True)
     for name in ("theme.css", "theme.js", "course.js", "map.js", "kernels.js", "live.js", "favicon.svg"):

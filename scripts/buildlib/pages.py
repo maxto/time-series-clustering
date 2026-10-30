@@ -33,10 +33,11 @@ def fill(template, values):
     return re.sub(r"\{\{(\w+)\}\}", lambda m: values[m.group(1)], template)
 
 
-def head_meta(title, description, url, og_type, site):
+def head_meta(title, description, url, og_type, site, image):
     tags = [("name", "description", description), ("property", "og:type", og_type), ("property", "og:site_name", site),
             ("property", "og:title", title), ("property", "og:description", description), ("property", "og:url", url),
-            ("property", "og:locale", "en_US"), ("name", "twitter:card", "summary")]
+            ("property", "og:image", image), ("property", "og:image:width", "1200"), ("property", "og:image:height", "630"),
+            ("property", "og:locale", "en_US"), ("name", "twitter:card", "summary_large_image")]
     return "\n".join([f"<title>{esc(title)}</title>", f'<link rel="canonical" href="{esc(url)}">',
                       *(f'<meta {k}="{v}" content="{esc(c)}">' for k, v, c in tags)])
 
@@ -196,7 +197,7 @@ def lesson_page(lesson, course, md, template, prev, nxt, sources, build_mode, si
     e, meta = lesson.entry, lesson.meta
     main, toc = lesson_main(lesson, course, md, prev, nxt, sources)
     return fill(template, {
-        "meta": head_meta(f"{meta['title']} · {course.title}", meta["lede"], f"{site_url}{e.id}/", "article", course.title),
+        "meta": head_meta(f"{meta['title']} · {course.title}", meta["lede"], f"{site_url}{e.id}/", "article", course.title, f"{site_url}og.png"),
         "build": build_mode, "root": "../",
         "top": top_bar("../", course.title, repo_url, progress=True),
         "contents": contents_nav(course, "../", current=e.id, toc=toc),
@@ -394,7 +395,7 @@ def sources_main(sources, cited, course, in_map):
 def sources_page(course, template, sources, cited, in_map, build_mode, site_url, repo_url):
     return fill(template, {
         "meta": head_meta(f"Sources · {course.title}", "Every work the course cites, with links and where it is cited.",
-                          f"{site_url}sources/", "website", course.title),
+                          f"{site_url}sources/", "website", course.title, f"{site_url}og.png"),
         "build": build_mode, "root": "../",
         "top": top_bar("../", course.title, repo_url, progress=False),
         "contents": contents_nav(course, "../", current="sources"),

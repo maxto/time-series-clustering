@@ -6,7 +6,8 @@
     "build": "uv run python scripts/build.py",
     "preview": "uv run python scripts/build.py --preview",
     "test": "node tests/e2e.mjs",
-    "shots": "node tests/shots.mjs"
+    "shots": "node tests/shots.mjs",
+    "og": "node scripts/og.mjs"
   },
   "devDependencies": {
     "geist": "^1.8.2",
