@@ -1,5 +1,13 @@
 # LOG — time-series-clustering
 
+## 2026-10-30 16:44 CET: pause after version 1
+
+Owner: close for now, commit and push, full clean, the checks come later. Done: the local notes commit
+and this one pushed to `master`, Codex and the bash pane cleaned. Reconciled in `HANDOFF.md`: Branches
+and Remote steps removed as done (here and in the entry below), the Ratanamahatana and Keogh year
+removed as done (entry "version 1 ready locally", corrected to 2005). `AGENTS.md`: the stale lines
+that said the Pages workflow is inactive and runs the release build now say it runs `--publish`.
+
 ## 2026-10-30 14:47 CET: version 1 online
 
 Owner's go-ahead in chat: no tag (checked, the other course has none), rename, Pages, repo details and
