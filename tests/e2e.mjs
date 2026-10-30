@@ -408,6 +408,19 @@ async function drawerChecks(run, p, url) {
 }
 
 // Scroll-spy on the contents and the reading progress bar (lesson alpha, 1280 x 600).
+// A section that lists options opens with a chooser, one link per option. A short list of steps has none.
+async function pickChecks(run, p, url) {
+  await p.goto(url('internal-indices/index.html'));
+  const names = await p.locator('nav.picks a').allTextContents();
+  expect(names.join('|') === 'Silhouette|Dunn|Calinski-Harabasz|Davies-Bouldin|Xie-Beni', `${run}: chooser of the internal indices: ${names.join('|')}`);
+  await p.locator('nav.picks a', { hasText: 'Davies-Bouldin' }).click();
+  await p.waitForFunction(() => { const t = document.querySelector(':target'); return t && t.textContent.startsWith('Davies-Bouldin') && Math.abs(t.getBoundingClientRect().top - 80) < 12; });
+  await p.goto(url('match-the-algorithm/index.html'));
+  expect(await p.locator('nav.picks a').count() === 13, `${run}: chooser of the algorithms is not 13 links`);
+  await p.goto(url('recipe-energy/index.html'));
+  expect(await p.locator('nav.picks').count() === 0, `${run}: a recipe has no chooser`);
+}
+
 async function spyChecks(run, p, url) {
   await p.setViewportSize({ width: 1280, height: 600 });
   await p.goto(url('alpha/index.html'));
@@ -924,7 +937,7 @@ async function widthChecks(run, p, url, pages) {
             return need > m.clientWidth + 1 ? [`${(m.querySelector('annotation')?.textContent ?? '').trim().slice(0, 40)} ${need}>${m.clientWidth}`] : [];
           }),
           // inline boxes report clientWidth 0, so only boxes that lay out their content are compared
-          clipped: [...document.querySelectorAll('summary.chip, .sector, a.q')].filter(e => getComputedStyle(e).display !== 'inline' && e.scrollWidth > e.clientWidth)
+          clipped: [...document.querySelectorAll('summary.chip, .sector, a.q, .picks a')].filter(e => getComputedStyle(e).display !== 'inline' && e.scrollWidth > e.clientWidth)
             .map(e => `${e.tagName.toLowerCase()}.${e.className} "${e.textContent.trim().slice(0, 24)}" ${e.scrollWidth}>${e.clientWidth}`),
           // static figures are drawn in viewBox units: a label must not be blown up past 16 px on screen
           // (the mockup's figure labels are 12.5 to 13 px, design 6: labels keep their size)
@@ -1350,7 +1363,7 @@ async function suite(label, dist, contentDir, smoke) {
       await mapChecks(run.name, p, run.url);
       await sourcesChecks(run.name, p, run.url);
       await searchChecks(run.name, p, run.url);
-    } else { await contentBehaviour(run.name, p, run.url, lessons); await previewSearchChecks(run.name, p, run.url); }
+    } else { await contentBehaviour(run.name, p, run.url, lessons); await previewSearchChecks(run.name, p, run.url); await pickChecks(run.name, p, run.url); }
     await navigation(run.name, p, run.url, ids);
     if (!run.http) {
       const pages = ['index.html', 'sources/index.html', ...lessons];

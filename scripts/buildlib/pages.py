@@ -151,6 +151,14 @@ def code_section(block, lesson, md):
             f'{libs_line(lesson.meta)}</section>\n')
 
 
+def picks_nav(block):
+    """The chooser of a section that lists options: one link per option, none when the section has no list."""
+    if not block.picks:
+        return ""
+    links = "".join(f'<a href="#{pid}">{esc(label)}</a>' for pid, label in block.picks)
+    return f'<nav class="picks" aria-label="Options in this section">{links}</nav>\n'
+
+
 def lesson_main(lesson, course, md, prev, nxt, sources):
     """The inside of main#main, and the (id, label, kind) of every block the contents and jump links point to."""
     e, meta = lesson.entry, lesson.meta
@@ -170,7 +178,7 @@ def lesson_main(lesson, course, md, prev, nxt, sources):
     parts.append(f'<div class="oneline" id="one-line">{render(md, by_kind["oneline"].tokens)}</div>\n')
     for b in lesson.blocks:
         if b.kind == "section":
-            parts.append(f'<section class="content" id="{b.id}"><h2>{render_inline(md, b.title_tok)}</h2>\n{render(md, b.tokens)}</section>\n')
+            parts.append(f'<section class="content" id="{b.id}"><h2>{render_inline(md, b.title_tok)}</h2>\n{picks_nav(b)}{render(md, b.tokens)}</section>\n')
         elif b.kind == "finance":
             parts.append(f'<section class="finance" id="in-finance"><h2>In finance</h2>\n{render(md, b.tokens)}</section>\n')
         elif b.kind == "measure":

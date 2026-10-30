@@ -28,6 +28,7 @@ FIXED = {"One line": ("oneline", "one-line"), "In finance": ("finance", "in-fina
          "Common mistake": ("mistake", "common-mistake")}
 KIND_ORDER = ("oneline", "section", "finance", "measure", "code", "mistake")
 BLOCK_IDS = tuple(bid for _, bid in FIXED.values())
+PICKS_MIN = 4  # a section with this many bold-led paragraphs lists options: it gets a chooser
 ONE_PARAGRAPH = ("oneline", "mistake")
 FIGURE_KINDS = ("section", "finance")
 CODE_LANGUAGES = ("python", "r")
@@ -183,6 +184,7 @@ class Block:
     id: str  # fixed blocks: one-line, in-finance, measure-card, code, common-mistake. Sections: heading slug
     tokens: list
     title_tok: object = None  # sections: the inline token of the '##' heading (rendered by the page, so math and links work)
+    picks: list = field(default_factory=list)  # sections: (id, label) of the options the section lists, for its chooser
 
 
 @dataclass
@@ -442,7 +444,29 @@ def heading_ids(blocks, path, errors):
         for i, tok in enumerate(b.tokens):
             if tok.type == "heading_open":
                 tok.attrSet("id", unique(heading_text(b.tokens, i)))
+        if b.kind == "section":
+            leads = [(i, label) for i in range(len(b.tokens)) if (label := lead_label(b.tokens, i))]
+            if len(leads) >= PICKS_MIN:
+                for i, label in leads:
+                    pid = unique(label)
+                    b.tokens[i].attrSet("id", pid)
+                    b.picks.append((pid, label))
     return ids
+
+
+def lead_label(tokens, i):
+    """The bold words opening the top-level paragraph at tokens[i], without their closing '.' or ':', or None."""
+    if tokens[i].type != "paragraph_open" or tokens[i].level != 0:
+        return None
+    children = [c for c in tokens[i + 1].children or [] if c.type != "text" or c.content]  # the parser opens with an empty text
+    if not children or children[0].type != "strong_open":
+        return None
+    words = []
+    for c in children[1:]:
+        if c.type == "strong_close":
+            return "".join(words).strip().rstrip(".:")
+        words.append(c.content if c.type in ("text", "code_inline") else "")
+    return None
 
 
 def split_blocks(tokens, path, errors):
