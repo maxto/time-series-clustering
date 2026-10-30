@@ -93,6 +93,10 @@ ignores = [{tag = "warp", cond = ""}, {tag = "length", cond = ""}]
 python = ""
 r = ""
 
+[[branch.family]]
+name = "Edit-based"
+lesson = "edit-based"
+
 [[branch.family.item]]
 name = "LCSS"
 does = "Longest common subsequence: counts matches within a threshold, gaps allowed."
@@ -130,6 +134,7 @@ r = ""
 
 [[branch.family]]
 name = "Kernel"
+lesson = "dtw"
 
 [[branch.family.item]]
 name = "GAK"

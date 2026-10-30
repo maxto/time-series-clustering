@@ -23,7 +23,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const out = path.join(root, 'tests', 'output');
 const PREFIX = '/time-series-clustering/';
 const SITE_URL = 'https://maxto.github.io/time-series-clustering/';
-const REPO_URL = 'https://github.com/maxto/Time-Series-Clustering';
+const REPO_URL = 'https://github.com/maxto/time-series-clustering';
 const DARK_BG = 'rgb(28, 32, 41)';
 const THEME_KEY = 'tsc:theme';
 const failures = [];
@@ -412,11 +412,11 @@ async function drawerChecks(run, p, url) {
 async function pickChecks(run, p, url) {
   await p.goto(url('internal-indices/index.html'));
   const names = await p.locator('nav.picks a').allTextContents();
-  expect(names.join('|') === 'Silhouette|Dunn|Calinski-Harabasz|Davies-Bouldin|Xie-Beni', `${run}: chooser of the internal indices: ${names.join('|')}`);
+  expect(names.join('|') === 'Silhouette|Dunn|Calinski-Harabasz|Davies-Bouldin|Xie-Beni|Ball-Hall|Ray-Turi|S_Dbw', `${run}: chooser of the internal indices: ${names.join('|')}`);
   await p.locator('nav.picks a', { hasText: 'Davies-Bouldin' }).click();
   await p.waitForFunction(() => { const t = document.querySelector(':target'); return t && t.textContent.startsWith('Davies-Bouldin') && Math.abs(t.getBoundingClientRect().top - 80) < 12; });
   await p.goto(url('match-the-algorithm/index.html'));
-  expect(await p.locator('nav.picks a').count() === 13, `${run}: chooser of the algorithms is not 13 links`);
+  expect(await p.locator('nav.picks a').count() === 14, `${run}: chooser of the algorithms is not 14 links`);
   await p.goto(url('recipe-energy/index.html'));
   expect(await p.locator('nav.picks').count() === 0, `${run}: a recipe has no chooser`);
 }
@@ -1427,6 +1427,20 @@ async function suite(label, dist, contentDir, smoke) {
 await suite('smoke', smokeDist, path.join(root, 'tests', 'fixtures', 'smoke'), true);
 if (fs.existsSync(path.join(root, 'content', '_course.md'))) await suite('content-preview', realDist, path.join(root, 'content'), false);
 else console.log('e2e: no content/_course.md yet, skipping the checks on the real build (smoke fixture checked)');
+
+// The publish build, the page the public gets: the home filters work without the sector question row.
+if (fs.existsSync(path.join(root, 'content', '_course.md'))) {
+  const publishDist = path.join(out, 'publish-dist');
+  execFileSync('uv', ['run', 'python', 'scripts/build.py', '--publish', '--dist', publishDist], { cwd: root, stdio: 'inherit' });
+  const pg = await browser.newPage();
+  await pg.goto('file://' + path.join(publishDist, 'index.html'));
+  const before = await pg.locator('#f-status').textContent();
+  await pg.locator('#f-ignore button').first().click();
+  const after = await pg.locator('#f-status').textContent();
+  expect(before.startsWith('Showing all') && !after.startsWith('Showing all'), `publish: the map filter did not react: ${after}`);
+  expect(await pg.locator('#f-question').count() === 0 && await pg.locator('#sectors').count() === 0, 'publish: sector examples on the home');
+  await pg.close();
+}
 
 await browser.close();
 if (failures.length) { console.error('FAIL\n' + failures.join('\n')); process.exit(1); }

@@ -76,7 +76,7 @@ def top_bar(root, course_title, repo_url, progress):
 def contents_nav(course, root, current=None, toc=""):
     """nav#contents: course links, then every module with its lessons. `toc` is the ol.toc under `current`."""
     links = [("Course home", f"{root}index.html", current == "home"), ("The pipeline", f"{root}index.html#map", False),
-             ("Examples by sector", f"{root}index.html#sectors", False),
+             *([("Examples by sector", f"{root}index.html#sectors", False)] if course.sectors else []),
              ("Sources", f"{root}sources/index.html", current == "sources")]
     out = ['<nav id="contents" aria-label="Course contents">'
            '<div class="dh"><strong>Contents</strong><button class="close" type="button" aria-label="Close contents">×</button></div>']
@@ -276,16 +276,14 @@ def item_card(it, family, sources, published, root):
         rows.append(tag_row("It ignores", it.ignores, IGNORE_LABELS, ""))
     else:
         rows.append(tag_row("It needs", it.needs, NEED_LABELS, ""))
-    for label, value in (("Python", it.python), ("R", it.r)):
-        if value:
-            rows.append(f'<div class="row"><dt>{label}</dt><dd><code>{esc(value)}</code></dd></div>')
     if family.lesson:
         e = published[family.lesson]
         rows.append('<div class="row"><dt>Lesson</dt><dd>' + (f'<a href="{root}{e.id}/index.html">{esc(e.title)}</a>' if e.status == "published"
                     else f'{esc(e.title)} <span class="coming">coming</span>') + "</dd></div>")
     parts.append(f'<dl>{"".join(rows)}</dl>')
-    refs = "".join(ref_line(r, sources, root) for r in it.all_refs()) or "<li>source pending</li>"
-    parts.append(f'<div class="srcs"><p class="lbl">Sources</p><ul>{refs}</ul></div>')
+    refs = "".join(ref_line(r, sources, root) for r in it.all_refs())
+    if refs:
+        parts.append(f'<div class="srcs"><p class="lbl">Sources</p><ul>{refs}</ul></div>')
     return f'<div class="card">{"".join(parts)}</div>'
 
 
@@ -293,7 +291,7 @@ def step_head(n, name, question):
     return f'<div class="br-head"><span class="step-n">{n}</span><div><b>{esc(name)}</b><span>{esc(question)}</span></div></div>'
 
 
-def map_section(atlas, sources, published, root, preview, course_title):
+def map_section(atlas, sources, published, root, preview, course_title, sectors=True):
     """`published` maps every course lesson id to its entry (planned ones too)."""
     banner = f'<div class="draft-banner" role="note">{draft_banner_text()}</div>' if preview else ""
     ignore = "".join(f'<button type="button" data-tag="{t}" aria-pressed="false">{IGNORE_LABELS[t]}</button>' for t in IGNORE_LABELS)
@@ -306,7 +304,7 @@ def map_section(atlas, sources, published, root, preview, course_title):
         f'<div class="mf-row"><span class="mf-lab">I want to ignore</span><div id="f-ignore" class="mf-chips">{ignore}</div></div>'
         '<div class="mf-row"><span class="mf-lab">My data</span><div class="mf-chips">'
         '<button type="button" id="f-matrix" aria-pressed="false">I only have a distance matrix</button></div></div>'
-        f'<div class="mf-row"><span class="mf-lab">My question</span><div id="f-question" class="mf-chips">{groups}</div></div>'
+        + (f'<div class="mf-row"><span class="mf-lab">My question</span><div id="f-question" class="mf-chips">{groups}</div></div>' if sectors else "") +
         f'<p id="f-status" class="mf-status" aria-live="polite">Showing all {len(atlas.items())} items.</p></div>')
     branches = []
     by_id = {b.id: b for b in atlas.branches}
@@ -322,7 +320,7 @@ def map_section(atlas, sources, published, root, preview, course_title):
                 link = f'<a class="fl" href="{root}{f.lesson}/index.html">Lesson</a>'
             lis = "".join(
                 f'<li class="item" data-item="{it.id}"><details id="item-{it.id}"><summary class="chip">{esc(it.name)}'
-                + (f'<span class="cond">{esc(it.cond)}</span>' if it.cond else "") + (DRAFT if not it.reviewed else "")
+                + (f'<span class="cond">{esc(it.cond)}</span>' if it.cond else "") + (DRAFT if preview and not it.reviewed else "")
                 + f"</summary>{item_card(it, f, sources, published, root)}</details></li>" for it in f.items)
             fams.append(f'<div class="family"><h3>{esc(f.name)}{link}</h3><ul>{lis}</ul></div>')
         branches.append(f'<div class="branch" id="step-{b.id}" data-branch="{b.id}">'

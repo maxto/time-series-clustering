@@ -889,3 +889,15 @@ def test_figure_markers(content, old, new, needle):
     assert result.returncode == 1
     errs = [ln for ln in result.stdout.splitlines() if "live-a.svg" in ln]
     assert len(errs) == 1 and needle in errs[0], result.stdout
+
+
+def test_publish_build_shows_no_draft_marks_no_code_and_no_sectors(tmp_path):
+    # the owner's first publication: the real course, nothing marked as a draft, no library code on the cards
+    out = tmp_path / "site"
+    r = subprocess.run([sys.executable, str(ROOT / "scripts" / "build.py"), "--publish", "--dist", str(out)],
+                       capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout
+    home, lesson = (out / "index.html").read_text(), (out / "dtw" / "index.html").read_text()
+    assert 'id="sectors"' not in home and "Examples by sector" not in lesson
+    assert "draft-banner" not in home and "draft-banner" not in lesson
+    assert "<dt>Python</dt>" not in home and "<dt>R</dt>" not in home and "source pending" not in home

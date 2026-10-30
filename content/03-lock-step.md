@@ -61,6 +61,8 @@ $$
 d_{\mathrm{Can}}(x, y) = \sum_{t=1}^{n} \frac{|x_t - y_t|}{|x_t| + |y_t|}
 $$
 
+For binary or categorical series, the Hamming distance ([Hamming, 1950](https://doi.org/10.1002/j.1538-7305.1950.tb00463.x)) counts the positions where the two series differ. DISSIM ([Frentzos, Gratsias and Theodoridis, 2007](https://doi.org/10.1109/ICDE.2007.367927)) integrates the distance between two series over time, which suits uneven sampling.
+
 - **Correlation distance**: one minus the Pearson correlation $\rho$, in the definition of `scipy.spatial.distance.correlation`.
 
 $$
@@ -119,7 +121,6 @@ Empirical applications:
 
 Limitations in financial time series:
 
-- **Volatility.** [Forbes and Rigobon (2002)](https://doi.org/10.1111/0022-1082.00494) show that correlation coefficients between stock markets are conditional on market volatility, and that heteroskedasticity biases tests of contagion based on them.
 - **Dimension.** Aggarwal, Hinneburg and Keim (2001) find that the meaning of proximity weakens as dimension grows. The result is for high dimensional data in general, not for financial series.
 
 ## Common mistake

@@ -52,7 +52,7 @@ $$
 
 It suits compact groups of similar spread. The criterion assumes convex and isotropic clusters and responds poorly to elongated ones, and in very high dimensions Euclidean distances inflate, so `scikit-learn` suggests reducing dimension first (general documentation, not specific to time series).
 
-**k-medoids** (partitioning around medoids, PAM, [Kaufman and Rousseeuw, 1990](https://doi.org/10.1002/9780470316801)). Needs a distance matrix. It searches $K$ series, the medoids, that minimise the sum of dissimilarities of every series to its nearest medoid. Because it sums dissimilarities and not squares, it is more robust than k-means, and every centre is a real series.
+**k-medoids** (partitioning around medoids, PAM, [Kaufman and Rousseeuw, 1990](https://doi.org/10.1002/9780470316801)). Needs a distance matrix. CLARA, from the same authors, runs PAM on samples of the data for large sets. PAM searches $K$ series, the medoids, that minimise the sum of dissimilarities of every series to its nearest medoid. Because it sums dissimilarities and not squares, it is more robust than k-means, and every centre is a real series.
 
 $$
 \min_{M \subset \{1, \dots, N\},\ |M| = K} \sum_{i=1}^{N} \min_{m \in M} d(x_i, x_m)
@@ -161,6 +161,8 @@ $$
 $$
 
 It suits cases where a learned representation is acceptable, as in the lesson on learned representations. The results reported by the authors are on their own benchmarks.
+
+**Robust continuous clustering** ([Shah and Koltun, 2017](https://doi.org/10.1073/pnas.1700770114)). Needs vectors, so series enter as features or embeddings. It optimises a smooth global objective with numerical methods, and the authors report high accuracy across domains and scaling to large datasets.
 
 ::: deep Two parameters called eps
 In DBSCAN, $\varepsilon$ is a radius on the distance. In SNN clustering, `eps` is a threshold on the number of shared neighbours, and the documentation notes it is different from the one in DBSCAN. A value tuned for one has no meaning for the other.

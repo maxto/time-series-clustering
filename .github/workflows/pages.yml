@@ -1,8 +1,6 @@
 # Build the course and publish dist/ to GitHub Pages on every push to master.
-# Inactive until the owner approves the push and the Pages activation.
-# The build step is the release build: it fails while any map item or sector fit lacks a review record
-# (by design, until the map is reviewed), and the upload below runs only when it succeeds, so a draft
-# or stale output is never published.
+# The build step is the publish build: no review gate, no draft marks (owner, 2026-10-30: first version
+# now, later versions raise the level). The upload below runs only when the build succeeds.
 # Needs only Python (uv) and Node (KaTeX, Geist): no R, no Chrome.
 name: Pages
 
@@ -37,7 +35,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: uv run python scripts/build.py
+      - run: uv run python scripts/build.py --publish
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

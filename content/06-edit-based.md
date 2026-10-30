@@ -157,11 +157,9 @@ Empirical applications:
 
 - **Exchange rates and stock indices.** [Karademir (2015)](https://ideas.repec.org/p/sek/iacpro/2804863.html) clusters G8, BRICS and Turkish markets with DTW and LCSS on daily data from 2005 to 2015, as a pre-processing step for the link between exchange rates and stock prices. The paper reports that Turkish exchange rate and stock price movements correspond more closely to those of Russia and China than to the other countries. It is a conference paper.
 - **Short-term trend retrieval.** [Udagawa (2018)](https://personales.upv.es/thinkmind/ALLDATA/ALLDATA_2018/alldata_2018_2_10_80026.html) revises the longest common subsequence algorithm to retrieve partially matching numerical sequences, with the position of the price relative to its 5-day and 25-day moving averages. Tests on daily Nikkei Stock Average data suggest that it helps to forecast short-term trends.
-- **Prediction intervals.** [Goldani (2025)](https://arxiv.org/abs/2507.16655) uses similarity measures to build confidence intervals around Ridge regression forecasts for 42 US mega cap companies. LCSS intervals cover about 95 percent of the actual values, as the standard deviation method does, but are much wider. TWED intervals are narrower and cover about 67 percent. The paper is a preprint.
 
 Limitations in financial time series:
 
-- **Threshold.** Goldani (2025), in a study on US stocks, describes LCSS as strongly dependent on the similarity threshold, with a zero-and-one notion of similarity that can lead to poor results. This is the author's description of the method, not a result of the study.
 - **Clustering accuracy.** On clustering benchmarks, LCSS and EDR performed poorly in all tests of Holder et al. (2023). The evidence is not specific to finance.
 - **Scale of the parameters.** The threshold, $g$ and $c$ are in the units of the series, and Holder et al. (2023) normalise all series for that reason. The evidence is from general benchmark data, not from financial series.
 - **Backtest overfitting.** The higher the number of configurations tried, the greater the probability that a backtest is overfit, and analysts rarely report that number ([Bailey et al., 2014](https://doi.org/10.1090/noti1105)). Threshold, penalties and number of clusters are all such configurations.

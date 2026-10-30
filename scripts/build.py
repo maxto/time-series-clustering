@@ -11,7 +11,8 @@ reports every problem as one line "<file>: <message>", exit 1. When all is valid
   DIST/assets/               theme.css, theme.js, course.js, map.js, search-index.js (generated), Geist fonts, KaTeX css and fonts
   DIR/figures/<name>.preview.svg   light preview of each figure for GitHub (default content/
                              only, or with --previews)
-Two modes. The release build (default, DIST defaults to dist/) fails on every lesson, citation, map
+Three modes. The publish build (--publish, DIST defaults to dist/) writes the version that goes online: no
+review gate, no draft marks, no sector examples. The release build (default, DIST defaults to dist/) fails on every lesson, citation, map
 item or sector fit without a current review record (one line each). The preview build (--preview, DIST
 defaults to preview/) allows them, marks the home and each draft lesson with a draft banner and never
 writes into dist/. Every page
@@ -37,7 +38,7 @@ from buildlib.pages import (contents_nav, fill, head_meta, lessons_section, less
                             sectors_section, sources_page, top_bar)
 
 SITE_URL = "https://maxto.github.io/time-series-clustering/"
-REPO_URL = "https://github.com/maxto/Time-Series-Clustering"  # the repo is not renamed yet
+REPO_URL = "https://github.com/maxto/time-series-clustering"
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SITE = ROOT / "site"
@@ -76,20 +77,21 @@ def setup_markdown(figures, live):
     return md
 
 
-def home_page(course, template, overview, atlas, sources, build_mode="release"):
+def home_page(course, template, overview, atlas, sources, build_mode="release", sectors=True):
     published = course.published()
     by_id = {e.id: e for e in course.entries}
     cta = (f'<p class="cta"><a class="start" href="{published[0].id}/index.html">Start with lesson 1</a></p>' if published else "")
     n = len(course.entries)
     atlas_html = ""
     if atlas:
-        atlas_html = (map_section(atlas, sources, by_id, "", build_mode == "preview", course.title) + sectors_section(atlas))
+        atlas_html = (map_section(atlas, sources, by_id, "", build_mode == "preview", course.title, sectors)
+                      + (sectors_section(atlas) if sectors else ""))
     return fill(template, {
         "meta": head_meta(course.title, course.tagline, SITE_URL, "website", course.title),
         "build": build_mode, "root": "",
         "top": top_bar("", course.title, REPO_URL, progress=False),
         "contents": contents_nav(course, "", current="home"),
-        "count": f"{n} lessons · {len(published)} published", "title": esc(course.title),
+        "count": f"{n} lessons", "title": esc(course.title),
         "tagline": esc(course.tagline), "cta": cta,
         "overview": f'<figure class="overview">{overview}</figure>' if overview and not atlas else "",
         "atlas": atlas_html, "lessons": lessons_section(course),
@@ -138,6 +140,7 @@ def main():
     ap.add_argument("--content", type=pathlib.Path, help="content directory (default: content/)")
     ap.add_argument("--dist", type=pathlib.Path, help="output directory (default: dist/, or preview/ with --preview)")
     ap.add_argument("--preview", action="store_true", help="preview build: allow draft lessons, map items and fits, write to preview/")
+    ap.add_argument("--publish", action="store_true", help="publication of a version: like a release, without the review gate, no draft marks, no sector examples")
     ap.add_argument("--previews", action="store_true", help="write figure previews also for a --content other than content/")
     args = ap.parse_args()
     content = (args.content or ROOT / "content").resolve()
@@ -164,9 +167,13 @@ def main():
     sources = load_sources(content, errors)
     reviews = load_reviews(content, errors)
     lessons = load_lessons(content, course, md, sources, errors)
-    check_reviews(lessons, sources, reviews, errors, allow_drafts=args.preview)
+    check_reviews(lessons, sources, reviews, errors, allow_drafts=args.preview or args.publish)
     atlas = load_atlas(content, sources, reviews, course, errors)
-    if atlas and not args.preview:
+    if args.publish:
+        course.sectors = False
+        for lesson in lessons:
+            lesson.draft = False
+    if atlas and not (args.preview or args.publish):
         for line in atlas.draft_items():
             errors.add(content / "_map.toml", line)
         for line in atlas.draft_fits() + atlas.draft_sectors():
@@ -209,7 +216,7 @@ def main():
         page = lesson_page(lesson, course, md, template, prev, nxt, sources, mode, SITE_URL, REPO_URL)
         (dist / lesson.entry.id / "index.html").write_text(page)
     (dist / "index.html").write_text(home_page(
-        course, (SITE / "home.html").read_text(), figures.get("overview"), atlas, sources, mode))
+        course, (SITE / "home.html").read_text(), figures.get("overview"), atlas, sources, mode, course.sectors))
     (dist / "assets" / "search-index.js").write_text(index_script(build_index(course, lessons, atlas)))
     (dist / "sources").mkdir()
     in_map = {r.key for it in atlas.items() for r in it.all_refs()} | {r.key for ft in atlas.fits() for r in ft.sources} if atlas else set()

@@ -74,6 +74,8 @@ $$
 
 They show that it lower-bounds the Euclidean distance between the original series.
 
+**Trend and summary statistics.** [Wang, Smith and Hyndman (2006)](https://doi.org/10.1007/s10618-005-0039-x) describe each series by global measures of trend, seasonality, periodicity, serial correlation, skewness, kurtosis, chaos, nonlinearity and self-similarity, and feed them to any clustering algorithm.
+
 **catch22.** [Lubba et al. (2019)](https://doi.org/10.1007/s10618-019-00647-x) select 22 features from a library of 4,791, using 93 classification datasets. They cover linear and non-linear autocorrelation, successive differences, value distributions, outliers and fluctuation scaling. A series becomes a vector of 22 numbers, and the distance is taken between vectors.
 
 ::: deep What a periodogram keeps and what it drops
@@ -112,7 +114,6 @@ Empirical applications:
 - **Volatility and spectra.** [Caiado and Crato (2010)](https://doi.org/10.1080/14697680903567152) cluster the stocks of the Dow Jones Industrial Average with a distance built from the periodogram of squared returns and the parameters of a TARCH model, and compare the result with groupings from correlations of returns and of squared returns.
 - **Wavelet scales.** [Michis (2022)](https://doi.org/10.3390/jrfm15010024) estimates partial correlations between returns at different wavelet scales and clusters on them, using the S&P 500 sector indices together with precious metals and energy futures. The cluster formations vary by time scale.
 - **SAX on European stocks.** [Hobbelhagen and Diamantis (2024)](https://doi.org/10.3934/QFE.2024027) compare SAX with topological data analysis on the daily closes of 60 European stocks over one year. They find that SAX captures broader trends better and TDA local movements better.
-- **SAX on a stock exchange.** [Nalici, Söylemez and Ünlü (2025)](https://doi.org/10.23055/ijietap.2025.32.2.10273) combine SAX with a dendrogram on three years of data for 81 BIST100 companies. The groups are sector-based and also cut across sectors.
 
 Limitations in financial time series:
 

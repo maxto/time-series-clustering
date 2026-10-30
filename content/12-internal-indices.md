@@ -88,13 +88,21 @@ $$
 
 Needs: group centres. The use of centre distances limits the metric to Euclidean space (scikit-learn documentation).
 
-**Xie-Beni** ([Xie and Beni, 1991](https://doi.org/10.1109/34.85677)). For a fuzzy partition with memberships $\mu_{ij}$ of point $i$ in group $j$ and centres $v_j$, as stated by [Wiroonsri and Preedasawakul (2026)](https://arxiv.org/abs/2308.14785):
+**Xie-Beni** ([Xie and Beni, 1991](https://doi.org/10.1109/34.85677)). For a fuzzy partition with memberships $\mu_{ij}$ of point $i$ in group $j$ and centres $v_j$, as stated by [Wiroonsri and Preedasawakul (2023)](https://arxiv.org/abs/2308.14785):
 
 $$
 \mathrm{XB} = \frac{\sum_{j=1}^{k} \sum_{i=1}^{n} \mu_{ij}^2 \, \lVert x_i - v_j \rVert^2}{n \cdot \min_{j \ne l} \lVert v_j - v_l \rVert^2}
 $$
 
 Needs: the memberships and centres of a fuzzy clustering.
+
+**Ball-Hall** (Ball and Hall, 1965). The mean, over the groups, of the mean squared distance of the points from the centre of their group.
+
+**Ray-Turi** (Ray and Turi, 1999). The mean squared distance of all the points from the centre of their group, divided by the smallest squared distance between two centres.
+
+**S_Dbw** ([Halkidi and Vazirgiannis, 2001](https://doi.org/10.1109/ICDM.2001.989517)). Adds to the scatter inside the groups a density term: for each pair of groups, the density at the midpoint of the two centres against the density at the centres.
+
+These three follow the definitions of [Desgraupes (2017)](https://cran.r-project.org/web/packages/clusterCrit/vignettes/clusterCrit.pdf). Needs: cluster centres.
 
 ::: deep Same name, different input
 Some software computes an index with the distance and the centre that the clustering used, not with Euclidean distance and the arithmetic mean. In `dtwclust`, the internal indices are computed with the distance and centroid chosen during clustering (documentation of `cvi`). Calinski-Harabasz has also been generalised to dissimilarities by Hennig and Liao (2013), a form `fpc::cluster.stats` reports. Check which distance and which centre sit behind a number before you compare it with one from another tool.

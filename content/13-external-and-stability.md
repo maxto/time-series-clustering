@@ -79,6 +79,17 @@ $$
 
 The scikit-learn documentation gives a small case: reference labels `[0, 0, 0, 1, 1, 1]` against `[0, 0, 1, 1, 2, 2]`. Here $A = 6$, $B = 3$, $T = 2$ and $M = 15$, so $\mathrm{RI} = 10/15$, $\mathrm{ARI} = 0.8/3.3 \approx 0.24$, $\mathrm{FM} \approx 0.47$ and $\mathrm{J} = 2/7$. The ARI and FM values match the documented outputs.
 
+**Other pair-counting indices** use the same counts ([Desgraupes, 2017](https://cran.r-project.org/web/packages/clusterCrit/vignettes/clusterCrit.pdf)). Czekanowski-Dice is the harmonic mean of the two shares of Fowlkes-Mallows. Hubert's $\hat\Gamma$ is the correlation between the two partitions read as together or apart for each pair, the same quantity as the phi coefficient. Sokal-Sneath has two versions:
+
+$$
+\begin{gathered}
+\mathrm{Dice} = \frac{2T}{A + B} \\[6pt]
+\hat\Gamma = \frac{MT - AB}{\sqrt{AB(M - A)(M - B)}} \\[6pt]
+\mathrm{SS}_1 = \frac{T}{2A + 2B - 3T} \\[6pt]
+\mathrm{SS}_2 = \frac{M - A - B + 2T}{M + T - \tfrac{1}{2}(A + B)}
+\end{gathered}
+$$
+
 ::: deep What the four indices weigh
 All four are functions of the same four pair counts and differ only in how they weight them. Rand counts the pairs apart in both partitions as agreement, Jaccard and Fowlkes-Mallows focus on the pairs together, and the adjusted Rand index subtracts the agreement expected when the group sizes are fixed and the labelings are independent, the hypergeometric model behind $E[T] = AB/M$ ([Gates, 2025](https://arxiv.org/abs/2511.03000)). Fuzzy versions of RI and ARI exist in `dtwclust::cvi`.
 :::

@@ -172,6 +172,7 @@ class Course:
     tagline: str = ""
     modules: list = field(default_factory=list)  # [(letter, title, [Entry])]
     entries: list = field(default_factory=list)
+    sectors: bool = True  # False in the publish build: no sector examples on the site
 
     def published(self):
         return [e for e in self.entries if e.status == "published"]
@@ -319,7 +320,7 @@ def load_lessons(content, course, md, sources, errors):
     numbers = Numbers(content)
     lessons, files = [], {}
     for path in sorted(content.glob("*.md")):
-        if path.name == "_course.md":
+        if path.name in ("_course.md", "LICENSE.md"):
             continue
         mm = re.fullmatch(rf"(\d\d)-({ID})\.md", path.name)
         if not mm:

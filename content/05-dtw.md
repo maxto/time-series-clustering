@@ -91,6 +91,32 @@ The lower part of the figure is the table DTW works on. Each cell is one pair $(
 For `mon` and `sat` at $w = 4$, across the peaks the path runs three columns right of the diagonal, the 1.5-hour shift. In the flat night hours it moves a sample or two off the diagonal. There every match costs little, so these detours follow the noise.
 :::
 
+## Two relatives: Fréchet and GAK
+
+The discrete Fréchet distance of Eiter and Mannila (1994), an approximation of the Fréchet distance between curves, uses the same alignments as DTW and keeps the largest gap along the alignment in place of the sum:
+
+$$
+\begin{aligned}
+\delta(i, j) &= \max\{|x_i - y_j|,\ m(i, j)\} \\[6pt]
+m(i, j) &= \min
+\begin{cases}
+\delta(i-1, j) \\
+\delta(i, j-1) \\
+\delta(i-1, j-1)
+\end{cases}
+\end{aligned}
+$$
+
+One large gap decides the value, so it reads the worst moment of the alignment.
+
+The Global Alignment Kernel (GAK) of [Cuturi et al. (2007)](https://doi.org/10.1109/ICASSP.2007.366260) sums over all alignments $\mathcal{A}$ instead of keeping the best one, with bandwidth $\sigma$:
+
+$$
+k(x, y) = \sum_{\pi \in \mathcal{A}} \prod_{i=1}^{|\pi|} \exp\left( -\frac{(x_{\pi_1(i)} - y_{\pi_2(i)})^2}{2\sigma^2} \right)
+$$
+
+It is a similarity, usually divided by $\sqrt{k(x, x)\, k(y, y)}$ so that a series scores 1 with itself and every value lies between 0 and 1. It goes to kernel methods, such as kernel k-means.
+
 ## Which clustering algorithm
 
 DTW gives a pairwise distance matrix and no natural centroid. It is also not a metric, since the triangle inequality can fail. That decides the options:
@@ -124,7 +150,7 @@ Limitations in financial time series:
 
 - **Volatility regime.** On equity indices, DTW similarity increases in high-volatility periods and decreases in low-volatility ones ([Tsinaslanidis et al., 2014](https://kar.kent.ac.uk/43498)), so a similarity reading depends on the regime in which it is measured.
 - **Normalisation.** Meaningful comparison requires both series to be normalised, and each subsequence must be normalised on its own: normalising the whole dataset is not sufficient ([Rakthanmanon et al., 2012](https://doi.org/10.1145/2339530.2339576)). The result comes from general time series benchmarks, not from financial data.
-- **Warping window.** On classification benchmarks, accuracy peaks at small windows and wider constraints do not improve it ([Ratanamahatana and Keogh, 2004](https://www.cs.ucr.edu/~eamonn/DTW_myths.pdf)). The evidence is not specific to finance.
+- **Warping window.** On classification benchmarks, accuracy peaks at small windows and wider constraints do not improve it ([Ratanamahatana and Keogh, 2005](https://doi.org/10.1137/1.9781611972757.50)). The evidence is not specific to finance.
 - **Subsequence clustering.** Clusters of subsequences extracted by a sliding window are essentially random, as shown also on S&P 500 closing values ([Keogh and Lin, 2005](https://doi.org/10.1007/s10115-004-0172-7)). The result does not apply to clustering whole series.
 - **Backtest overfitting.** The higher the number of configurations tried, the greater the probability that a backtest is overfit, and analysts rarely report that number ([Bailey et al., 2014](https://doi.org/10.1090/noti1105)). Window, normalisation and number of clusters are all such configurations.
 

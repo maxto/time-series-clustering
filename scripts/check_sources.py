@@ -31,7 +31,7 @@ from buildlib.cite import load_sources  # noqa: E402
 from buildlib.content import Errors  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-UA = "time-series-clustering-source-check (mailto:m.todaro@macroasset.it)"
+UA = "time-series-clustering-source-check (https://github.com/maxto/time-series-clustering)"
 ATOM = "{http://www.w3.org/2005/Atom}"
 
 

@@ -8,7 +8,7 @@
   var matrixBtn = doc.getElementById('f-matrix');
   var questionBox = doc.getElementById('f-question');
   var statusEl = doc.getElementById('f-status');
-  if (!dataEl || !ignoreBox || !matrixBtn || !questionBox || !statusEl) return;
+  if (!dataEl || !ignoreBox || !matrixBtn || !statusEl) return;  // no question row in the publish build
   var data = JSON.parse(dataEl.textContent);
   var items = Array.prototype.slice.call(doc.querySelectorAll('#map li.item[data-item]'));
   var total = items.length;
@@ -46,7 +46,7 @@
     clearMarks();
     Array.prototype.forEach.call(ignoreBox.querySelectorAll('button[data-tag]'), function (b) { pressed(b, tags.indexOf(b.dataset.tag) >= 0); });
     pressed(matrixBtn, matrix);
-    Array.prototype.forEach.call(questionBox.querySelectorAll('button[data-question]'), function (b) { pressed(b, b.dataset.question === question); });
+    if (questionBox) Array.prototype.forEach.call(questionBox.querySelectorAll('button[data-question]'), function (b) { pressed(b, b.dataset.question === question); });
 
     if (question) {
       var q = data.questions[question];
@@ -102,7 +102,7 @@
     if (question) { tags = []; matrix = false; }
     render();
   }
-  questionBox.addEventListener('click', function (e) {
+  if (questionBox) questionBox.addEventListener('click', function (e) {
     var b = e.target.closest && e.target.closest('button[data-question]');
     if (b) choose(b.dataset.question, true);
   });
