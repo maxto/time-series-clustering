@@ -1,8 +1,8 @@
 # HANDOFF — time-series-clustering
 
-Closed: 2026-10-30 14:23 CET (HEAD verified before this update: ddda879)
-Last operation: version 1 ready locally on `redesign`. Nothing pushed. Waiting for the owner's
-go-ahead on the remote steps (open item 1).
+Closed: 2026-10-30 14:47 CET (HEAD verified before this update: a7a5e7a)
+Last operation: version 1 online at https://maxto.github.io/time-series-clustering/. Repo renamed
+`maxto/time-series-clustering`, Pages active from the workflow, push on `master`.
 
 ## Goal
 
@@ -17,11 +17,13 @@ superseded from Task 5 on (LOG 2026-10-30).
 
 ## State
 
-- Clone at `~/projects/personal/time-series-clustering/`. Branch `redesign`,
-  local only. `pilot` at `6055354`, `master` at `196e416`, nothing pushed.
-- Verified 2026-10-30 13:49 CET: all 15 lessons `published` in `content/_course.md`, pytest
-  163 passed, `npm test` e2e ok, `npm run preview` builds 15 of 15 with 22 figures. `npm run build`
-  fails by design (draft lessons and map).
+- Clone at `~/projects/personal/time-series-clustering/`. Working branch now `master`, same as
+  `redesign` plus the notes commit. Every push to `master` republishes the site. `pilot` local only.
+- Verified 2026-10-30 14:47 CET: the live site answers 200 on home, lessons, sources, card and assets. In a browser:
+  15 lessons, no draft banner, no sector section, the map filter reacts, no display formula overflows
+  at 375 px, the live DTW figure is there, no console or request errors. Workflow run 41065978711
+  success. pytest 164 passed, `npm test` e2e ok. The old repo URL still answers.
+- `npm run build` (release) still fails by design, the site uses `--publish`.
 - Follow-ups per lesson, figures asked for and doubts:
   `docs/research/2026-10-30-first-pass-followups.md`. Finance research:
   `docs/research/2026-10-30-dtw-finance-report.md` (in Italian) and
@@ -37,11 +39,9 @@ superseded from Task 5 on (LOG 2026-10-30).
 
 ## Open items
 
-1. **Remote steps of version 1, need the owner's explicit go-ahead:** fast-forward `master` to
-   `redesign`, push `master` and tag `v1`, rename the repo to `time-series-clustering` and update
-   `origin`, enable Pages from the workflow, set description and homepage. The owner stated the goal
-   (first publication now, like ai-one-token-at-a-time), the go-ahead on these steps is pending.
-   Then check the live site. Status: waiting for the owner.
+1. **Owner reads the live course** and says what to change. No second-model review was done,
+   Claude has not read all lessons end to end, DISSIM's definition was not checked on the paper.
+   Status: waiting.
 2. **Remaining figures** of the follow-ups file (second panels, Ward, DTW_D against DTW_I, the
    Keogh and Lin test). Status: after the owner's look.
 3. **Proposals to the owner:** remove the unused `content/figures/dtw-window.svg`,
@@ -71,17 +71,16 @@ superseded from Task 5 on (LOG 2026-10-30).
     Status: to propose as a short list.
 12. **Code, last pass, not in version 1 (owner, 2026-10-30):** `## Code`, code labs and the reference packages. `code/` stays in the repo only because `scripts/figures.py` draws the figures with it. Library cards
     follow "content first, existing libraries first" (owner, 2026-10-28). Status: deferred.
-13. **Branches:** `redesign` builds on `pilot`, merging into `master` needs the owner's
-    go-ahead. Status: after the passes.
+13. **Branches:** `redesign` merged into `master` by fast-forward. Status: done.
 14. **Parked items** of the pilot: `docs/research/2026-10-28-codex-pilot-final-review.md`.
     Status: parked.
 15. **Licence:** done, MIT and CC BY 4.0 (LOG 2026-10-30). PDF rights still to check.
-16. **Remote steps:** see item 1.
+16. **Remote steps:** done 2026-10-30, no tag (owner: the other course has none). A later push needs
+    its own go-ahead. The notes commit after the publication is local only.
 17. **Codex sessions in other projects** still hold the old hooks (exit 127) until
     restarted. Owner: the `~/infra/agents` session, told 2026-10-28. Status: handed over,
     to check there.
 
 ## Next step
 
-Get the go-ahead on item 1, run the steps, check the live site. Then version after version,
-lesson by lesson.
+Take the owner's corrections on the live course, version after version, lesson by lesson.

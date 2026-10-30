@@ -1,5 +1,17 @@
 # LOG — time-series-clustering
 
+## 2026-10-30 14:47 CET: version 1 online
+
+Owner's go-ahead in chat: no tag (checked, the other course has none), rename, Pages, repo details and
+live check. Done in this order, so that the first push already deployed: repo renamed to
+`time-series-clustering` (49 stars kept), `origin` updated, Pages enabled with `build_type=workflow`,
+description and homepage set, `master` fast-forwarded to `redesign` (65 commits), pushed. Workflow run
+41065978711 success. README redone on the model of ai-one-token-at-a-time with a card, `site/og.png`,
+made by `scripts/og.mjs` from fixture days, also used for link previews.
+
+Verified live: HTTP 200 on home, lessons, sources, card, assets, and in a browser 15 lessons, no draft
+banner, no sector section, map filter working, no formula overflow at 375 px, no errors.
+
 ## 2026-10-30 14:23 CET: version 1 ready locally, owner's direction
 
 Owner, plainly: no code in the course, the topics of the original README turned into a mini-course
