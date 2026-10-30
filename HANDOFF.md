@@ -1,9 +1,8 @@
 # HANDOFF — time-series-clustering
 
-Closed: 2026-10-30 13:49 CET (HEAD verified before this update: c26cf76)
-Last operation: formulas fit their column, section choosers, 14 new lesson figures,
-all committed on `redesign`. Codex review dropped by the owner for now. Waiting for
-the owner to look at the result.
+Closed: 2026-10-30 14:23 CET (HEAD verified before this update: ddda879)
+Last operation: version 1 ready locally on `redesign`. Nothing pushed. Waiting for the owner's
+go-ahead on the remote steps (open item 1).
 
 ## Goal
 
@@ -38,11 +37,11 @@ superseded from Task 5 on (LOG 2026-10-30).
 
 ## Open items
 
-1. **Owner looks at the lessons and the figures** (owner). Status: waiting.
-   **Review of the first pass:** dropped for now by the owner (2026-10-30). Codex hit its usage
-   limit with no answer written and was cleared. The request is ready in
-   `docs/research/2026-10-30-first-pass-review-request.md`, its commit hashes date from `e1db08f`.
-   So the 15 lessons and the 14 figures have had no second-model review. Status: to decide.
+1. **Remote steps of version 1, need the owner's explicit go-ahead:** fast-forward `master` to
+   `redesign`, push `master` and tag `v1`, rename the repo to `time-series-clustering` and update
+   `origin`, enable Pages from the workflow, set description and homepage. The owner stated the goal
+   (first publication now, like ai-one-token-at-a-time), the go-ahead on these steps is pending.
+   Then check the live site. Status: waiting for the owner.
 2. **Remaining figures** of the follow-ups file (second panels, Ward, DTW_D against DTW_I, the
    Keogh and Lin test). Status: after the owner's look.
 3. **Proposals to the owner:** remove the unused `content/figures/dtw-window.svg`,
@@ -50,8 +49,8 @@ superseded from Task 5 on (LOG 2026-10-30).
    with the unused `aeon-dtw`, `dtw-python`, `rousseeuw87` entries. Tests for the two new
    behaviours: a preview shows a draft lesson with the banner and a release refuses it.
    Status: to ask.
-4. **Second pass, lesson by lesson** (owner and Claude), with second-model review and
-   `scripts/review.py` records, before any release. Status: after the first pass.
+4. **Next versions, lesson by lesson** (owner and Claude). A second-model review is welcome but
+   no longer holds back a publication (owner, 2026-10-30). Status: after version 1.
 5. **Facts to confirm in the second pass:** the year of Ratanamahatana and Keogh
    (2004 from memory, the copy read has no date), the "When to use it" and
    "Which clustering algorithm" text of lesson `dtw`, written from standard knowledge.
@@ -70,21 +69,19 @@ superseded from Task 5 on (LOG 2026-10-30).
 11. **Deferred minor findings** of checkpoint 1 and 2, in the ledgers above. One is flagged
     as worth fixing: the deep-dive validation accepts `:::` as closer of a `::::` opener.
     Status: to propose as a short list.
-12. **Code, last pass:** `## Code`, code labs and the reference packages. Library cards
+12. **Code, last pass, not in version 1 (owner, 2026-10-30):** `## Code`, code labs and the reference packages. `code/` stays in the repo only because `scripts/figures.py` draws the figures with it. Library cards
     follow "content first, existing libraries first" (owner, 2026-10-28). Status: deferred.
 13. **Branches:** `redesign` builds on `pilot`, merging into `master` needs the owner's
     go-ahead. Status: after the passes.
 14. **Parked items** of the pilot: `docs/research/2026-10-28-codex-pilot-final-review.md`.
     Status: parked.
-15. **Licence:** MIT code + CC BY 4.0 content proposed, owner to confirm. PDF rights to
-    check. Status: to decide.
-16. **Remote steps, each with its own go-ahead:** push, repo rename, GitHub Pages
-    activation. Status: not started.
+15. **Licence:** done, MIT and CC BY 4.0 (LOG 2026-10-30). PDF rights still to check.
+16. **Remote steps:** see item 1.
 17. **Codex sessions in other projects** still hold the old hooks (exit 127) until
     restarted. Owner: the `~/infra/agents` session, told 2026-10-28. Status: handed over,
     to check there.
 
 ## Next step
 
-Wait for the owner's look at the lessons and figures, then take the corrections lesson by
-lesson. The review is the owner's call.
+Get the go-ahead on item 1, run the steps, check the live site. Then version after version,
+lesson by lesson.

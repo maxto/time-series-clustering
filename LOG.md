@@ -1,5 +1,36 @@
 # LOG — time-series-clustering
 
+## 2026-10-30 14:23 CET: version 1 ready locally, owner's direction
+
+Owner, plainly: no code in the course, the topics of the original README turned into a mini-course
+along the pipeline, a reference only if verified, and a first publication now, the same way as
+ai-one-token-at-a-time. Later versions raise the level. Rejected: review before publishing, which
+replaces the rule that every content change needs a second-model review before release. The review
+records and the release build stay in the code. The new `--publish` build skips them and the Pages
+workflow runs it. Done, approved by the owner's message.
+
+Done (ddda879): references: all links of the lessons checked on Crossref and arXiv, the others by HTTP
+status, 116 in all. Corrected: Ratanamahatana and Keogh to 2005 with its DOI, Wiroonsri and
+Preedasawakul to 2023. Removed: Nalici (DOI not in Crossref), Goldani (preprint, off the question),
+the Forbes and Rigobon limit (abstract only, the rule asks for a source read). Topics added from the
+list: Hamming, DISSIM, discrete Frechet, GAK, characteristic features, CLARA, robust continuous
+clustering, Ball-Hall, Ray-Turi, S_Dbw, Dice, Hubert gamma, Sokal-Sneath. Definitions checked on
+Desgraupes (2017), the tslearn docs, the Hyndman abstract page, Wikipedia for discrete Frechet.
+DISSIM is stated from the original list and memory, the paper was not opened. The home map splits
+out Edit-based, so LCSS, EDR, ERP, MSM and TWE reach their lesson.
+
+Code off the pages: Python and R rows removed from the cards, also "source pending". Decided: the
+sector examples stay out of the publish build, they are unreviewed mockup text and not in the
+original list. `code/` stays in the repo, the figures need it.
+
+Bug found by a smoke run of the publish build: without the question row `map.js` returned early and
+the filters did nothing, with no error. Fixed, with a regression check in `tests/e2e.mjs` that failed
+before the fix. pytest 164 passed, `npm test` e2e ok.
+
+README rewritten on the model of the other course, the first one moved to `docs/original-list.md`.
+LICENSE MIT and `content/LICENSE.md` CC BY 4.0, as in the other course. This closes the licence item.
+Push audit: no secrets, no third-party PDF. The work email in `scripts/check_sources.py` replaced.
+
 ## 2026-10-30 13:49 CET: formulas in the column, choosers, 14 figures
 
 Owner on a phone: formulas had scrollbars. Measured: 22 of 63 display formulas overflowed at 375 px,
