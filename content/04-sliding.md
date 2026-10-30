@@ -42,15 +42,20 @@ Avoid it when:
 For z-normalised $x, y$ of length $m$, shifting $y$ by $s$ samples and filling the gap with zeros, the cross-correlation at shift $s$ is the sum of products over the overlap:
 
 $$
-\mathrm{CC}_s(x, y) = \sum_{t} x_t\, y_{t-s}, \qquad s \in \{-(m-1), \dots, m-1\}
+\begin{gathered}
+\mathrm{CC}_s(x, y) = \sum_{t} x_t\, y_{t-s} \\[6pt]
+s \in \{-(m-1), \dots, m-1\}
+\end{gathered}
 $$
 
 Paparrizos and Gravano define three normalisations of it, the biased estimator, the unbiased estimator and the coefficient normalisation:
 
 $$
-\mathrm{NCC}_b = \frac{\mathrm{CC}_s}{m}, \qquad
-\mathrm{NCC}_u = \frac{\mathrm{CC}_s}{m - |s|}, \qquad
-\mathrm{NCC}_c = \frac{\mathrm{CC}_s}{\lVert x \rVert \, \lVert y \rVert}
+\begin{aligned}
+\mathrm{NCC}_b &= \frac{\mathrm{CC}_s}{m} \\[6pt]
+\mathrm{NCC}_u &= \frac{\mathrm{CC}_s}{m - |s|} \\[6pt]
+\mathrm{NCC}_c &= \frac{\mathrm{CC}_s}{\lVert x \rVert \, \lVert y \rVert}
+\end{aligned}
 $$
 
 The distance uses the last one:

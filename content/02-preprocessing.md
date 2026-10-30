@@ -64,7 +64,10 @@ $$
 Resampling a series to blocks of $b$ samples by the mean, and filling one gap between observed values $x_a$ and $x_c$ by linear interpolation:
 
 $$
-y_u = \frac{1}{b} \sum_{j=1}^{b} x_{(u-1)b + j}, \qquad \hat{x}_t = x_a + \frac{t - a}{c - a}\,(x_c - x_a)
+\begin{gathered}
+y_u = \frac{1}{b} \sum_{j=1}^{b} x_{(u-1)b + j} \\[6pt]
+\hat{x}_t = x_a + \frac{t - a}{c - a}\,(x_c - x_a)
+\end{gathered}
 $$
 
 ::: deep Differencing and the series length

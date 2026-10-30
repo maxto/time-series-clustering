@@ -58,7 +58,10 @@ $$
 - **Correlation distance**: one minus the Pearson correlation $\rho$, in the definition of `scipy.spatial.distance.correlation`.
 
 $$
-d_{\rho}(x, y) = 1 - \rho(x, y), \qquad \rho(x, y) = \frac{\sum_t (x_t - \bar{x})(y_t - \bar{y})}{\sqrt{\sum_t (x_t - \bar{x})^2}\ \sqrt{\sum_t (y_t - \bar{y})^2}}
+\begin{gathered}
+d_{\rho}(x, y) = 1 - \rho(x, y) \\[6pt]
+\rho(x, y) = \frac{\sum_t (x_t - \bar{x})(y_t - \bar{y})}{\sqrt{\sum_t (x_t - \bar{x})^2}\ \sqrt{\sum_t (y_t - \bar{y})^2}}
+\end{gathered}
 $$
 
 Correlation and Euclidean distance are tied. If both series are z-normalised with the population standard deviation, so that $\sum_t z_t^2 = n$, then

@@ -63,8 +63,11 @@ It suits any distance, including elastic ones. The exact PAM search costs of ord
 **k-Shape** ([Paparrizos and Gravano, 2015](https://doi.org/10.1145/2723372.2737793)). Needs the series, of equal length. It is a k-means loop with the shape-based distance (SBD) for assignment and a shape-extraction step for the centroid. SBD is one minus the largest normalised cross-correlation over all shifts $w$, with $R_0$ the cross-correlation at shift zero, and the centroid maximises the sum of squared correlations with the members of its cluster $P_k$:
 
 $$
-\mathrm{SBD}(x, y) = 1 - \max_{w} \frac{CC_w(x, y)}{\sqrt{R_0(x, x)\, R_0(y, y)}}, \qquad
-\mu_k = \arg\max_{\mu} \sum_{x_i \in P_k} \left( \max_{w} \frac{CC_w(x_i, \mu)}{\sqrt{R_0(x_i, x_i)\, R_0(\mu, \mu)}} \right)^{2}
+\begin{gathered}
+\mathrm{NCC}_{\max}(x, y) = \max_{w} \frac{CC_w(x, y)}{\sqrt{R_0(x, x)\, R_0(y, y)}} \\[6pt]
+\mathrm{SBD}(x, y) = 1 - \mathrm{NCC}_{\max}(x, y) \\[6pt]
+\mu_k = \arg\max_{\mu} \sum_{x_i \in P_k} \mathrm{NCC}_{\max}(x_i, \mu)^{2}
+\end{gathered}
 $$
 
 It suits groups that differ in shape when a global shift is allowed, with series z-normalised.
@@ -80,8 +83,10 @@ The centres are always members of the data, as in PAM, and the result is determi
 **Affinity propagation** ([Frey and Dueck, 2007](https://doi.org/10.1126/science.1136800)). Needs a similarity matrix $s(i, k)$. Series exchange two messages, the responsibility $r(i, k)$ that $k$ should be the exemplar of $i$, and the availability $a(i, k)$ that $i$ should choose $k$. They are updated until convergence, with a damping factor, and the exemplars are real series.
 
 $$
-r(i, k) \leftarrow s(i, k) - \max_{k' \ne k} \left[ a(i, k') + s(i, k') \right], \qquad
+\begin{gathered}
+r(i, k) \leftarrow s(i, k) - \max_{k' \ne k} \left[ a(i, k') + s(i, k') \right] \\[6pt]
 a(i, k) \leftarrow \min\left[ 0,\ r(k, k) + \sum_{i' \notin \{i, k\}} r(i', k) \right]
+\end{gathered}
 $$
 
 The number of clusters follows from the data and from the preference given to each series to be an exemplar. It suits small and medium sets with many clusters or uneven sizes. A distance has to be turned into a similarity first: the default of `scikit-learn` uses the negative squared Euclidean distance.
@@ -89,9 +94,11 @@ The number of clusters follows from the data and from the preference given to ea
 **Agglomerative hierarchical.** Needs a distance matrix, or vectors for Ward. Every series starts alone and the two closest groups are merged until one is left. The linkage defines closest: single, the closest pair of members. Complete, the farthest pair. Average, the mean over all pairs. Ward, the merge that least increases the within-cluster sum of squares.
 
 $$
-d_{\mathrm{single}} = \min_{a \in A,\, b \in B} d(a, b), \quad
-d_{\mathrm{complete}} = \max_{a \in A,\, b \in B} d(a, b), \quad
-d_{\mathrm{average}} = \frac{1}{|A||B|} \sum_{a \in A} \sum_{b \in B} d(a, b)
+\begin{aligned}
+d_{\mathrm{single}} &= \min_{a \in A,\, b \in B} d(a, b) \\[6pt]
+d_{\mathrm{complete}} &= \max_{a \in A,\, b \in B} d(a, b) \\[6pt]
+d_{\mathrm{average}} &= \frac{1}{|A||B|} \sum_{a \in A} \sum_{b \in B} d(a, b)
+\end{aligned}
 $$
 
 It suits small sets where the tree itself is the result. Single linkage is not robust to noise, Ward gives the most regular sizes, and Ward and the centroid and median linkages are correctly defined only for Euclidean distances (`scikit-learn` and `scipy` documentation).
@@ -115,7 +122,10 @@ It suits series that sit between groups. A variant on a dissimilarity matrix exi
 **DBSCAN** ([Ester et al., 1996](https://cdn.aaai.org/KDD/1996/KDD96-037.pdf)). Needs a distance matrix or vectors. A core series has at least $\mathrm{MinPts}$ series within distance $\varepsilon$. A cluster is a set of core series reachable from one another through neighbours, plus the non-core series next to them. The rest is noise, and there is no $K$.
 
 $$
-N_{\varepsilon}(p) = \{ q : d(p, q) \le \varepsilon \}, \qquad p \text{ is core if } |N_{\varepsilon}(p)| \ge \mathrm{MinPts}
+\begin{gathered}
+N_{\varepsilon}(p) = \{ q : d(p, q) \le \varepsilon \} \\[6pt]
+p \text{ is core if } |N_{\varepsilon}(p)| \ge \mathrm{MinPts}
+\end{gathered}
 $$
 
 It suits groups of any shape and uneven sizes, with outliers. $\varepsilon$ depends on the data and on the distance and usually cannot be left at a default (`scikit-learn` documentation), so it has to be set on the scale of the chosen measure.

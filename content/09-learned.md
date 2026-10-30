@@ -56,7 +56,10 @@ The search removes the series it separated and repeats on the rest until no data
 For an embedding, the unsupervised loss of Franceschi et al. (2019) takes a random subseries $x^{\mathrm{ref}}$ of a series, a subseries $x^{\mathrm{pos}}$ of it, and $K$ subseries $x^{\mathrm{neg}}_k$ drawn from other series. With encoder $f$ and sigmoid $\sigma$ it minimises:
 
 $$
--\log \sigma\left(f(x^{\mathrm{ref}})^\top f(x^{\mathrm{pos}})\right) - \sum_{k=1}^{K} \log \sigma\left(-f(x^{\mathrm{ref}})^\top f(x^{\mathrm{neg}}_k)\right)
+\begin{aligned}
+& -\log \sigma\left(f(x^{\mathrm{ref}})^\top f(x^{\mathrm{pos}})\right) \\
+& - \sum_{k=1}^{K} \log \sigma\left(-f(x^{\mathrm{ref}})^\top f(x^{\mathrm{neg}}_k)\right)
+\end{aligned}
 $$
 
 ::: deep Learned shapelets

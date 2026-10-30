@@ -905,8 +905,9 @@ async function contrastMatrix(run, p, url, pages, requiredAreas = []) {
   console.log(`contrast: ${run}: body rows at 10:1 by area: ${[...areas].map(([a, n]) => `${a} ${n}`).join(', ')}`);
 }
 
-// Widths 1440, 1280, 820, 375, both themes, every page: no page-level horizontal scroll, and no clipped
-// chip, sector card or sector question link.
+// Widths 1440, 1280, 820, 375, both themes, every page: no page-level horizontal scroll, no clipped
+// chip, sector card or sector question link. On the real course also no display formula wider than its
+// column: a formula that needs a scrollbar is a bug, break it over lines in the lesson.
 async function widthChecks(run, p, url, pages) {
   for (const theme of ['light', 'dark']) {
     await p.emulateMedia({ colorScheme: theme });
@@ -915,8 +916,13 @@ async function widthChecks(run, p, url, pages) {
       for (const page of pages) {
         await p.goto(url(page));
         if (page === 'index.html') await p.locator('#map details').evaluateAll(ds => ds.forEach(d => { d.open = true; }));
+        await p.evaluate(() => { document.querySelectorAll('details.deep').forEach(d => { d.open = true; }); return document.fonts.ready; });
         const r = await p.evaluate(() => ({
           doc: document.documentElement.scrollWidth, view: document.documentElement.clientWidth,
+          math: [...document.querySelectorAll('.math')].flatMap(m => {
+            const need = Math.max(m.scrollWidth, m.querySelector('.katex-display')?.scrollWidth ?? 0);
+            return need > m.clientWidth + 1 ? [`${(m.querySelector('annotation')?.textContent ?? '').trim().slice(0, 40)} ${need}>${m.clientWidth}`] : [];
+          }),
           // inline boxes report clientWidth 0, so only boxes that lay out their content are compared
           clipped: [...document.querySelectorAll('summary.chip, .sector, a.q')].filter(e => getComputedStyle(e).display !== 'inline' && e.scrollWidth > e.clientWidth)
             .map(e => `${e.tagName.toLowerCase()}.${e.className} "${e.textContent.trim().slice(0, 24)}" ${e.scrollWidth}>${e.clientWidth}`),
@@ -930,6 +936,8 @@ async function widthChecks(run, p, url, pages) {
         }));
         expect(r.doc <= width, `${run}: widths: ${page}, ${theme}, ${width} px: scrollWidth ${r.doc} exceeds the viewport`);
         expect(r.clipped.length === 0, `${run}: widths: ${page}, ${theme}, ${width} px: clipped ${r.clipped.join('; ')}`);
+        // the smoke lesson keeps one wide formula on purpose: it exercises the scroll fallback of .katex-display
+        if (run.startsWith('content-preview')) expect(r.math.length === 0, `${run}: widths: ${page}, ${theme}, ${width} px: formula wider than its column: ${r.math.join('; ')}`);
         expect(r.bigText.length === 0, `${run}: widths: ${page}, ${theme}, ${width} px: figure text too large: ${r.bigText.join('; ')}`);
       }
     }

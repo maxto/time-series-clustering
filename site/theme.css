@@ -195,6 +195,7 @@ li { margin: 4px 0; }
 /* a display wider than the column scrolls on its own (KaTeX CSS customization docs), no clipping */
 .katex-display { overflow: auto hidden; }
 .katex { font-size: 1.08em; }
+@media (max-width: 600px) { .math .katex { font-size: 1em; } }
 pre { margin: 24px 0; padding: 14px 18px; overflow-x: auto; background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; font-size: 14px; line-height: 1.6; }
 .cite { font-size: .94em; }
 

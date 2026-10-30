@@ -42,52 +42,75 @@ Write $x$ and $y$ for series of length $n$, indexed from 1. Every measure fills 
 **LCSS** counts matches. A pair matches when the values differ by at most $\varepsilon$. Vlachos et al. add a time window $\delta$ so that only pairs with $|i - j| \le \delta$ can match:
 
 $$
-L(i, j) =
-\begin{cases}
-L(i-1, j-1) + 1 & \text{if } |x_i - y_j| \le \varepsilon \\
-\max\{L(i-1, j),\ L(i, j-1)\} & \text{otherwise}
-\end{cases}
-\qquad
-d_{\mathrm{LCSS}}(x, y) = 1 - \frac{L(n, n)}{n}
+\begin{aligned}
+& L(i, j) = \\
+& \begin{cases}
+L(i-1, j-1) + 1 \quad \text{if } |x_i - y_j| \le \varepsilon \\
+\max\{L(i-1, j),\ L(i, j-1)\} \quad \text{otherwise}
+\end{cases} \\[6pt]
+& d_{\mathrm{LCSS}}(x, y) = 1 - \frac{L(n, n)}{n}
+\end{aligned}
 $$
 
 **EDR** keeps the threshold and charges 1 for a mismatch and 1 for a gap:
 
 $$
-D(i, j) = \min\{D(i-1, j-1) + s(i, j),\ D(i-1, j) + 1,\ D(i, j-1) + 1\},
-\quad
+\begin{gathered}
+D(i, j) = \min
+\begin{cases}
+D(i-1, j-1) + s(i, j) \\
+D(i-1, j) + 1 \\
+D(i, j-1) + 1
+\end{cases} \\[6pt]
 s(i, j) = \begin{cases} 0 & |x_i - y_j| \le \varepsilon \\ 1 & \text{otherwise} \end{cases}
+\end{gathered}
 $$
 
 **ERP** has no threshold. A gap costs the distance of the deleted value from a constant $g$:
 
 $$
-D(i, j) = \min\{D(i-1, j-1) + |x_i - y_j|,\ D(i-1, j) + |x_i - g|,\ D(i, j-1) + |y_j - g|\}
+D(i, j) = \min
+\begin{cases}
+D(i-1, j-1) + |x_i - y_j| \\
+D(i-1, j) + |x_i - g| \\
+D(i, j-1) + |y_j - g|
+\end{cases}
 $$
 
 **MSM** moves a value at cost $|x_i - y_j|$ and splits or merges at a cost that depends on the neighbours. With a constant $c$ and $C(u, v, w)$ the cost of splitting or merging the value $u$ next to $v$ and $w$:
 
 $$
-C(u, v, w) =
-\begin{cases}
-c & \text{if } v \le u \le w \text{ or } v \ge u \ge w \\
-c + \min\{|u - v|,\ |u - w|\} & \text{otherwise}
+\begin{aligned}
+& C(u, v, w) = \\
+& \begin{cases}
+c \quad \text{if } v \le u \le w \text{ or } v \ge u \ge w \\
+c + \min\{|u - v|,\ |u - w|\} \quad \text{otherwise}
 \end{cases}
+\end{aligned}
 $$
 
 $$
-D(i, j) = \min\{D(i-1, j-1) + |x_i - y_j|,\ D(i-1, j) + C(x_i, x_{i-1}, y_j),\ D(i, j-1) + C(y_j, x_i, y_{j-1})\}
+D(i, j) = \min
+\begin{cases}
+D(i-1, j-1) + |x_i - y_j| \\
+D(i-1, j) + C(x_i, x_{i-1}, y_j) \\
+D(i, j-1) + C(y_j, x_i, y_{j-1})
+\end{cases}
 $$
 
 **TWE** works on pairs of value and time stamp, $(x_i, t_i)$ and $(y_j, s_j)$. With stiffness $\nu > 0$ and a deletion penalty $\lambda \ge 0$, and by convention $x_0 = y_0 = 0$ and $t_0 = s_0 = 0$:
 
 $$
-D(i, j) = \min
-\begin{cases}
-D(i-1, j) + |x_i - x_{i-1}| + \nu (t_i - t_{i-1}) + \lambda \\
-D(i-1, j-1) + |x_i - y_j| + |x_{i-1} - y_{j-1}| + \nu \big(|t_i - s_j| + |t_{i-1} - s_{j-1}|\big) \\
-D(i, j-1) + |y_j - y_{j-1}| + \nu (s_j - s_{j-1}) + \lambda
-\end{cases}
+\begin{aligned}
+D(i, j) &= \min\{D_1,\ D_2,\ D_3\} \\[6pt]
+D_1 &= D(i-1, j) + |x_i - x_{i-1}| \\
+&\quad + \nu (t_i - t_{i-1}) + \lambda \\[6pt]
+D_2 &= D(i-1, j-1) + |x_i - y_j| \\
+&\quad + |x_{i-1} - y_{j-1}| \\
+&\quad + \nu \big(|t_i - s_j| + |t_{i-1} - s_{j-1}|\big) \\[6pt]
+D_3 &= D(i, j-1) + |y_j - y_{j-1}| \\
+&\quad + \nu (s_j - s_{j-1}) + \lambda
+\end{aligned}
 $$
 
 Marteau shows that TWE is a distance for $\nu > 0$ and $\lambda \ge 0$, and that its time and space cost match DTW and ERP.

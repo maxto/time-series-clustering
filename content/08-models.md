@@ -54,9 +54,10 @@ It does not use the variance of the innovations. [Maharaj (2000)](https://doi.or
 **Cepstral distance.** With the AR coefficients $\phi_1, \dots, \phi_p$, the linear predictive coding cepstrum is, for $h \ge 1$ and $\phi_m = 0$ beyond $p$:
 
 $$
-\psi_h = \phi_h + \sum_{m=1}^{h-1} \Big(1 - \frac{m}{h}\Big) \phi_m \psi_{h-m},
-\qquad
+\begin{gathered}
+\psi_h = \phi_h + \sum_{m=1}^{h-1} \Big(1 - \frac{m}{h}\Big) \phi_m \psi_{h-m} \\[6pt]
 d_{\mathrm{LPC}}(x, y) = \sqrt{\sum_{h=1}^{H} \big(\psi_{h, x} - \psi_{h, y}\big)^2}
+\end{gathered}
 $$
 
 Kalpakis et al. argue that a few of these coefficients keep much of the information on the underlying ARIMA model.
@@ -64,9 +65,10 @@ Kalpakis et al. argue that a few of these coefficients keep much of the informat
 **CID.** Batista et al. multiply a raw distance $d$, in practice the Euclidean one, by a complexity correction, with $CE$ a complexity estimate:
 
 $$
-d_{\mathrm{CID}}(x, y) = d(x, y) \cdot \frac{\max\{CE(x), CE(y)\}}{\min\{CE(x), CE(y)\}},
-\qquad
+\begin{gathered}
+d_{\mathrm{CID}}(x, y) = d(x, y) \cdot \frac{\max\{CE(x), CE(y)\}}{\min\{CE(x), CE(y)\}} \\[6pt]
 CE(x) = \sqrt{\sum_{t=1}^{T-1} (x_t - x_{t+1})^2}
+\end{gathered}
 $$
 
 When both series have the same complexity, the factor is 1 and CID equals $d$.

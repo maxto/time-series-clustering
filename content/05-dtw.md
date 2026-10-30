@@ -51,7 +51,12 @@ A dynamic programme fills the table of smallest accumulated costs, inside the wi
 $$
 \begin{aligned}
 D(0, 0) &= c(0, 0) \\
-D(i, j) &= c(i, j) + \min\{D(i-1, j),\ D(i, j-1),\ D(i-1, j-1)\}
+D(i, j) &= c(i, j) + \min
+\begin{cases}
+D(i-1, j) \\
+D(i, j-1) \\
+D(i-1, j-1)
+\end{cases}
 \end{aligned}
 $$
 

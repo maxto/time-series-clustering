@@ -39,7 +39,10 @@ Avoid it when:
 Let two partitions of $N$ series have contingency counts $n_{ij}$, the number of series in group $i$ of the first and group $j$ of the second, with row sums $a_i$ and column sums $b_j$. All the indices below are functions of four pair counts, written as in [Gates (2025)](https://arxiv.org/abs/2511.03000):
 
 $$
-A = \sum_i \binom{a_i}{2}, \quad B = \sum_j \binom{b_j}{2}, \quad T = \sum_{i,j} \binom{n_{ij}}{2}, \quad M = \binom{N}{2}
+\begin{gathered}
+A = \sum_i \binom{a_i}{2}, \quad B = \sum_j \binom{b_j}{2} \\[6pt]
+T = \sum_{i,j} \binom{n_{ij}}{2}, \quad M = \binom{N}{2}
+\end{gathered}
 $$
 
 $A$ counts the pairs together in the first partition, $B$ in the second, $T$ in both, and $M$ is all pairs. The pairs apart in both are $M - A - B + T$.

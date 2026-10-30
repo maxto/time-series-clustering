@@ -52,11 +52,13 @@ $$
 The `tslearn` function `dtw` computes the first form for multivariate input. For MPdist, join $A$ and $B$ and let $P_{ABBA}$ hold, for every subsequence of length $L$ of $A$, the Euclidean distance to its nearest neighbour in $B$, and the same from $B$ to $A$. It has $2(n - L + 1)$ values for series of length $n$. The distance is the $k$-th smallest value, with $k$ set to 5 percent of $2n$ in the paper, or the largest one when $P_{ABBA}$ is not longer than $k$:
 
 $$
-\mathrm{MPdist}_L(A, B) =
-\begin{cases}
-k\text{-th smallest value of } P_{ABBA} & \text{if } |P_{ABBA}| > k \\
+\begin{aligned}
+& \mathrm{MPdist}_L(A, B) = \\
+& \begin{cases}
+k\text{-th smallest of } P_{ABBA} & \text{if } |P_{ABBA}| > k \\
 \max P_{ABBA} & \text{otherwise}
 \end{cases}
+\end{aligned}
 $$
 
 The largest value would be brittle to one spike or dropout, the smallest would barely discriminate. When $L$ equals the series length, MPdist is the Euclidean distance.

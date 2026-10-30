@@ -44,8 +44,10 @@ Let the partition have $k$ groups $C_1, \dots, C_k$ of $n_q$ points each, $n$ po
 **Silhouette** ([Rousseeuw, 1987](https://doi.org/10.1016/0377-0427(87)90125-7)). For a point $i$ in group $C_I$, let $a(i)$ be its mean dissimilarity to the other points of its own group and $b(i)$ the smallest mean dissimilarity from $i$ to the points of any other group:
 
 $$
-a(i) = \frac{1}{n_I - 1} \sum_{j \in C_I,\, j \ne i} d(i, j), \qquad
+\begin{gathered}
+a(i) = \frac{1}{n_I - 1} \sum_{j \in C_I,\, j \ne i} d(i, j) \\[6pt]
 b(i) = \min_{J \ne I} \frac{1}{n_J} \sum_{j \in C_J} d(i, j)
+\end{gathered}
 $$
 
 $$
@@ -65,9 +67,11 @@ Needs: a dissimilarity matrix. Variants replace the separation or the diameter w
 **Calinski-Harabasz** ([Calinski and Harabasz, 1974](https://doi.org/10.1080/03610927408827101)). With centres $c_q$ and global centre $c$, the ratio of between-group to within-group dispersion, corrected for the number of groups:
 
 $$
-\mathrm{CH} = \frac{\operatorname{tr}(B_k)}{\operatorname{tr}(W_k)} \cdot \frac{n - k}{k - 1}, \quad
-\operatorname{tr}(B_k) = \sum_{q=1}^{k} n_q \lVert c_q - c \rVert^2, \quad
-\operatorname{tr}(W_k) = \sum_{q=1}^{k} \sum_{x \in C_q} \lVert x - c_q \rVert^2
+\begin{aligned}
+\mathrm{CH} &= \frac{\operatorname{tr}(B_k)}{\operatorname{tr}(W_k)} \cdot \frac{n - k}{k - 1} \\[6pt]
+\operatorname{tr}(B_k) &= \sum_{q=1}^{k} n_q \lVert c_q - c \rVert^2 \\[6pt]
+\operatorname{tr}(W_k) &= \sum_{q=1}^{k} \sum_{x \in C_q} \lVert x - c_q \rVert^2
+\end{aligned}
 $$
 
 Needs: points in a vector space, the group centres and a global centre.
