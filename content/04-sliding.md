@@ -23,6 +23,10 @@ Lock-step distance compares sample $t$ with sample $t$. Cross-correlation slides
 
 On the twelve days of the fixture, an authored demonstration, SBD on z-normalised days groups the six two-peak days together and the six flat-block days together, though early and late days differ by five hours. Euclidean distance on the same z-normalised days still splits early from late. The shift is what SBD forgives, and the normalisation is what lets it ignore level and scale.
 
+![Normalised cross-correlation against the shift in samples, z-normalised days. A negative shift means the second day runs later](figures/cross-correlation.svg)
+
+The curve for `mon` and `sat` peaks at a shift of {{n:shift_mon_sat}} samples, the one for `mon` and `wed` at {{n:shift_mon_wed}}. SBD is one minus the height of the peak: {{n:sbd_mon_sat}} and {{n:sbd_mon_wed}}.
+
 ## When to use it
 
 Use it when:

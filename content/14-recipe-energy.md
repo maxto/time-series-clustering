@@ -55,7 +55,11 @@ Three checks, each answering a different question.
 
 **Agreement with a reference.** The fixture file stores an hour group and a shape group. The partition equals the hour group, so an external index such as the adjusted Rand index reaches its maximum against it, and it does not equal the shape group. This is the expected reading: the question asked for the hour, not the shape. The reference exists because the fixture was authored, and real data seldom has one.
 
-**Sensitivity to the decision.** The window is the decision that moves the answer. At $w = 10$ the distance between `mon` and `wed` falls to {{n:dtw10_mon_wed}}, from {{n:dtw4_mon_wed}} at $w = 4$, so a wider window can bring days from the two timings close together. Whether the two-group cut changes at other windows is a check to run before trusting the result, with the stability idea of the previous lesson. The result of that run is not claimed here.
+**Sensitivity to the decision.** The window is the decision that moves the answer. At $w = 10$ the distance between `mon` and `wed` falls to {{n:dtw10_mon_wed}}, from {{n:dtw4_mon_wed}} at $w = 4$, so a wider window can bring days from the two timings close together. Whether the two-group cut changes at other windows is a check to run before trusting the result, with the stability idea of the previous lesson.
+
+![Average linkage cut at two groups, at six windows. Colour is the group, the number at the right is the mean silhouette on that window's matrix](figures/window-sensitivity.svg)
+
+From $w = 0$ to $w = 6$ the cut stays the hour group. At $w = 10$ and with no window it puts `thu` alone against the other eleven days, and the mean silhouette falls to {{n:sensitivity_sil_10}} and {{n:sensitivity_sil_none}}, from {{n:silhouette_dtw4_k2}} at $w = 4$. The result depends on the window, so report the window with it.
 
 The fixture is an authored demonstration. It shows what each choice does, not that the method performs well on real load data.
 

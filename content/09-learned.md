@@ -23,6 +23,10 @@ For clustering there are no class labels, which changes the shapelet search. [Za
 
 For embeddings, [Franceschi, Dieuleveut and Jaggi (2019)](https://arxiv.org/abs/1901.10738) train a causal dilated convolutional encoder without labels, on multivariate series of variable length. Another route is an autoencoder followed by an ordinary clusterer on the latent vector.
 
+![The twelve days as points in a plane: distance to a shapelet from a peak of mon and to a shapelet from the rising edge of sun. Two-peak days in ink, flat-block days in accent](figures/shapelet-map.svg)
+
+On the fixture, an authored demonstration, two shapelets of nine samples turn each day into a point, and the two shapes fall into opposite corners. These two shapelets were cut by hand to show the representation, no search found them.
+
 ## When to use it
 
 Use it when:

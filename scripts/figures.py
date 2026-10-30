@@ -19,6 +19,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "code" / "python"))
+sys.path.insert(0, str(ROOT / "scripts"))
 
 from tsc.distances import dtw, dtw_path, euclidean, sbd, znorm  # noqa: E402
 from tsc.group import average_linkage, distance_matrix, load_demand  # noqa: E402
@@ -480,6 +481,10 @@ def main():
         "dtw-matrix": fig_dtw_matrix(ids, D, labels),
         "dtw-explorer": fig_dtw_explorer(live, live["initial"]["pair"], live["w"]["initial"]),
     }
+    from figures_lessons import lesson_figures  # it imports the helpers of this file
+    extra_figures, extra_numbers = lesson_figures(ids, X)
+    figures.update(extra_figures)
+    numbers.update(extra_numbers)
     OUT.mkdir(parents=True, exist_ok=True)
     for name, svg in figures.items():
         (OUT / f"{name}.svg").write_text(svg)

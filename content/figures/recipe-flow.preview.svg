@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 278" role="img"><style>.ln { fill: none; stroke: #161a23; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }.ln-accent { fill: none; stroke: #3b5bdb; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }.ln-muted { fill: none; stroke: #6f7689; stroke-width: 1.5; }.ln-soft { fill: none; stroke: #aeb6c6; stroke-width: 1; }.box { fill: #ffffff; stroke: #aeb6c6; stroke-width: 1; }.box-accent { fill: color-mix(in srgb, #3b5bdb 16%, #ffffff); stroke: #3b5bdb; stroke-width: 1; }.fill-accent { fill: #3b5bdb; }.fill-ink { fill: #161a23; }.fill-muted { fill: #6f7689; }text { font-family: "Geist", system-ui, sans-serif; fill: #161a23; }.t { font-size: 14px; fill: #161a23; }.t-sm { font-size: 14px; fill: #464d5e; }.t-mono { font-family: "Geist Mono", ui-monospace, monospace; }.mid { text-anchor: middle; }.end { text-anchor: end; }</style><rect width="100%" height="100%" fill="#ffffff"/>
+<title>The four steps of the stock recipe and what each one hands over</title>
+<desc>A vertical flow: Define gives question, object, N and T, then Measure gives N by N dissimilarity matrix, then Group gives tree or partition, then Validate gives checks, each on its own question.</desc>
+<rect class="box" x="4" y="2" width="352" height="56" rx="6"/>
+<text class="t" x="16" y="25">Define</text>
+<text class="t-sm t-mono" x="16" y="46">question, object, N and T</text>
+<line class="ln-muted" x1="180" y1="58" x2="180" y2="74"/>
+<rect class="box" x="4" y="74" width="352" height="56" rx="6"/>
+<text class="t" x="16" y="97">Measure</text>
+<text class="t-sm t-mono" x="16" y="118">N by N dissimilarity matrix</text>
+<line class="ln-muted" x1="180" y1="130" x2="180" y2="146"/>
+<rect class="box" x="4" y="146" width="352" height="56" rx="6"/>
+<text class="t" x="16" y="169">Group</text>
+<text class="t-sm t-mono" x="16" y="190">tree or partition</text>
+<line class="ln-muted" x1="180" y1="202" x2="180" y2="218"/>
+<rect class="box" x="4" y="218" width="352" height="56" rx="6"/>
+<text class="t" x="16" y="241">Validate</text>
+<text class="t-sm t-mono" x="16" y="262">checks, each on its own question</text>
+</svg>

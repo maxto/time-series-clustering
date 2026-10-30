@@ -178,6 +178,16 @@ Start from the distance, since it comes from the question, and read down to the 
 
 An algorithm that merely accepts a matrix does not make the result meaningful. Ward linkage accepts a precomputed matrix in `scipy`, but the result is correct only if the distances are Euclidean, and the user has to guarantee it.
 
+Feed one matrix, DTW with $w = 4$ on the twelve fixture days, to three of these algorithms. The fixture is an authored demonstration, so this shows what each input does, not which algorithm is better.
+
+![Dendrogram of average linkage on the DTW matrix, with the cut that gives two groups](figures/dendrogram.svg)
+
+The tree keeps every level. Its last merge is at height {{n:merge_last}} and the one before at {{n:merge_prev}}, so any cut between the two gives two groups.
+
+![Five partitions of the twelve days from the same DTW matrix. Colour is the group, an empty box is noise](figures/partitions.svg)
+
+k-medoids at two groups, with medoids `{{n:medoid_a}}` and `{{n:medoid_b}}`, gives the same partition as average linkage. DBSCAN takes a radius in place of a number of groups. With MinPts 3 it leaves {{n:dbscan_noise_small}} days as noise at radius 1.25, returns the same two groups at 2.00, and joins all twelve at 2.35.
+
 ## In finance
 
 Clustering answers which assets or periods group together under the chosen measure, for instance to pick diversifiers or candidates for pairs. It does not prove that groups exist, and the groups depend on the measure and the algorithm. For the question of how assets move together through time, the literature offers several tools: Pearson correlation for linear association, the rank correlations of [Spearman (1904)](https://doi.org/10.2307/1412159) and [Kendall (1938)](https://doi.org/10.1093/biomet/30.1-2.81) for monotonic association, dynamic conditional correlation for time-varying dependence ([Engle, 2002](https://doi.org/10.1198/073500102288618487)), copulas for dependence beyond correlation ([Embrechts, McNeil and Straumann, 2002](https://doi.org/10.1017/CBO9780511615337.008)), and the minimal spanning tree of the correlation matrix of [Mantegna (1999)](https://doi.org/10.1007/s100510050929).

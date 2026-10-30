@@ -23,6 +23,10 @@ Every index below compares two things: how close the members of a group are to e
 
 Take the two-group cut of the fixture, average linkage on the DTW matrix of [Elastic: DTW and its window](lesson:dtw). Its mean silhouette is {{n:silhouette_dtw4_k2}}. That number says how well the six early days and the six late days separate under DTW with $w = 4$. It says nothing about whether DTW was the comparison your question needed, which is the point of [Same series, different questions](lesson:same-series-different-questions): a score computed under one distance measures the fit to that distance.
 
+![Silhouette of each day in that cut, group 1 in ink, group 2 in accent](figures/silhouette-bars.svg)
+
+The mean hides the spread. Per day the silhouette runs from {{n:silhouette_min}} for `d08` to {{n:silhouette_max}} for `d09`, two days of the same group.
+
 ## When to use it
 
 Use it when:

@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 250" role="img"><style>.ln { fill: none; stroke: #161a23; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }.ln-accent { fill: none; stroke: #3b5bdb; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }.ln-muted { fill: none; stroke: #6f7689; stroke-width: 1.5; }.ln-soft { fill: none; stroke: #aeb6c6; stroke-width: 1; }.box { fill: #ffffff; stroke: #aeb6c6; stroke-width: 1; }.box-accent { fill: color-mix(in srgb, #3b5bdb 16%, #ffffff); stroke: #3b5bdb; stroke-width: 1; }.fill-accent { fill: #3b5bdb; }.fill-ink { fill: #161a23; }.fill-muted { fill: #6f7689; }text { font-family: "Geist", system-ui, sans-serif; fill: #161a23; }.t { font-size: 14px; fill: #161a23; }.t-sm { font-size: 14px; fill: #464d5e; }.t-mono { font-family: "Geist Mono", ui-monospace, monospace; }.mid { text-anchor: middle; }.end { text-anchor: end; }</style><rect width="100%" height="100%" fill="#ffffff"/>
+<title>Silhouette of each day in the two-group cut</title>
+<desc>Horizontal bars of s(i) for the twelve days, group 1 in ink and group 2 in accent, sorted within each group.</desc>
+<line class="ln-soft" x1="44" y1="4" x2="44" y2="236"/>
+<text class="t-sm t-mono end" x="38" y="19">d09</text>
+<rect class="fill-ink" x="44" y="8" width="160.9" height="14"/>
+<text class="t-sm t-mono" x="210.9" y="19">0.61</text>
+<text class="t-sm t-mono end" x="38" y="38">sun</text>
+<rect class="fill-ink" x="44" y="27" width="156.4" height="14"/>
+<text class="t-sm t-mono" x="206.4" y="38">0.59</text>
+<text class="t-sm t-mono end" x="38" y="57">mon</text>
+<rect class="fill-ink" x="44" y="46" width="152.8" height="14"/>
+<text class="t-sm t-mono" x="202.8" y="57">0.58</text>
+<text class="t-sm t-mono end" x="38" y="76">tue</text>
+<rect class="fill-ink" x="44" y="65" width="148.7" height="14"/>
+<text class="t-sm t-mono" x="198.7" y="76">0.56</text>
+<text class="t-sm t-mono end" x="38" y="95">sat</text>
+<rect class="fill-ink" x="44" y="84" width="135.8" height="14"/>
+<text class="t-sm t-mono" x="185.8" y="95">0.51</text>
+<text class="t-sm t-mono end" x="38" y="114">d08</text>
+<rect class="fill-ink" x="44" y="103" width="99.8" height="14"/>
+<text class="t-sm t-mono" x="149.8" y="114">0.38</text>
+<text class="t-sm t-mono end" x="38" y="141">d11</text>
+<rect class="fill-accent" x="44" y="130" width="153.5" height="14"/>
+<text class="t-sm t-mono" x="203.5" y="141">0.58</text>
+<text class="t-sm t-mono end" x="38" y="160">d10</text>
+<rect class="fill-accent" x="44" y="149" width="141.5" height="14"/>
+<text class="t-sm t-mono" x="191.5" y="160">0.54</text>
+<text class="t-sm t-mono end" x="38" y="179">d12</text>
+<rect class="fill-accent" x="44" y="168" width="134" height="14"/>
+<text class="t-sm t-mono" x="184" y="179">0.51</text>
+<text class="t-sm t-mono end" x="38" y="198">wed</text>
+<rect class="fill-accent" x="44" y="187" width="131.1" height="14"/>
+<text class="t-sm t-mono" x="181.1" y="198">0.50</text>
+<text class="t-sm t-mono end" x="38" y="217">thu</text>
+<rect class="fill-accent" x="44" y="206" width="130.5" height="14"/>
+<text class="t-sm t-mono" x="180.5" y="217">0.49</text>
+<text class="t-sm t-mono end" x="38" y="236">fri</text>
+<rect class="fill-accent" x="44" y="225" width="120.4" height="14"/>
+<text class="t-sm t-mono" x="170.4" y="236">0.46</text>
+</svg>

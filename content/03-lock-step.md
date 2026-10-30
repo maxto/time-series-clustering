@@ -23,6 +23,12 @@ Under a lock-step measure two series are close when they are close at the same t
 
 In the fixture, an authored demonstration, the Euclidean distance between `mon` and `sat` is {{n:euclid_mon_sat}}, and between `mon` and `wed` it is {{n:euclid_mon_wed}}. The peaks of `sat` come three samples after those of `mon`, the peaks of `wed` ten samples after. Lock-step distance gives similar values for both. DTW with $w = 4$ gives {{n:dtw4_mon_sat}} for the first pair and {{n:dtw4_mon_wed}} for the second, because the window forgives a shift of three samples and not of ten.
 
+Over the same two pairs, Manhattan distance gives {{n:manhattan_mon_sat}} and {{n:manhattan_mon_wed}}, Chebyshev distance {{n:chebyshev_mon_sat}} and {{n:chebyshev_mon_wed}}, and correlation distance, which ignores level and scale, {{n:corr_mon_sat}} and {{n:corr_mon_wed}}.
+
+![Euclidean distance on raw values next to correlation distance, the twelve days ordered early two-peak, early flat, late two-peak, late flat. Higher opacity means a smaller distance, each panel on its own scale](figures/lockstep-matrices.svg)
+
+Both matrices split by the hour of activity, not by the shape of the day: a lock-step measure reads two days with the same shape at different hours as different.
+
 ## When to use it
 
 Use it when:

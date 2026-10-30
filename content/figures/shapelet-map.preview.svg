@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 262" role="img"><style>.ln { fill: none; stroke: #161a23; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }.ln-accent { fill: none; stroke: #3b5bdb; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }.ln-muted { fill: none; stroke: #6f7689; stroke-width: 1.5; }.ln-soft { fill: none; stroke: #aeb6c6; stroke-width: 1; }.box { fill: #ffffff; stroke: #aeb6c6; stroke-width: 1; }.box-accent { fill: color-mix(in srgb, #3b5bdb 16%, #ffffff); stroke: #3b5bdb; stroke-width: 1; }.fill-accent { fill: #3b5bdb; }.fill-ink { fill: #161a23; }.fill-muted { fill: #6f7689; }text { font-family: "Geist", system-ui, sans-serif; fill: #161a23; }.t { font-size: 14px; fill: #161a23; }.t-sm { font-size: 14px; fill: #464d5e; }.t-mono { font-family: "Geist Mono", ui-monospace, monospace; }.mid { text-anchor: middle; }.end { text-anchor: end; }</style><rect width="100%" height="100%" fill="#ffffff"/>
+<title>The twelve days in the plane of two shapelets</title>
+<desc>Each day is a point: its distance to a shapelet cut from a peak of mon and to a shapelet cut from a flat block. Two-peak days in ink, flat-block days in accent.</desc>
+<rect class="box" x="34" y="8" width="316" height="230"/>
+<circle class="fill-ink" cx="34" cy="33.6" r="5"/>
+<circle class="fill-ink" cx="56.3" cy="42.6" r="5"/>
+<circle class="fill-ink" cx="48" cy="37.5" r="5"/>
+<circle class="fill-ink" cx="49.8" cy="28.9" r="5"/>
+<circle class="fill-ink" cx="46.9" cy="33.6" r="5"/>
+<circle class="fill-ink" cx="56.6" cy="29.1" r="5"/>
+<circle class="fill-accent" cx="210.7" cy="238" r="5"/>
+<circle class="fill-accent" cx="265.3" cy="208.3" r="5"/>
+<circle class="fill-accent" cx="249.6" cy="208.2" r="5"/>
+<circle class="fill-accent" cx="321.3" cy="209.6" r="5"/>
+<circle class="fill-accent" cx="286.8" cy="206.6" r="5"/>
+<circle class="fill-accent" cx="299" cy="219" r="5"/>
+<text class="t-sm t-mono" x="34" y="256">0</text>
+<text class="t-sm t-mono end" x="350" y="256">distance to shapelet A</text>
+<text class="t-sm t-mono end" x="28" y="238">0</text>
+<text class="t-sm t-mono end" x="342" y="26">distance to shapelet B</text>
+</svg>

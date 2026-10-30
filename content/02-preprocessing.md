@@ -26,6 +26,8 @@ Every preprocessing step erases one property of the series before the distance i
 
 Take the pair `mon` and `sat` of the fixture, which share a two-peak profile with the peaks of `sat` three samples later. Their Euclidean distance on raw values is {{n:euclid_mon_sat}}, and DTW with $w = 4$ gives {{n:dtw4_mon_sat}}. The gap is almost all timing, and z-normalisation would not change it: it erases level and scale and keeps timing.
 
+![One day of the fixture, mon, through four of these steps, each panel on its own vertical scale. Z-normalisation changes only the axis, differencing leaves the changes, the moving average over five points softens the peaks, the two-hour means keep only their rough place](figures/preprocess-views.svg)
+
 ## When to use it
 
 Use it when:

@@ -19,9 +19,11 @@ Feature-based measures compare series through descriptors such as autocorrelatio
 
 Euclidean distance and DTW compare values at, or near, the same positions. A feature-based measure first reduces each series to a description and then compares descriptions, so two series with different timing and different length can be close if they share the same dependence, the same cycles or the same coarse shape. [Montero and Vilar (2014)](https://doi.org/10.18637/jss.v062.i01) call the first kind shape-based, dominated by local comparisons of the geometric profile, and the second kind structure-based, which compares underlying dependence structures.
 
-![The twelve days of the fixture, 48 half-hour readings each, all on one shared scale from 0 kW](figures/demand-12.svg)
+![Sample autocorrelation of a two-peak day, mon, and a flat-block day, sun, from lag 1 to lag 24 (half a day), on a scale from -1 to 1](figures/acf-bars.svg)
 
 Each day of this fixture could be described by its autocorrelations, by the weight of its half-day and daily cycles, or by a short word of symbols. Two days can then be close in one description and far in another, and that is the point: the feature is the question.
+
+Over 24 lags the autocorrelation distance between `mon` and `sun`, two shapes, is {{n:acf_d_mon_sun}}. Between `mon` and `wed`, the same shape five hours later, it is {{n:acf_d_mon_wed}}. This description keeps the shape and drops the hour.
 
 ## When to use it
 

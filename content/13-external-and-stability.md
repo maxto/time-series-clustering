@@ -21,6 +21,10 @@ External indices compare two labelings of the same series: the clustering and a 
 
 On the twelve fixture days the reference exists, because the fixture file stores two intended labelings, an hour group and a shape group (see [Same series, different questions](lesson:same-series-different-questions)). The two-group cut of average linkage on the DTW matrix, described in [Elastic: DTW and its window](lesson:dtw), puts the six early days against the six late days. Compared with the hour group, every pair is treated alike and an external index returns its maximum. Compared with the shape group, it does not. The fixture is authored, so this shows how an index behaves, not that a method works.
 
+![The two-group cut against the hour group and the shape group, as contingency tables](figures/contingency.svg)
+
+The tables give the same reading in numbers. Against the hour group the adjusted Rand index is {{n:ari_hour}} and the Jaccard index {{n:jaccard_hour}}. Against the shape group they are {{n:ari_shape}} and {{n:jaccard_shape}}, and a negative adjusted Rand index means agreement below its expected value under chance.
+
 ## When to use it
 
 Use it when:

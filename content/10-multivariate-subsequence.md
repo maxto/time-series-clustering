@@ -79,6 +79,10 @@ They show on classification that neither dominates: the two methods can produce 
 
 MPdist is a different use of subsequences: the series stay the objects to cluster, and the windows only enter the distance. Gharghabi et al. (2018) show a behaviour of an insect whose pattern has a variable number of peaks, clustered with three smoothed random walks. The clustering by Euclidean distance looks essentially random, and DTW cannot warp three peaks into five. MPdist is the measure they propose for this kind of data.
 
+![For each window of 8 samples of mon, by its start time, the z-normalised Euclidean distance to the nearest window of sat, a two-peak day, and of sun, a flat-block day](figures/nearest-window.svg)
+
+These nearest-window distances are what MPdist sorts. On the fixture, an authored demonstration, the windows over the peaks of `mon` find a close match in `sat` and none in `sun`. Over the flat hours both distances are high, because a z-normalised flat window holds mostly noise.
+
 ## Which clustering algorithm
 
 Both families give a matrix of pairwise distances, so the matrix-based algorithms apply: agglomerative hierarchical clustering, k-medoids and DBSCAN, as with DTW. The details of each are in the lesson on matching the algorithm to the distance.

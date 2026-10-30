@@ -133,6 +133,10 @@ Each measure has its own parameters, and they are all in the units of the data, 
 
 Pick the tolerance from the question: the size of an error, or of a gap, that you would call the same event.
 
+On the z-normalised fixture days, an authored demonstration, take $\varepsilon = {{n:lcss_eps}}$ and $\delta = {{n:lcss_delta}}$. The days `mon` and `sat`, with peaks three samples apart, match {{n:lcss_mon_sat}} of 48 points, so $d_{\mathrm{LCSS}}$ is {{n:lcss_d_mon_sat}}. For `mon` and `wed`, with peaks ten samples apart, the window keeps the peaks out of reach: {{n:lcss_mon_wed}} points match and $d_{\mathrm{LCSS}}$ is {{n:lcss_d_mon_wed}}.
+
+![LCSS on mon and wed: a line for each matched pair, a dot for each point left without a partner](figures/lcss-alignment.svg)
+
 ## Which clustering algorithm
 
 All five give a pairwise distance matrix. None has a natural centroid, so the options follow the same logic as DTW:

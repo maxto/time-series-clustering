@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 236" role="img"><style>.ln { fill: none; stroke: #161a23; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }.ln-accent { fill: none; stroke: #3b5bdb; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }.ln-muted { fill: none; stroke: #6f7689; stroke-width: 1.5; }.ln-soft { fill: none; stroke: #aeb6c6; stroke-width: 1; }.box { fill: #ffffff; stroke: #aeb6c6; stroke-width: 1; }.box-accent { fill: color-mix(in srgb, #3b5bdb 16%, #ffffff); stroke: #3b5bdb; stroke-width: 1; }.fill-accent { fill: #3b5bdb; }.fill-ink { fill: #161a23; }.fill-muted { fill: #6f7689; }text { font-family: "Geist", system-ui, sans-serif; fill: #161a23; }.t { font-size: 14px; fill: #161a23; }.t-sm { font-size: 14px; fill: #464d5e; }.t-mono { font-family: "Geist Mono", ui-monospace, monospace; }.mid { text-anchor: middle; }.end { text-anchor: end; }</style><rect width="100%" height="100%" fill="#ffffff"/>
+<title>LCSS alignment of mon and wed</title>
+<desc>Two z-normalised days with a line for each of the 29 matched pairs, epsilon 0.25, delta 4 samples. Dots mark the points left unmatched.</desc>
+<text class="t-sm t-mono" x="4" y="14">mon</text>
+<text class="t-sm t-mono" x="4" y="144">wed</text>
+<line class="ln-soft" x1="4" y1="95.9" x2="34" y2="224.8"/>
+<line class="ln-soft" x1="11.5" y1="96.5" x2="41.4" y2="222.8"/>
+<line class="ln-soft" x1="19" y1="95.9" x2="48.9" y2="225.9"/>
+<line class="ln-soft" x1="26.5" y1="95.3" x2="56.4" y2="227.2"/>
+<line class="ln-soft" x1="34" y1="97" x2="63.9" y2="227.7"/>
+<line class="ln-soft" x1="41.4" y1="94" x2="71.4" y2="225.1"/>
+<line class="ln-soft" x1="48.9" y1="94.6" x2="78.9" y2="226.3"/>
+<line class="ln-soft" x1="56.4" y1="94.8" x2="86.4" y2="224.2"/>
+<line class="ln-soft" x1="63.9" y1="91.3" x2="93.9" y2="225.7"/>
+<line class="ln-soft" x1="123.8" y1="88.7" x2="138.8" y2="223.4"/>
+<line class="ln-soft" x1="131.3" y1="80.4" x2="146.3" y2="210.7"/>
+<line class="ln-soft" x1="138.8" y1="64.7" x2="153.8" y2="190.4"/>
+<line class="ln-soft" x1="153.8" y1="28.4" x2="176.3" y2="163.5"/>
+<line class="ln-soft" x1="176.3" y1="84.9" x2="191.2" y2="216.5"/>
+<line class="ln-soft" x1="183.7" y1="94.7" x2="198.7" y2="220"/>
+<line class="ln-soft" x1="251.1" y1="95" x2="258.6" y2="219.9"/>
+<line class="ln-soft" x1="266.1" y1="93.5" x2="266.1" y2="223.9"/>
+<line class="ln-soft" x1="273.6" y1="96.9" x2="273.6" y2="223.8"/>
+<line class="ln-soft" x1="281.1" y1="94.8" x2="281.1" y2="227.5"/>
+<line class="ln-soft" x1="288.6" y1="96.4" x2="288.6" y2="227.4"/>
+<line class="ln-soft" x1="296.1" y1="97.5" x2="296.1" y2="225.3"/>
+<line class="ln-soft" x1="303.6" y1="96.1" x2="303.6" y2="224.6"/>
+<line class="ln-soft" x1="311.1" y1="95" x2="311.1" y2="223.9"/>
+<line class="ln-soft" x1="318.6" y1="93.8" x2="318.6" y2="223.3"/>
+<line class="ln-soft" x1="326" y1="93.1" x2="326" y2="227.2"/>
+<line class="ln-soft" x1="333.5" y1="95.4" x2="333.5" y2="226.4"/>
+<line class="ln-soft" x1="341" y1="96.9" x2="341" y2="226.3"/>
+<line class="ln-soft" x1="348.5" y1="96.6" x2="348.5" y2="226.9"/>
+<line class="ln-soft" x1="356" y1="98" x2="356" y2="225.8"/>
+<polyline class="ln" points="4,95.9 11.5,96.5 19,95.9 26.5,95.3 34,97 41.4,94 48.9,94.6 56.4,94.8 63.9,91.3 71.4,83.5 78.9,61.2 86.4,31.8 93.9,20.2 101.4,31.5 108.9,59.3 116.3,81 123.8,88.7 131.3,80.4 138.8,64.7 146.3,40.5 153.8,28.4 161.3,40.4 168.8,64.2 176.3,84.9 183.7,94.7 191.2,96 198.7,94.4 206.2,96.5 213.7,94.6 221.2,93.6 228.7,97.6 236.2,93.8 243.7,95 251.1,95 258.6,95.6 266.1,93.5 273.6,96.9 281.1,94.8 288.6,96.4 296.1,97.5 303.6,96.1 311.1,95 318.6,93.8 326,93.1 333.5,95.4 341,96.9 348.5,96.6 356,98"/>
+<polyline class="ln-accent" points="4,224.4 11.5,224.5 19,224.1 26.5,224.2 34,224.8 41.4,222.8 48.9,225.9 56.4,227.2 63.9,227.7 71.4,225.1 78.9,226.3 86.4,224.2 93.9,225.7 101.4,228 108.9,225.9 116.3,223.6 123.8,226.7 131.3,224.6 138.8,223.4 146.3,210.7 153.8,190.4 161.3,162.6 168.8,150 176.3,163.5 183.7,188.6 191.2,216.5 198.7,220 206.2,213.4 213.7,194.3 221.2,169.4 228.7,157.3 236.2,169.9 243.7,195.1 251.1,213.5 258.6,219.9 266.1,223.9 273.6,223.8 281.1,227.5 288.6,227.4 296.1,225.3 303.6,224.6 311.1,223.9 318.6,223.3 326,227.2 333.5,226.4 341,226.3 348.5,226.9 356,225.8"/>
+<circle class="fill-ink" cx="71.4" cy="83.5" r="3.2"/>
+<circle class="fill-ink" cx="78.9" cy="61.2" r="3.2"/>
+<circle class="fill-ink" cx="86.4" cy="31.8" r="3.2"/>
+<circle class="fill-ink" cx="93.9" cy="20.2" r="3.2"/>
+<circle class="fill-ink" cx="101.4" cy="31.5" r="3.2"/>
+<circle class="fill-ink" cx="108.9" cy="59.3" r="3.2"/>
+<circle class="fill-ink" cx="116.3" cy="81" r="3.2"/>
+<circle class="fill-ink" cx="146.3" cy="40.5" r="3.2"/>
+<circle class="fill-ink" cx="161.3" cy="40.4" r="3.2"/>
+<circle class="fill-ink" cx="168.8" cy="64.2" r="3.2"/>
+<circle class="fill-ink" cx="191.2" cy="96" r="3.2"/>
+<circle class="fill-ink" cx="198.7" cy="94.4" r="3.2"/>
+<circle class="fill-ink" cx="206.2" cy="96.5" r="3.2"/>
+<circle class="fill-ink" cx="213.7" cy="94.6" r="3.2"/>
+<circle class="fill-ink" cx="221.2" cy="93.6" r="3.2"/>
+<circle class="fill-ink" cx="228.7" cy="97.6" r="3.2"/>
+<circle class="fill-ink" cx="236.2" cy="93.8" r="3.2"/>
+<circle class="fill-ink" cx="243.7" cy="95" r="3.2"/>
+<circle class="fill-ink" cx="258.6" cy="95.6" r="3.2"/>
+<circle class="fill-accent" cx="4" cy="224.4" r="3.2"/>
+<circle class="fill-accent" cx="11.5" cy="224.5" r="3.2"/>
+<circle class="fill-accent" cx="19" cy="224.1" r="3.2"/>
+<circle class="fill-accent" cx="26.5" cy="224.2" r="3.2"/>
+<circle class="fill-accent" cx="101.4" cy="228" r="3.2"/>
+<circle class="fill-accent" cx="108.9" cy="225.9" r="3.2"/>
+<circle class="fill-accent" cx="116.3" cy="223.6" r="3.2"/>
+<circle class="fill-accent" cx="123.8" cy="226.7" r="3.2"/>
+<circle class="fill-accent" cx="131.3" cy="224.6" r="3.2"/>
+<circle class="fill-accent" cx="161.3" cy="162.6" r="3.2"/>
+<circle class="fill-accent" cx="168.8" cy="150" r="3.2"/>
+<circle class="fill-accent" cx="183.7" cy="188.6" r="3.2"/>
+<circle class="fill-accent" cx="206.2" cy="213.4" r="3.2"/>
+<circle class="fill-accent" cx="213.7" cy="194.3" r="3.2"/>
+<circle class="fill-accent" cx="221.2" cy="169.4" r="3.2"/>
+<circle class="fill-accent" cx="228.7" cy="157.3" r="3.2"/>
+<circle class="fill-accent" cx="236.2" cy="169.9" r="3.2"/>
+<circle class="fill-accent" cx="243.7" cy="195.1" r="3.2"/>
+<circle class="fill-accent" cx="251.1" cy="213.5" r="3.2"/>
+</svg>

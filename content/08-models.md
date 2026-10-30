@@ -27,6 +27,10 @@ The five measures of this lesson, in order:
 - **Ordinal patterns.** [Bandt and Pompe (2002)](https://doi.org/10.1103/PhysRevLett.88.174102) describe a series by the relative frequency of the order patterns of short windows. Brandmaier (2011) turns this into a distance between series.
 - **Normalized compression distance of [Cilibrasi and Vitányi (2005)](https://doi.org/10.1109/TIT.2005.844059).** How much less space two series need together than apart.
 
+![Relative frequency of the six ordinal patterns of length 3 in mon, a two-peak day, and sun, a flat-block day](figures/ordinal-patterns.svg)
+
+On the fixture, an authored demonstration, the normalised permutation entropy of `mon` is {{n:pe_mon}} and that of `sun` is {{n:pe_sun}}, both close to the maximum of 1. At this pattern length a two-peak day and a flat-block day look almost alike, so the length is a choice and not a detail.
+
 ## When to use it
 
 Use it when:

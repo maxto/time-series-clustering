@@ -17,6 +17,8 @@ Grouping stocks means choosing four things in order, the question, the dissimila
 
 ## Define
 
+![The four steps and what each one hands to the next](figures/recipe-flow.svg)
+
 Three decisions, in this order.
 
 **The question.** The usual one is contemporaneous co-movement: which stocks move together on the same dates. [Mantegna (1999)](https://doi.org/10.1007/s100510050929) builds a taxonomy of stocks from the synchronous correlation of daily differences of the logarithm of the closing price. If the question is about one series leading another, warping or shifting is part of the answer and the comparison changes, as in [Elastic: DTW and its window](lesson:dtw). The question fixes what must be ignored, as in [Same series, different questions](lesson:same-series-different-questions).

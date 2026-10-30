@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 226" role="img"><style>.ln { fill: none; stroke: #161a23; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }.ln-accent { fill: none; stroke: #3b5bdb; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }.ln-muted { fill: none; stroke: #6f7689; stroke-width: 1.5; }.ln-soft { fill: none; stroke: #aeb6c6; stroke-width: 1; }.box { fill: #ffffff; stroke: #aeb6c6; stroke-width: 1; }.box-accent { fill: color-mix(in srgb, #3b5bdb 16%, #ffffff); stroke: #3b5bdb; stroke-width: 1; }.fill-accent { fill: #3b5bdb; }.fill-ink { fill: #161a23; }.fill-muted { fill: #6f7689; }text { font-family: "Geist", system-ui, sans-serif; fill: #161a23; }.t { font-size: 14px; fill: #161a23; }.t-sm { font-size: 14px; fill: #464d5e; }.t-mono { font-family: "Geist Mono", ui-monospace, monospace; }.mid { text-anchor: middle; }.end { text-anchor: end; }</style><rect width="100%" height="100%" fill="#ffffff"/>
+<title>Average-linkage tree of the DTW distances (w = 4)</title>
+<desc>Dendrogram of the twelve days. The last merge is at height 3.67, the one before at 2.36, and the dashed line cuts the tree into two groups.</desc>
+<line class="ln-soft" x1="34" y1="188" x2="356" y2="188"/>
+<polyline class="ln-muted" points="74.2,188 74.2,159 101.1,159 101.1,188"/>
+<polyline class="ln-muted" points="47.4,188 47.4,135.3 87.7,135.3 87.7,159"/>
+<polyline class="ln-muted" points="154.8,188 154.8,168.1 181.6,168.1 181.6,188"/>
+<polyline class="ln-muted" points="127.9,188 127.9,100.1 168.2,100.1 168.2,168.1"/>
+<polyline class="ln-muted" points="67.5,135.3 67.5,93.5 148,93.5 148,100.1"/>
+<polyline class="ln-muted" points="235.2,188 235.2,169 262.1,169 262.1,188"/>
+<polyline class="ln-muted" points="315.8,188 315.8,178.4 342.6,178.4 342.6,188"/>
+<polyline class="ln-muted" points="288.9,188 288.9,133.1 329.2,133.1 329.2,178.4"/>
+<polyline class="ln-muted" points="248.7,169 248.7,111.7 309,111.7 309,133.1"/>
+<polyline class="ln-muted" points="208.4,188 208.4,84 278.9,84 278.9,111.7"/>
+<polyline class="ln-muted" points="107.8,93.5 107.8,26.1 243.6,26.1 243.6,84"/>
+<line class="ln-accent" x1="34" y1="55" x2="356" y2="55" stroke-dasharray="5 4"/>
+<text class="t-sm t-mono end" x="356" y="49">k = 2</text>
+<text class="t-sm t-mono end" x="28" y="28">3.7</text>
+<text class="t-sm t-mono end" x="28" y="188">0</text>
+<text class="t-sm t-mono mid" x="47.4" y="204">d10</text>
+<text class="t-sm t-mono mid" x="74.2" y="220">d11</text>
+<text class="t-sm t-mono mid" x="101.1" y="204">d12</text>
+<text class="t-sm t-mono mid" x="127.9" y="220">thu</text>
+<text class="t-sm t-mono mid" x="154.8" y="204">wed</text>
+<text class="t-sm t-mono mid" x="181.6" y="220">fri</text>
+<text class="t-sm t-mono mid" x="208.4" y="204">d08</text>
+<text class="t-sm t-mono mid" x="235.2" y="220">sun</text>
+<text class="t-sm t-mono mid" x="262.1" y="204">d09</text>
+<text class="t-sm t-mono mid" x="288.9" y="220">tue</text>
+<text class="t-sm t-mono mid" x="315.8" y="204">mon</text>
+<text class="t-sm t-mono mid" x="342.6" y="220">sat</text>
+</svg>
