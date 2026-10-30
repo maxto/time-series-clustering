@@ -29,3 +29,29 @@ title = "An extensive comparative study of cluster validity indices"
 venue = "Pattern Recognition 46(1), 243-256"
 doi = "10.1016/j.patcog.2012.07.021"
 topics = ["validate"]
+
+[aeon-dtw]
+authors = ["aeon developers"]
+year = 2026
+title = "aeon.distances.dtw_distance"
+venue = "aeon documentation, stable (release 1.6.0)"
+url = "https://www.aeon-toolkit.org/en/stable/api_reference/auto_generated/aeon.distances.dtw_distance.html"
+topics = ["software", "compare"]
+manual = { date = 2026-10-29, by = "Claude (main agent)", what = "page read: definition, window parameter and Returns; release 1.6.0 from PyPI, the page states no version" }
+
+[dtw-python]
+authors = ["Giorgino, Toni"]
+year = 2026
+title = "dtw-python: dtw.dtw and StepPattern"
+venue = "dtw-python documentation, version 1.9.0"
+url = "https://dynamictimewarping.github.io/py-api/html/api/dtw.dtw.html"
+topics = ["software", "compare"]
+manual = { date = 2026-10-29, by = "Claude (main agent)", what = "pages dtw.dtw and dtw.StepPattern read: signature defaults, symmetric2 recursion with a diagonal weight of 2" }
+
+[rousseeuw87]
+authors = ["Rousseeuw, Peter J."]
+year = 1987
+title = "Silhouettes: a graphical aid to the interpretation and validation of cluster analysis"
+venue = "Journal of Computational and Applied Mathematics 20, 53-65"
+doi = "10.1016/0377-0427(87)90125-7"
+topics = ["validate"]

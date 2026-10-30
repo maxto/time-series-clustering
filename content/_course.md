@@ -3,35 +3,32 @@ title: Time series clustering
 tagline: Decide what similar means before you cluster time series.
 ---
 
-## A. Define similarity
+## A. Define
 
 - same-series-different-questions | published | Same series, different questions
-- preprocessing | planned | What preprocessing erases
+- preprocessing | published | What preprocessing erases
 
-## B. Compare sequences
+## B. Measure
 
-- lock-step | planned | Lock-step: Euclidean, L1, correlation
-- sliding | planned | Sliding: cross-correlation and SBD
+- lock-step | published | Lock-step: Euclidean, L1, correlation
+- sliding | published | Sliding: cross-correlation and SBD
 - dtw | published | Elastic: DTW and its window
-- edit-based | planned | Edit-based: LCSS, EDR, ERP, MSM, TWE
+- edit-based | published | Edit-based: LCSS, EDR, ERP, MSM, TWE
+- features | published | Features: ACF, spectra, wavelets, SAX, catch22
+- models | published | Models, complexity, ordinal patterns, compression
+- learned | published | Learned representations
+- multivariate-subsequence | published | Multivariate and subsequence
 
-## C. Compare representations
+## C. Group
 
-- features | planned | Features: ACF, spectra, wavelets, SAX, catch22
-- models | planned | Models, complexity, ordinal patterns, compression
-- learned | planned | Learned representations
-- multivariate-subsequence | planned | Multivariate and subsequence
+- match-the-algorithm | published | Match the algorithm to the distance
 
-## D. Group
+## D. Validate
 
-- match-the-algorithm | planned | Match the algorithm to the geometry
+- internal-indices | published | Internal indices
+- external-and-stability | published | External indices and stability
 
-## E. Validate
+## E. Recipes
 
-- internal-indices | planned | Internal indices by geometry
-- external-and-stability | planned | External indices, stability and the decision guide
-
-## F. Code labs
-
-- python-lab | planned | Python reference lab
-- r-lab | planned | R reference lab
+- recipe-energy | published | Recipe: daily load profiles
+- recipe-finance | published | Recipe: a stock universe
