@@ -163,7 +163,7 @@ async function smokeChecks(run, p, url) {
   expect(await count(p, 'main section#validity-example') === 1, `${run}: gamma content section "Validity example" missing`);
   expect(await count(p, '.pager a.next') === 0, `${run}: gamma has a next link`);
   expect(await count(p, 'section.finance') === 0 && await count(p, 'section.code') === 0 && await count(p, 'section.measure') === 0, `${run}: gamma has blocks it does not define`);
-  expect(await count(p, 'nav#contents li:has(> a[aria-current="page"]) > ol.toc') === 1 && await count(p, 'nav#contents li:has(> a[aria-current="page"]) span.fin') === 0, `${run}: gamma contents entry`);
+  expect(await count(p, 'nav#contents li:has(> a[aria-current="page"]) > ol.toc') === 1, `${run}: gamma contents entry`);
   expect(await count(p, 'a[href*="beta"]') === 0, `${run}: gamma links to the planned lesson beta`);
 
   // previous / next on every lesson: navigation() below, against the manifest
@@ -222,7 +222,7 @@ async function homeChecks(run, p, url) {
   const qt = await q.innerText();
   expect(qt.includes('Same hours, or same shape?') && qt.includes('Euclidean') && qt.includes('DTW'), `${run}: a.q text ${qt}`);
   // lesson index
-  expect(await count(p, '#lessons li#lesson-beta') === 1 && await count(p, '#lessons li#lesson-alpha span.fin') === 1 && await count(p, '#lessons li#lesson-gamma span.fin') === 0, `${run}: lesson index and finance tags`);
+  expect(await count(p, '#lessons li#lesson-beta') === 1 && await count(p, '#lessons span.fin') === 0, `${run}: lesson index, or a finance tag in it`);
   // release build: nothing is draft
   expect(await count(p, '.draft-banner') === 0 && await count(p, 'span.draft') === 0, `${run}: release home shows draft marks`);
   // sources page
@@ -281,7 +281,7 @@ async function lessonContract(run, p) {
     `${run}: contents lesson links ${JSON.stringify(lessonLinksIn)}`);
   expect(await count(p, 'nav#contents li.coming') === 1 && (await nav.locator('li.coming').innerText()).includes('Beta')
     && await count(p, 'nav#contents li.coming a') === 0, `${run}: contents does not list beta as coming without a link`);
-  expect(await count(p, 'nav#contents span.fin') === 1 && (await nav.locator('li:has(span.fin)').innerText()).includes('Alpha'), `${run}: Finance tag only on alpha`);
+  expect(await count(p, 'nav#contents span.fin') === 0, `${run}: Finance tag in the contents`);
   expect(await count(p, 'nav#contents ol.toc') === 1 && await count(p, 'nav#contents li:has(> a[aria-current="page"]) > ol.toc') === 1, `${run}: ol.toc not under the current lesson`);
   const toc = await nav.locator('ol.toc a').evaluateAll(as => as.map(a => a.getAttribute('href')));
   expect(JSON.stringify(toc) === JSON.stringify(['#engine-features', '#a-second-section', '#in-finance', '#measure-card', '#code', '#common-mistake']),
@@ -413,10 +413,18 @@ async function spyChecks(run, p, url) {
   await p.goto(url('alpha/index.html'));
   const frac = () => p.evaluate(() => { const i = document.querySelector('.progress > i'); return i.getBoundingClientRect().width / i.parentElement.getBoundingClientRect().width; });
   expect(await frac() === 0, `${run}: progress at the top is ${await frac()}`);
+  const marked = sel => p.$$eval(sel, as => as.map(a => a.getAttribute('href')));
+  const firstBlock = await p.$eval('nav#contents ol.toc a', a => a.getAttribute('href'));
+  // regression: on load the first block is marked, in the contents and in the chips, and no chip looks marked by itself
+  expect(JSON.stringify(await marked('nav#contents ol.toc a[aria-current="true"]')) === JSON.stringify([firstBlock]), `${run}: on load the contents do not mark the first block`);
+  expect(JSON.stringify(await marked('nav.jump a[aria-current="true"]')) === JSON.stringify([firstBlock]), `${run}: on load the chips do not mark the first block`);
+  const chipBg = await p.$$eval('nav.jump a:not([aria-current])', as => [...new Set(as.map(a => getComputedStyle(a).backgroundColor))]);
+  expect(chipBg.length === 1, `${run}: unmarked chips differ in background: ${JSON.stringify(chipBg)}`);
   await jump(p, await p.evaluate(() => document.getElementById('measure-card').getBoundingClientRect().top + scrollY - 80));
   await p.waitForTimeout(250);
   const cur = await p.$$eval('nav#contents ol.toc a[aria-current="true"]', as => as.map(a => a.getAttribute('href')));
   expect(JSON.stringify(cur) === JSON.stringify(['#measure-card']), `${run}: scroll-spy marks ${JSON.stringify(cur)} at #measure-card`);
+  expect(JSON.stringify(await marked('nav.jump a[aria-current="true"]')) === JSON.stringify(['#measure-card']), `${run}: the chips do not follow the scroll to #measure-card`);
   const mid = await frac();
   expect(mid > 0.1 && mid < 0.95, `${run}: progress mid-lesson is ${mid}`);
   await jump(p, await p.evaluate(() => document.documentElement.scrollHeight));
@@ -424,7 +432,7 @@ async function spyChecks(run, p, url) {
   expect(await frac() >= 0.99, `${run}: progress at the bottom is ${await frac()}`);
   await jump(p, 0);
   await p.waitForTimeout(250);
-  expect(await frac() === 0 && await count(p, 'nav#contents ol.toc a[aria-current="true"]') === 0, `${run}: top of the page leaves a toc link marked or progress above 0`);
+  expect(await frac() === 0 && JSON.stringify(await marked('nav#contents ol.toc a[aria-current="true"]')) === JSON.stringify([firstBlock]), `${run}: back at the top the first block is not marked, or progress is above 0`);
 }
 
 // Code tabs, copy, citation popover (lesson alpha). Fixture code: python "print(1)", R "cat(1)".
@@ -494,14 +502,8 @@ async function codeChecks(run, p, url, http) {
 async function mapChecks(run, p, url) {
   await p.setViewportSize({ width: 1280, height: 900 });
   await p.goto(url('index.html'));
-  expect(await count(p, '#map div.map-root') === 1 && (await p.locator('#map div.map-root').innerText()).includes('compare, group, validate'), `${run}: map root box`);
-  expect(await count(p, '#map svg.wires[aria-hidden="true"]') === 1 && await count(p, '#map svg.wires path') >= 1, `${run}: 1280 px: connector lines missing or not aria-hidden`);
-  await p.setViewportSize({ width: 390, height: 800 });
-  await p.waitForTimeout(150);
-  expect(await count(p, '#map svg.wires[aria-hidden="true"]') === 1 && await count(p, '#map svg.wires path') === 0, `${run}: 390 px: connector lines drawn while the branches stack`);
-  await p.setViewportSize({ width: 1440, height: 900 });
-  await p.waitForTimeout(150);
-  expect(await count(p, '#map svg.wires path') >= 1, `${run}: 1440 px: connector lines not redrawn after a resize`);
+  const pipeline = await p.$$eval('#map ol.pipeline a', as => as.map(a => [a.querySelector('b').textContent, !!document.getElementById(a.getAttribute('href').slice(1))]));
+  expect(pipeline[0][0] === 'Define' && pipeline.length === 1 + await count(p, '#map div.branch') && pipeline.every(([, ok]) => ok), `${run}: pipeline steps ${JSON.stringify(pipeline)}`);
   const states = () => p.$$eval('li.item[data-item]', ls => Object.fromEntries(ls.map(l => [l.dataset.item, l.dataset.state || ''])));
   const is = async (want, msg) => { const got = await states(); const w = { euclidean: '', correlation: '', dtw: '', agglomerative: '', 'k-medoids': '', ...want }; expect(JSON.stringify(Object.entries(got).sort()) === JSON.stringify(Object.entries(w).sort()), `${run}: ${msg}: ${JSON.stringify(got)}`); };
   const status = () => p.locator('#f-status').innerText();

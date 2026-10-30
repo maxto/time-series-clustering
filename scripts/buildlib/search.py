@@ -42,13 +42,13 @@ def build_index(course, lessons, atlas):
     for lesson in lessons:
         e, meta = lesson.entry, lesson.meta
         entries.append({"kind": "lesson", "title": meta["title"], "section": "", "href": f"{e.id}/index.html",
-                        "text": " ".join(meta["lede"].split()), "draft": False})
+                        "text": " ".join(meta["lede"].split()), "draft": lesson.draft})
         for b in lesson.blocks:
             if b.kind == "code":
                 continue
             section = BLOCK_TITLES.get(b.kind) or b.title
             entries.append({"kind": "lesson", "title": meta["title"], "section": section, "href": f"{e.id}/index.html#{b.id}",
-                            "text": block_text(b.tokens), "draft": False})
+                            "text": block_text(b.tokens), "draft": lesson.draft})
     if atlas:
         for branch in atlas.branches:
             for fam in branch.families:

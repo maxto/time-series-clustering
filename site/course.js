@@ -211,6 +211,7 @@
   var bar = doc.querySelector('header.top .progress > i');
   var mainEl = doc.getElementById('main');
   var targets = tocLinks.map(function (a) { return doc.getElementById(decodeURIComponent(a.getAttribute('href').slice(1))); });
+  var chips = Array.prototype.slice.call(doc.querySelectorAll('nav.jump a[href^="#"]'));
   var queued = false;
   function update() {
     queued = false;
@@ -222,11 +223,16 @@
     }
     if (tocLinks.length) {
       var atEnd = y + vh >= doc.documentElement.scrollHeight - 2 && y > 0;
-      var current = -1;
+      var current = 0; // the first block until a later one reaches the top
       targets.forEach(function (t, i) { if (t && t.getBoundingClientRect().top <= 100) current = i; });
       if (atEnd) current = targets.length - 1;
       tocLinks.forEach(function (a, i) {
         if (i === current) { a.setAttribute('aria-current', 'true'); a.classList.add('on'); }
+        else { a.removeAttribute('aria-current'); a.classList.remove('on'); }
+      });
+      var href = tocLinks[current].getAttribute('href');
+      chips.forEach(function (a) {
+        if (a.getAttribute('href') === href) { a.setAttribute('aria-current', 'true'); a.classList.add('on'); }
         else { a.removeAttribute('aria-current'); a.classList.remove('on'); }
       });
     }

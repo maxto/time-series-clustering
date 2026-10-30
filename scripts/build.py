@@ -11,9 +11,10 @@ reports every problem as one line "<file>: <message>", exit 1. When all is valid
   DIST/assets/               theme.css, theme.js, course.js, map.js, search-index.js (generated), Geist fonts, KaTeX css and fonts
   DIR/figures/<name>.preview.svg   light preview of each figure for GitHub (default content/
                              only, or with --previews)
-Two modes. The release build (default, DIST defaults to dist/) fails on every map item or sector fit
-without a current review record (one line each). The preview build (--preview, DIST defaults to
-preview/) allows them, marks the home with a draft banner and never writes into dist/. Every page
+Two modes. The release build (default, DIST defaults to dist/) fails on every lesson, citation, map
+item or sector fit without a current review record (one line each). The preview build (--preview, DIST
+defaults to preview/) allows them, marks the home and each draft lesson with a draft banner and never
+writes into dist/. Every page
 carries <html data-build="release|preview" data-root="...">.
 All links are relative, so the site works from file:// and under the Pages subpath.
 """
@@ -75,7 +76,7 @@ def setup_markdown(figures, live):
     return md
 
 
-def home_page(course, template, overview, atlas, sources, finance_ids, build_mode="release"):
+def home_page(course, template, overview, atlas, sources, build_mode="release"):
     published = course.published()
     by_id = {e.id: e for e in course.entries}
     cta = (f'<p class="cta"><a class="start" href="{published[0].id}/index.html">Start with lesson 1</a></p>' if published else "")
@@ -87,11 +88,11 @@ def home_page(course, template, overview, atlas, sources, finance_ids, build_mod
         "meta": head_meta(course.title, course.tagline, SITE_URL, "website", course.title),
         "build": build_mode, "root": "",
         "top": top_bar("", course.title, REPO_URL, progress=False),
-        "contents": contents_nav(course, "", finance_ids, current="home"),
+        "contents": contents_nav(course, "", current="home"),
         "count": f"{n} lessons · {len(published)} published", "title": esc(course.title),
         "tagline": esc(course.tagline), "cta": cta,
-        "overview": f'<figure class="overview">{overview}</figure>' if overview else "",
-        "atlas": atlas_html, "lessons": lessons_section(course, finance_ids),
+        "overview": f'<figure class="overview">{overview}</figure>' if overview and not atlas else "",
+        "atlas": atlas_html, "lessons": lessons_section(course),
     })
 
 
@@ -136,7 +137,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--content", type=pathlib.Path, help="content directory (default: content/)")
     ap.add_argument("--dist", type=pathlib.Path, help="output directory (default: dist/, or preview/ with --preview)")
-    ap.add_argument("--preview", action="store_true", help="preview build: allow draft map items and fits, write to preview/")
+    ap.add_argument("--preview", action="store_true", help="preview build: allow draft lessons, map items and fits, write to preview/")
     ap.add_argument("--previews", action="store_true", help="write figure previews also for a --content other than content/")
     args = ap.parse_args()
     content = (args.content or ROOT / "content").resolve()
@@ -163,7 +164,7 @@ def main():
     sources = load_sources(content, errors)
     reviews = load_reviews(content, errors)
     lessons = load_lessons(content, course, md, sources, errors)
-    check_reviews(lessons, sources, reviews, errors)
+    check_reviews(lessons, sources, reviews, errors, allow_drafts=args.preview)
     atlas = load_atlas(content, sources, reviews, course, errors)
     if atlas and not args.preview:
         for line in atlas.draft_items():
@@ -201,20 +202,19 @@ def main():
     lessons.sort(key=lambda lesson: order[lesson.entry.id])
     published = course.published()
     template = (SITE / "page.html").read_text()
-    finance_ids = {lesson.entry.id for lesson in lessons if any(b.kind == "finance" for b in lesson.blocks)}
     for i, lesson in enumerate(lessons):
         prev = published[i - 1] if i > 0 else None
         nxt = published[i + 1] if i + 1 < len(published) else None
         (dist / lesson.entry.id).mkdir()
-        page = lesson_page(lesson, course, md, template, prev, nxt, sources, finance_ids, mode, SITE_URL, REPO_URL)
+        page = lesson_page(lesson, course, md, template, prev, nxt, sources, mode, SITE_URL, REPO_URL)
         (dist / lesson.entry.id / "index.html").write_text(page)
     (dist / "index.html").write_text(home_page(
-        course, (SITE / "home.html").read_text(), figures.get("overview"), atlas, sources, finance_ids, mode))
+        course, (SITE / "home.html").read_text(), figures.get("overview"), atlas, sources, mode))
     (dist / "assets" / "search-index.js").write_text(index_script(build_index(course, lessons, atlas)))
     (dist / "sources").mkdir()
     in_map = {r.key for it in atlas.items() for r in it.all_refs()} | {r.key for ft in atlas.fits() for r in ft.sources} if atlas else set()
     (dist / "sources" / "index.html").write_text(sources_page(
-        course, (SITE / "sources.html").read_text(), sources, cited_sources(lessons), in_map, finance_ids, mode, SITE_URL, REPO_URL))
+        course, (SITE / "sources.html").read_text(), sources, cited_sources(lessons), in_map, mode, SITE_URL, REPO_URL))
 
     written = []
     if previews and figures:

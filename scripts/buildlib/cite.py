@@ -200,17 +200,23 @@ def citation_text(c):
     return f"[@{c.key}, {c.locator}]"
 
 
-def check_reviews(lessons, sources, reviews, errors):
-    """The review gate: a record for the lesson text and one for every citation, in every build."""
+def check_reviews(lessons, sources, reviews, errors, allow_drafts=False):
+    """The review gate: a record for the lesson text and one for every citation. A release build
+    rejects a missing record. A preview (allow_drafts) marks the lesson as a draft instead."""
     for lesson in lessons:
         lid = lesson.entry.id
+        missing = []
         if lesson.fingerprint not in reviews.lessons.get(lid, set()):
-            errors.add(lesson.path, f"lesson {lid!r} has no review for its current text"
-                                    f" (fingerprint {lesson.fingerprint}, see scripts/review.py)")
+            missing.append(f"lesson {lid!r} has no review for its current text"
+                           f" (fingerprint {lesson.fingerprint}, see scripts/review.py)")
         for c in lesson.citations:
             if c.key in sources and (lid, c.key, c.locator, c.paragraph, sources[c.key].identity) not in reviews.citations:
-                errors.add(lesson.path, f"citation {citation_text(c)} has no review record"
-                                        f" (paragraph {c.paragraph}, see scripts/review.py)")
+                missing.append(f"citation {citation_text(c)} has no review record"
+                               f" (paragraph {c.paragraph}, see scripts/review.py)")
+        if missing and allow_drafts:
+            lesson.draft = True
+        for line in [] if allow_drafts else missing:
+            errors.add(lesson.path, line)
 
 
 def cited_sources(lessons):

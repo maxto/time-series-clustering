@@ -73,9 +73,9 @@ def top_bar(root, course_title, repo_url, progress):
         "</div></header>")
 
 
-def contents_nav(course, root, finance_ids, current=None, toc=""):
+def contents_nav(course, root, current=None, toc=""):
     """nav#contents: course links, then every module with its lessons. `toc` is the ol.toc under `current`."""
-    links = [("Course home", f"{root}index.html", current == "home"), ("Map of the field", f"{root}index.html#map", False),
+    links = [("Course home", f"{root}index.html", current == "home"), ("The pipeline", f"{root}index.html#map", False),
              ("Examples by sector", f"{root}index.html#sectors", False),
              ("Sources", f"{root}sources/index.html", current == "sources")]
     out = ['<nav id="contents" aria-label="Course contents">'
@@ -86,8 +86,7 @@ def contents_nav(course, root, finance_ids, current=None, toc=""):
     for letter, title, entries in course.modules:
         out.append(f'<h2>{letter} · {esc(title)}</h2><ol>')
         for e in entries:
-            tag = '<span class="fin">Finance</span>' if e.id in finance_ids else ""
-            label = f'<span class="n">{e.number}</span><span class="t">{esc(e.title)}</span>{tag}'
+            label = f'<span class="n">{e.number}</span><span class="t">{esc(e.title)}</span>'
             if e.status == "planned":
                 out.append(f'<li class="coming"><span class="ls">{label}<span class="soon">coming</span></span></li>')
             elif e.id == current:
@@ -164,8 +163,9 @@ def lesson_main(lesson, course, md, prev, nxt, sources):
             targets.append((b.id, plain_label(md, b), "section"))
         elif b.kind in FIXED_LABELS and (b.kind != "code" or lesson.code):
             targets.append((b.id, FIXED_LABELS[b.kind], b.kind))
-    jump = "".join(f'<a{cls} href="#{bid}">{label}</a>' for bid, label, kind in targets if kind != "mistake"
-                   for cls in [' class="f"' if kind == "finance" else ""])
+    jump = "".join(f'<a href="#{bid}">{label}</a>' for bid, label, kind in targets if kind != "mistake")
+    if lesson.draft:
+        parts.append(f'<div class="draft-banner" role="note">{LESSON_DRAFT_TEXT}</div>\n')
     parts.append(f'<nav class="jump" aria-label="Sections of this lesson">{jump}</nav>\n')
     parts.append(f'<div class="oneline" id="one-line">{render(md, by_kind["oneline"].tokens)}</div>\n')
     for b in lesson.blocks:
@@ -184,14 +184,14 @@ def lesson_main(lesson, course, md, prev, nxt, sources):
     return "".join(parts), f'<ol class="toc">{toc}</ol>'
 
 
-def lesson_page(lesson, course, md, template, prev, nxt, sources, finance_ids, build_mode, site_url, repo_url):
+def lesson_page(lesson, course, md, template, prev, nxt, sources, build_mode, site_url, repo_url):
     e, meta = lesson.entry, lesson.meta
     main, toc = lesson_main(lesson, course, md, prev, nxt, sources)
     return fill(template, {
         "meta": head_meta(f"{meta['title']} · {course.title}", meta["lede"], f"{site_url}{e.id}/", "article", course.title),
         "build": build_mode, "root": "../",
         "top": top_bar("../", course.title, repo_url, progress=True),
-        "contents": contents_nav(course, "../", finance_ids, current=e.id, toc=toc),
+        "contents": contents_nav(course, "../", current=e.id, toc=toc),
         "main": main,
     })
 
@@ -206,12 +206,19 @@ IGNORE_LABELS = {"level": "level", "scale": "scale", "shift": "a global shift", 
 NEED_LABELS = {"matrix": "a distance matrix", "similarity": "a similarity matrix", "vectors": "feature vectors",
                "series": "the series themselves", "labels": "labels"}
 BRANCH_ORDER = ("compare", "group", "validate")
+STEP_DEFINE = ("Define", "What may the comparison ignore?")
+STEP_QUESTIONS = {"compare": "Which distance ignores exactly that?", "group": "Which algorithm accepts that distance?",
+                  "validate": "Are the groups real?"}
 DRAFT = '<span class="draft">draft</span>'
 LINK_POLICY = ("Each source links to the publisher through its DOI, to arXiv or SSRN, or to the authors' page. "
                "Only legitimate copies of the cited work are linked. The build does not check that links still work, "
                "so a link may have moved. If one fails, search for the title.")
 TOPIC_LABELS = {"survey": "Surveys", "compare": "Compare", "group": "Group", "validate": "Validate",
                 "finance": "Finance", "software": "Software"}
+
+
+LESSON_DRAFT_TEXT = ("Draft lesson. Local preview only. The text and its citations are not yet reviewed. "
+                     "A release build refuses this lesson until it is.")
 
 
 def draft_banner_text():
@@ -274,6 +281,10 @@ def item_card(it, family, sources, published, root):
     return f'<div class="card">{"".join(parts)}</div>'
 
 
+def step_head(n, name, question):
+    return f'<div class="br-head"><span class="step-n">{n}</span><div><b>{esc(name)}</b><span>{esc(question)}</span></div></div>'
+
+
 def map_section(atlas, sources, published, root, preview, course_title):
     """`published` maps every course lesson id to its entry (planned ones too)."""
     banner = f'<div class="draft-banner" role="note">{draft_banner_text()}</div>' if preview else ""
@@ -291,10 +302,11 @@ def map_section(atlas, sources, published, root, preview, course_title):
         f'<p id="f-status" class="mf-status" aria-live="polite">Showing all {len(atlas.items())} items.</p></div>')
     branches = []
     by_id = {b.id: b for b in atlas.branches}
-    for bid in BRANCH_ORDER:
-        b = by_id.get(bid)
-        if not b:
-            continue
+    present = [by_id[bid] for bid in BRANCH_ORDER if bid in by_id]
+    bar = [(STEP_DEFINE[0], STEP_DEFINE[1], "step-define")] + [(b.name, STEP_QUESTIONS[b.id], f"step-{b.id}") for b in present]
+    steps = "".join(f'<li><a href="#{sid}"><span class="step-n">{n}</span><b>{esc(name)}</b><span class="step-q">{esc(q)}</span></a></li>'
+                    for n, (name, q, sid) in enumerate(bar, 1))
+    for n, b in enumerate(present, 2):
         fams = []
         for f in b.families:
             link = ""
@@ -305,11 +317,13 @@ def map_section(atlas, sources, published, root, preview, course_title):
                 + (f'<span class="cond">{esc(it.cond)}</span>' if it.cond else "") + (DRAFT if not it.reviewed else "")
                 + f"</summary>{item_card(it, f, sources, published, root)}</details></li>" for it in f.items)
             fams.append(f'<div class="family"><h3>{esc(f.name)}{link}</h3><ul>{lis}</ul></div>')
-        branches.append(f'<div class="branch" data-branch="{b.id}"><div class="br-head"><b>{esc(b.name)}</b>'
-                        f'<span>{esc(b.sub)}</span></div>{"".join(fams)}</div>')
-    return (f'<section id="map"><h2 class="h-sec">Map of the field</h2>\n{banner}{filters}\n'
-            f'<div class="map"><div class="map-root"><b>{esc(course_title)}</b><span>compare, group, validate</span></div>'
-            f'<div class="branches">{"".join(branches)}</div></div>\n{atlas_data(atlas)}</section>\n')
+        branches.append(f'<div class="branch" id="step-{b.id}" data-branch="{b.id}">'
+                        f'{step_head(n, b.name, STEP_QUESTIONS[b.id])}<div class="fams">{"".join(fams)}</div></div>')
+    define = f'<div class="step" id="step-define">{step_head(1, *STEP_DEFINE)}{filters}</div>'
+    return (f'<section id="map"><h2 class="h-sec">The pipeline</h2>\n'
+            '<p class="h-intro">Four decisions, in order. Each one limits the next.</p>\n'
+            f'<ol class="pipeline">{steps}</ol>\n{banner}'
+            f'<div class="map">{define}<div class="branches">{"".join(branches)}</div></div>\n{atlas_data(atlas)}</section>\n')
 
 
 def sparkline(curve, title):
@@ -336,14 +350,13 @@ def sectors_section(atlas):
             f'<div class="sectors">{"".join(cards)}</div></section>\n')
 
 
-def lessons_section(course, finance_ids):
+def lessons_section(course):
     mods = []
     for letter, title, entries in course.modules:
         items = []
         for e in entries:
-            tag = '<span class="fin">Finance</span>' if e.id in finance_ids else ""
             if e.status == "published":
-                items.append(f'<li id="lesson-{e.id}"><span class="n">{e.number}</span><a href="{e.id}/index.html">{esc(e.title)}</a>{tag}</li>')
+                items.append(f'<li id="lesson-{e.id}"><span class="n">{e.number}</span><a href="{e.id}/index.html">{esc(e.title)}</a></li>')
             else:
                 items.append(f'<li class="planned" id="lesson-{e.id}"><span class="n">{e.number}</span><span>{esc(e.title)}</span>'
                              '<span class="coming">coming</span></li>')
@@ -372,12 +385,12 @@ def sources_main(sources, cited, course, in_map):
             f'<ul class="refs" id="src-list">{"".join(items)}</ul>\n')
 
 
-def sources_page(course, template, sources, cited, in_map, finance_ids, build_mode, site_url, repo_url):
+def sources_page(course, template, sources, cited, in_map, build_mode, site_url, repo_url):
     return fill(template, {
         "meta": head_meta(f"Sources · {course.title}", "Every work the course cites, with links and where it is cited.",
                           f"{site_url}sources/", "website", course.title),
         "build": build_mode, "root": "../",
         "top": top_bar("../", course.title, repo_url, progress=False),
-        "contents": contents_nav(course, "../", finance_ids, current="sources"),
+        "contents": contents_nav(course, "../", current="sources"),
         "main": sources_main(sources, cited, course, in_map),
     })

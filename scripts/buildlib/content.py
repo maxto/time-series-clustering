@@ -196,6 +196,7 @@ class Lesson:
     fingerprint: str = ""  # whole text after {{n:}} (line endings only normalised) plus the identity of every cited source
     math: list = field(default_factory=list)  # math tokens, rendered in one batch later
     fragments: list = field(default_factory=list)  # "#id" link targets, checked against heading ids
+    draft: bool = False  # preview only: the text or a citation has no current review record
 
 
 def split_front(text, path, errors):

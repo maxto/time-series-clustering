@@ -1,6 +1,6 @@
 [[branch]]
 id = "compare"
-name = "Compare"
+name = "Measure"
 sub = "distances and similarities"
 
 [[branch.family]]
