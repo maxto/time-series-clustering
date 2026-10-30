@@ -1,5 +1,33 @@
 # LOG — time-series-clustering
 
+## 2026-10-30 13:49 CET: formulas in the column, choosers, 14 figures
+
+Owner on a phone: formulas had scrollbars. Measured: 22 of 63 display formulas overflowed at 375 px,
+6 at 1440 px, the widest at 2.2 times the column. Done (`32202c6`): all stacked with `gathered` and
+`aligned`, display math 1em on phones. Decided: break lines, not shrink alone and not a wider column,
+because shrinking would have halved the type. TWE, k-Shape and MPdist were rewritten, same maths. The
+regression check in `tests/e2e.mjs` runs on the real course only: the smoke lesson keeps a wide formula
+for the scroll fallback, and editing it would need a new review record. The rule is in `AGENTS.md`.
+
+Owner asked for a list of options where one can choose, not only on the home. Done (`e1db08f`): a
+section with four or more bold-led paragraphs gets a row of links, built from the text. Applies to
+6 lessons. The threshold keeps the three steps of the recipes out. Rejected: `###` headings for
+each option, which would rewrite the paragraphs.
+
+Codex review of the first pass: request written, Codex hit its usage limit with no answer. The owner
+said to drop it and to clear Codex, done, screen checked. Still no second-model review of the lessons.
+
+Figures (c26cf76): `scripts/figures_lessons.py`, 14 figures, with `scripts/figure_measures.py` for the
+measures. Decided: no new dependency, the measures stay in `scripts/` until the code pass. Verified
+once with `uv run --with` against scikit-learn (silhouette per point, ARI, DBSCAN at six radii), aeon
+(LCSS) and statsmodels (ACF), and SBD against `tsc.distances`: exact agreement. Facts stated in the
+text were computed: at `w = 10` and with no window the two-group cut isolates `thu`, both lock-step
+matrices split by hour. Lesson 14 now states that result in place of "not claimed here". pytest 163
+passed, `npm test` e2e ok, 5 figures looked at in dark theme at phone width. The other 9 were seen in
+light on a contact sheet only.
+
+Also deleted the stray `e.pdf` and `e.txt` from the root, on the owner's ok, never committed.
+
 ## 2026-10-30 10:55 CET: first pass of all 15 lessons
 
 Thirteen lesson files written by four subagents against the design doc, with `dtw` as the

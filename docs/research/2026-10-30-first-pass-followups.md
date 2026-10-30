@@ -5,6 +5,12 @@ All 15 lessons are drafts. Numbers below must come from the fixture through `num
 
 ## Figures and numbers requested
 
+Done 2026-10-30: `preprocess-views`, `lockstep-matrices`, `cross-correlation`, `lcss-alignment`, `acf-bars`,
+`ordinal-patterns`, `shapelet-map`, `nearest-window`, `dendrogram`, `partitions`, `silhouette-bars`, `contingency`,
+`window-sensitivity`, `recipe-flow`. Still open from the list below: the second panels (wrong shift on raw data, MSM or
+ERP alignment, periodogram and SAX per day, AR coefficients), Ward on DTW against Euclidean, the Euclidean matrix after
+z-normalisation, the DTW_D against DTW_I panel (needs a second fixture channel), the Keogh and Lin random-walk test.
+
 - `preprocessing`: one series before and after z-normalisation, differencing, 5-point smoothing, resampling to 2 h.
   Euclidean matrix of the 12 days before and after z-normalisation. Number: Euclidean `mon`-`sat` after z-normalisation.
 - `lock-step`: 12 by 12 Euclidean matrix on raw values next to correlation distance. Manhattan, Chebyshev and

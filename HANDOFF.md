@@ -1,9 +1,9 @@
 # HANDOFF — time-series-clustering
 
-Closed: 2026-10-30 10:55 CET (HEAD verified before this update: c0e23f6)
-Last operation: first pass of all 15 lessons done, published in the preview,
-committed on `redesign`. Waiting for the owner to check a couple of lessons,
-then a Codex review.
+Closed: 2026-10-30 13:49 CET (HEAD verified before this update: c26cf76)
+Last operation: formulas fit their column, section choosers, 14 new lesson figures,
+all committed on `redesign`. Codex review dropped by the owner for now. Waiting for
+the owner to look at the result.
 
 ## Goal
 
@@ -20,8 +20,8 @@ superseded from Task 5 on (LOG 2026-10-30).
 
 - Clone at `~/projects/personal/time-series-clustering/`. Branch `redesign`,
   local only. `pilot` at `6055354`, `master` at `196e416`, nothing pushed.
-- Verified 2026-10-30 10:55 CET: all 15 lessons `published` in `content/_course.md`, pytest
-  163 passed, `npm test` e2e ok, `npm run preview` builds 15 of 15. `npm run build`
+- Verified 2026-10-30 13:49 CET: all 15 lessons `published` in `content/_course.md`, pytest
+  163 passed, `npm test` e2e ok, `npm run preview` builds 15 of 15 with 22 figures. `npm run build`
   fails by design (draft lessons and map).
 - Follow-ups per lesson, figures asked for and doubts:
   `docs/research/2026-10-30-first-pass-followups.md`. Finance research:
@@ -38,11 +38,13 @@ superseded from Task 5 on (LOG 2026-10-30).
 
 ## Open items
 
-1. **Owner checks a couple of lessons** (owner), then **Codex review of the first pass**
-   (Claude, request and answer files in `docs/research/`, with the follow-ups file as
-   input). Status: waiting for the owner.
-2. **New figures** (owner: more varied graphics). The list per lesson is in the follow-ups
-   file. Status: after the review, one worker on `scripts/figures.py`.
+1. **Owner looks at the lessons and the figures** (owner). Status: waiting.
+   **Review of the first pass:** dropped for now by the owner (2026-10-30). Codex hit its usage
+   limit with no answer written and was cleared. The request is ready in
+   `docs/research/2026-10-30-first-pass-review-request.md`, its commit hashes date from `e1db08f`.
+   So the 15 lessons and the 14 figures have had no second-model review. Status: to decide.
+2. **Remaining figures** of the follow-ups file (second panels, Ward, DTW_D against DTW_I, the
+   Keogh and Lin test). Status: after the owner's look.
 3. **Proposals to the owner:** remove the unused `content/figures/dtw-window.svg`,
    and `content/figures/overview.svg`, no longer shown on the home. Decide what to do
    with the unused `aeon-dtw`, `dtw-python`, `rousseeuw87` entries. Tests for the two new
@@ -84,5 +86,5 @@ superseded from Task 5 on (LOG 2026-10-30).
 
 ## Next step
 
-Wait for the owner's check of a couple of lessons, then write the Codex review request
-with the follow-ups file as input.
+Wait for the owner's look at the lessons and figures, then take the corrections lesson by
+lesson. The review is the owner's call.
